@@ -4,10 +4,10 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
-class DatabaseSeeder extends Seeder
+class ProductionSeeder extends Seeder
 {
     /**
-     * Seed the application's database.
+     * Run the database seeds.
      */
     public function run(): void
     {
@@ -15,11 +15,5 @@ class DatabaseSeeder extends Seeder
             DocumentTypeSeeder::class,
             SuperAdminSeeder::class,
         ]);
-
-        if (! app()->environment('production')) {
-            $this->call([
-                DemoDataSeeder::class,
-            ]);
-        }
     }
 }

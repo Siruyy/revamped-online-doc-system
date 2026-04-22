@@ -1,0 +1,40 @@
+
+Deprecated: Constant PDO::MYSQL_ATTR_SSL_CA is deprecated since 8.5, use Pdo\Mysql::ATTR_SSL_CA instead in /Volumes/NeriaX9/Dev/Commissions/Online-Document/revamped-online-doc-system/vendor/laravel/framework/config/database.php on line 61
+
+Deprecated: Constant PDO::MYSQL_ATTR_SSL_CA is deprecated since 8.5, use Pdo\Mysql::ATTR_SSL_CA instead in /Volumes/NeriaX9/Dev/Commissions/Online-Document/revamped-online-doc-system/vendor/laravel/framework/config/database.php on line 81
+
+Deprecated: Constant PDO::MYSQL_ATTR_SSL_CA is deprecated since 8.5, use Pdo\Mysql::ATTR_SSL_CA instead in /Volumes/NeriaX9/Dev/Commissions/Online-Document/revamped-online-doc-system/config/database.php on line 61
+
+Deprecated: Constant PDO::MYSQL_ATTR_SSL_CA is deprecated since 8.5, use Pdo\Mysql::ATTR_SSL_CA instead in /Volumes/NeriaX9/Dev/Commissions/Online-Document/revamped-online-doc-system/config/database.php on line 81
+
+  SQLite .............................................................. 3.53.0  
+  Connection .......................................................... sqlite  
+  Database .......................................... database/database.sqlite  
+  Host .......................................................................  
+  Port .......................................................................  
+  Username ...................................................................  
+  URL ........................................................................  
+  Open Connections ...........................................................  
+  Tables .................................................................. 18  
+  Total Size ....................................................... 208.00 KB  
+
+  Table ................................................................. Size  
+  activity_logs ..................................................... 16.00 KB  
+  announcements ...................................................... 4.00 KB  
+  cache .............................................................. 8.00 KB  
+  cache_locks ........................................................ 8.00 KB  
+  clearances ........................................................ 16.00 KB  
+  document_requests ................................................. 32.00 KB  
+  document_types ..................................................... 4.00 KB  
+  failed_jobs ........................................................ 8.00 KB  
+  faqs ............................................................... 4.00 KB  
+  job_batches ........................................................ 8.00 KB  
+  jobs ............................................................... 8.00 KB  
+  messages .......................................................... 12.00 KB  
+  migrations ......................................................... 4.00 KB  
+  notifications ..................................................... 12.00 KB  
+  password_reset_tokens .............................................. 8.00 KB  
+  payments .......................................................... 16.00 KB  
+  sessions .......................................................... 16.00 KB  
+  users ............................................................. 24.00 KB  
+

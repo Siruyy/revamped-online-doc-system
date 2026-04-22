@@ -231,3 +231,12 @@ Use Laravel's built-in `notifications` migration. Columns:
 - `document_requests(status, created_at)` — admin queue
 - `payments(status)` — pending payments queue
 - `messages(receiver_id, read_at)` — unread count badge
+
+## Phase 01 Implementation Notes
+
+The Phase 01 implementation is largely aligned with this schema spec, with the following deliberate details captured for contributors:
+
+- `payments.status` currently has a default of `pending` in migration implementation for safer row creation in seed/demo flows.
+- `faqs.role` currently has a default of `all` in migration implementation.
+- `sessions.user_id` remains Laravel default (indexed nullable column, no FK) to preserve framework compatibility and avoid session write friction.
+- `users.year_level` is stored as `UNSIGNED TINYINT` and expected to be 1-4 by application/business-layer validation; a DB-level check constraint is not yet enforced in the current migration set.

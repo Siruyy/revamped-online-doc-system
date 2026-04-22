@@ -13,12 +13,27 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
+            $table->string('fullname', 150);
+            $table->string('email', 150)->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->enum('role', ['student', 'admin', 'teacher', 'dean', 'accounting', 'sao', 'superadmin']);
+            $table->enum('status', ['pending', 'active', 'suspended', 'rejected'])->default('pending');
+            $table->string('course', 100)->nullable();
+            $table->unsignedTinyInteger('year_level')->nullable();
+            $table->string('student_id', 50)->nullable()->unique();
+            $table->string('contact_number', 30)->nullable();
+            $table->string('avatar_path')->nullable();
+            $table->string('signature_path')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users')->restrictOnDelete();
+            $table->timestamp('approved_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
+
+            $table->index('role');
+            $table->index('status');
+            $table->index(['role', 'status']);
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -42,8 +57,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('users');
     }
 };
