@@ -1,12 +1,28 @@
 <script setup>
+import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
+import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 
-defineProps({
+const props = defineProps({
     stats: { type: Object, required: true },
     pendingLatest: { type: Array, required: true },
     department: { type: String, required: true },
 });
+
+const reloadDashboard = () => {
+    router.reload({ only: ['stats', 'pendingLatest', 'department'], preserveScroll: true });
+};
+
+useEchoPrivateChannel(
+    () => `role.department.${props.department}`,
+    {
+        ClearanceCreated: reloadDashboard,
+        ClearanceUpdated: reloadDashboard,
+    },
+);
+
+useRealtimeOrPoll(reloadDashboard, { intervalMs: 90000 });
 </script>
 
 <template>

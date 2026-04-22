@@ -7,6 +7,7 @@ use App\Models\DocumentRequest;
 use App\Models\User;
 use App\Notifications\ClearanceCompletedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -37,6 +38,7 @@ class ClearanceWorkflowTest extends TestCase
 
     public function test_teacher_can_sign_pending_clearance(): void
     {
+        Event::fake();
         $teacher = $this->makeOfficer('teacher');
         $student = $this->makeStudent();
         $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
@@ -77,6 +79,7 @@ class ClearanceWorkflowTest extends TestCase
 
     public function test_dean_can_deny_with_remarks(): void
     {
+        Event::fake();
         $dean = $this->makeOfficer('dean');
         $student = $this->makeStudent();
         $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
@@ -116,6 +119,7 @@ class ClearanceWorkflowTest extends TestCase
 
     public function test_all_departments_clearing_completes_clearance_and_stubs_pdf(): void
     {
+        Event::fake();
         Notification::fake();
 
         $student = $this->makeStudent();

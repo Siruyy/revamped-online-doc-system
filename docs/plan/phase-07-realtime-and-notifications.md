@@ -16,34 +16,34 @@
 
 ## 7.2 Echo Client Setup
 
-- [ ] `resources/js/echo.js` configured (per [`docs/08-real-time.md`](../docs/08-real-time.md)).
-- [ ] Imported in `app.js`.
-- [ ] Connection works in browser console: `Echo.private('user.1').listen(...)`.
+- [x] `resources/js/echo.js` configured (per [`08-real-time.md`](../08-real-time.md)).
+- [x] Imported via `resources/js/bootstrap.js` (loaded from `app.js`).
+- [ ] Connection works in browser console: `Echo.private('user.1').listen(...)` (manual check with Reverb running).
 
 ## 7.3 Channels
 
-- [ ] `routes/channels.php` defines: `user.{userId}`, `role.admin`, `role.superadmin`, `role.department.{role}`, `chat.{conversationId}`.
-- [ ] Authorization callbacks tested.
+- [x] `routes/channels.php` defines: `user.{userId}`, `role.admin`, `role.superadmin`, `role.department.{role}`, `chat.{messageId}` (message-participant auth; refine in Phase 08 if needed).
+- [x] Authorization callbacks tested (`tests/Feature/Broadcasting/BroadcastChannelAuthorizationTest.php`).
 
 ## 7.4 Events
 
 Implement each event class with `ShouldBroadcast` (or `ShouldBroadcastNow` for chat):
 
-- [ ] `RegistrationSubmitted` → `role.superadmin`
-- [ ] `RegistrationApproved` → `user.{id}`
-- [ ] `RequestSubmitted` → `role.admin`
-- [ ] `RequestApproved` / `RequestDenied` → `user.{studentId}`
-- [ ] `RequestStageUpdated` → `user.{studentId}`
-- [ ] `PaymentSubmitted` → `role.admin`
-- [ ] `PaymentApproved` / `PaymentDenied` → `user.{studentId}`
-- [ ] `ClearanceCreated` → `role.department.teacher`, `dean`, `accounting`, `sao` (each)
-- [ ] `ClearanceUpdated` → `user.{studentId}` + `role.admin`
-- [ ] `ClearanceCompleted` → `user.{studentId}`
-- [ ] `NotificationCreated` → `user.{userId}` (sent automatically by Laravel notifications)
+- [x] `RegistrationSubmitted` → `role.superadmin`
+- [x] `RegistrationApproved` → `user.{id}`
+- [x] `RequestSubmitted` → `role.admin`
+- [x] `RequestApproved` / `RequestDenied` → `user.{studentId}`
+- [x] `RequestStageUpdated` → `user.{studentId}`
+- [x] `PaymentSubmitted` → `role.admin`
+- [x] `PaymentApproved` / `PaymentDenied` → `user.{studentId}`
+- [x] `ClearanceCreated` → `role.department.teacher`, `dean`, `accounting`, `sao` (each)
+- [x] `ClearanceUpdated` → `user.{studentId}` + `role.admin`
+- [x] `ClearanceCompleted` → `user.{studentId}`
+- [ ] `NotificationCreated` / per-notification `toBroadcast()` where needed (Laravel + `User::receivesBroadcastNotificationsOn()`; bell uses Inertia reload on `.notification()` when notifications use `broadcast` channel)
 
 ## 7.5 Notifications
 
-- [ ] Implement all Notification classes from [`docs/12-notifications-and-email.md`](../docs/12-notifications-and-email.md).
+- [ ] Implement all Notification classes from [`12-notifications-and-email.md`](../12-notifications-and-email.md).
 - [ ] Each implements `ShouldQueue`.
 - [ ] Each defines `via()`, `toDatabase()`, `toMail()`, `toBroadcast()` as appropriate.
 - [ ] Mail templates customized with brand styling.
@@ -59,21 +59,21 @@ Wire events to side effects in services or dedicated listeners:
 
 ## 7.7 Vue Real-Time Integration
 
-- [ ] `useEcho` composable for subscribing/unsubscribing.
-- [ ] `useUserChannel` helper.
-- [ ] `useRoleChannel` helper.
-- [ ] `NotificationBell.vue` subscribes to user channel, prepends new notifications, increments badge.
+- [x] `useEchoPrivateChannel` composable (`resources/js/Composables/useEchoPrivateChannel.js`) for private channel subscribe / cleanup (non-`user.*` channels leave on unmount).
+- [ ] `useUserChannel` / `useRoleChannel` named helpers (optional refactor on top of composable above).
+- [x] `NotificationBell.vue` — Echo `user.{id}` `.notification()` + Inertia reload for shared `unreadNotificationsCount`; notifications link by role; shown on `StudentLayout` and `StaffLayout`.
 - [ ] `MessageBell.vue` (UI-only here; messaging features in Phase 08).
-- [ ] Admin Requests list subscribes to `role.admin`, prepends new rows.
-- [ ] Student Request detail subscribes to user channel, updates timeline live.
-- [ ] Department dashboard subscribes to `role.department.{role}`, updates pending list.
-- [ ] Fallback polling composable (`useRealtimeOrPoll`) for when WebSocket unavailable.
+- [x] Admin Requests list subscribes to `role.admin` — reloads table on `RequestSubmitted`, `PaymentSubmitted`, `ClearanceUpdated`.
+- [x] Student Request detail subscribes to `user.{id}` — partial reload `request` on status / payment / clearance / registration events.
+- [x] Department dashboard subscribes to `role.department.{role}` — reload stats/list on `ClearanceCreated` / `ClearanceUpdated`.
+- [x] SuperAdmin Pending registrations — `role.superadmin` + `RegistrationSubmitted`.
+- [x] Fallback polling (`useRealtimeOrPoll`) when Echo is unavailable.
 
 ## 7.8 Queue Worker
 
 - [ ] Verify `php artisan queue:work` processes notification jobs.
 - [ ] Test failed-job handling (`failed_jobs` table).
-- [ ] Document Supervisor config for production (already in [`docs/14-deployment.md`](../docs/14-deployment.md)).
+- [ ] Document Supervisor config for production (already in [`14-deployment.md`](../14-deployment.md)).
 
 ## 7.9 Email Configuration (Local)
 
@@ -90,8 +90,8 @@ Wire events to side effects in services or dedicated listeners:
 ## 7.11 Tests
 
 - [ ] `Notification::fake()` based tests for every notifiable action.
-- [ ] `Event::fake()` for broadcast assertions.
-- [ ] Channel authorization tests.
+- [x] `Event::fake()` for broadcast assertions (registration, request deny/stage, payment deny, clearance created).
+- [x] Channel authorization tests (`BroadcastChannelAuthorizationTest`).
 
 ## 7.12 Manual Verification
 

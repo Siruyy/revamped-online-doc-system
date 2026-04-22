@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Events\ClearanceCreated;
 use App\Events\PaymentApproved;
+use App\Events\PaymentDenied;
 use App\Events\PaymentSubmitted;
 use App\Models\Clearance;
 use App\Models\Payment;
@@ -59,7 +61,7 @@ class PaymentService
         ]);
 
         if ($payment->document_request_id) {
-            Clearance::query()->firstOrCreate(
+            $clearance = Clearance::query()->firstOrCreate(
                 [
                     'user_id' => $payment->user_id,
                     'document_request_id' => $payment->document_request_id,
@@ -68,6 +70,14 @@ class PaymentService
                     'overall_status' => 'in_progress',
                 ]
             );
+
+            if ($clearance->wasRecentlyCreated) {
+                ClearanceCreated::dispatch(
+                    $clearance->id,
+                    $clearance->user_id,
+                    $clearance->document_request_id
+                );
+            }
         }
 
         ActivityLogger::log(
@@ -103,6 +113,8 @@ class PaymentService
             $payment->user,
             ['payment_id' => $payment->id, 'reason' => $reason]
         );
+
+        PaymentDenied::dispatch($payment->id, $payment->user_id, $admin->id, $reason);
 
         return $payment->refresh();
     }

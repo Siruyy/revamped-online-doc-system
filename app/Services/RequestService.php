@@ -3,18 +3,21 @@
 namespace App\Services;
 
 use App\Events\RequestApproved;
+use App\Events\RequestDenied;
+use App\Events\RequestStageUpdated;
 use App\Events\RequestSubmitted;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class RequestService
 {
     /**
      * @param  array<int, int|string>  $documentIds
-     * @return array{requests: \Illuminate\Support\Collection<int, DocumentRequest>, payment: Payment}
+     * @return array{requests: Collection<int, DocumentRequest>, payment: Payment}
      */
     public function createRequestBatch(User $user, array $documentIds, ?string $purpose = null): array
     {
@@ -124,12 +127,20 @@ class RequestService
             ['document_request_id' => $documentRequest->id, 'reason' => $reason]
         );
 
+        RequestDenied::dispatch(
+            $documentRequest->id,
+            $documentRequest->user_id,
+            $admin->id,
+            $reason
+        );
+
         return $documentRequest->refresh();
     }
 
     public function updateStage(DocumentRequest $documentRequest, User $admin, string $stage): DocumentRequest
     {
         $allowedStages = ['processing', 'ready_for_pickup', 'released'];
+
         if (! in_array($stage, $allowedStages, true)) {
             throw new \InvalidArgumentException('Invalid processing stage.');
         }
@@ -139,6 +150,7 @@ class RequestService
         }
 
         $updates = ['processing_stage' => $stage];
+
         if ($stage === 'released') {
             $updates['status'] = 'completed';
             $updates['released_at'] = now();
@@ -154,6 +166,15 @@ class RequestService
             ['document_request_id' => $documentRequest->id, 'stage' => $stage]
         );
 
-        return $documentRequest->refresh();
+        $documentRequest->refresh();
+
+        RequestStageUpdated::dispatch(
+            $documentRequest->id,
+            $documentRequest->user_id,
+            $documentRequest->processing_stage,
+            $documentRequest->status,
+        );
+
+        return $documentRequest;
     }
 }

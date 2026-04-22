@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Models\Clearance;
+use App\Events\ClearanceCreated;
+use App\Events\PaymentDenied;
 use App\Models\DocumentRequest;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -25,12 +27,16 @@ class PaymentManagementTest extends TestCase
 
     public function test_admin_can_approve_payment_and_initialize_clearance(): void
     {
+        Event::fake([ClearanceCreated::class]);
+
         $admin = $this->createAdmin();
         $student = $this->createStudent();
         $request = DocumentRequest::factory()->for($student)->pending()->create();
         $payment = Payment::factory()->for($student)->for($request)->pendingApproval()->create();
 
         $this->actingAs($admin)->post(route('admin.payments.approve', $payment))->assertRedirect();
+
+        Event::assertDispatched(ClearanceCreated::class);
 
         $this->assertDatabaseHas('payments', [
             'id' => $payment->id,
@@ -45,6 +51,8 @@ class PaymentManagementTest extends TestCase
 
     public function test_admin_can_deny_payment_with_reason(): void
     {
+        Event::fake([PaymentDenied::class]);
+
         $admin = $this->createAdmin();
         $student = $this->createStudent();
         $payment = Payment::factory()->for($student)->pendingApproval()->create();
@@ -52,6 +60,8 @@ class PaymentManagementTest extends TestCase
         $this->actingAs($admin)->post(route('admin.payments.deny', $payment), [
             'denial_reason' => 'Receipt details mismatch',
         ])->assertRedirect();
+
+        Event::assertDispatched(PaymentDenied::class);
 
         $this->assertDatabaseHas('payments', [
             'id' => $payment->id,

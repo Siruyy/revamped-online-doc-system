@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Events\RequestDenied;
+use App\Events\RequestStageUpdated;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
-use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class RequestManagementTest extends TestCase
@@ -41,6 +43,8 @@ class RequestManagementTest extends TestCase
 
     public function test_admin_can_deny_request_with_reason(): void
     {
+        Event::fake([RequestDenied::class]);
+
         $admin = $this->createAdmin();
         $student = $this->createStudent();
         $request = DocumentRequest::factory()->for($student)->pending()->create();
@@ -48,6 +52,8 @@ class RequestManagementTest extends TestCase
         $this->actingAs($admin)->post(route('admin.requests.deny', $request), [
             'denial_reason' => 'Invalid student records',
         ])->assertRedirect();
+
+        Event::assertDispatched(RequestDenied::class);
 
         $this->assertDatabaseHas('document_requests', [
             'id' => $request->id,
@@ -58,6 +64,8 @@ class RequestManagementTest extends TestCase
 
     public function test_admin_can_update_request_stage(): void
     {
+        Event::fake([RequestStageUpdated::class]);
+
         $admin = $this->createAdmin();
         $student = $this->createStudent();
         $request = DocumentRequest::factory()->for($student)->approved()->create();
@@ -65,6 +73,8 @@ class RequestManagementTest extends TestCase
         $this->actingAs($admin)->post(route('admin.requests.stage', $request), [
             'processing_stage' => 'ready_for_pickup',
         ])->assertRedirect();
+
+        Event::assertDispatched(RequestStageUpdated::class);
 
         $this->assertDatabaseHas('document_requests', [
             'id' => $request->id,

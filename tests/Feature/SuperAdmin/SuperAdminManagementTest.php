@@ -5,6 +5,7 @@ namespace Tests\Feature\SuperAdmin;
 use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -146,6 +147,7 @@ class SuperAdminManagementTest extends TestCase
 
     public function test_bulk_approve_approves_pending_students(): void
     {
+        Event::fake();
         Notification::fake();
 
         $superAdmin = User::factory()->superadmin()->create();

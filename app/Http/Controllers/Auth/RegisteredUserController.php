@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Events\RegistrationSubmitted as RegistrationSubmittedEvent;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\RegistrationSubmittedNotification;
@@ -59,6 +60,13 @@ class RegisteredUserController extends Controller
 
         $superAdmins = User::query()->where('role', 'superadmin')->get();
         Notification::send($superAdmins, new RegistrationSubmittedNotification($user));
+
+        RegistrationSubmittedEvent::dispatch(
+            $user->id,
+            $user->fullname,
+            $user->email,
+            (string) $user->student_id,
+        );
 
         ActivityLogger::log(
             'registration_submitted',

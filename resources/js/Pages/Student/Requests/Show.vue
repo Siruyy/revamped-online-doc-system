@@ -1,7 +1,9 @@
 <script setup>
+import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
+import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import Timeline from '@/Components/Timeline.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const props = defineProps({
@@ -10,6 +12,29 @@ const props = defineProps({
         required: true,
     },
 });
+
+const page = usePage();
+const studentId = computed(() => page.props.auth?.user?.id ?? null);
+
+const reloadRequest = () => {
+    router.reload({ only: ['request'], preserveScroll: true });
+};
+
+useEchoPrivateChannel(
+    () => (studentId.value ? `user.${studentId.value}` : null),
+    {
+        RequestApproved: reloadRequest,
+        RequestDenied: reloadRequest,
+        RequestStageUpdated: reloadRequest,
+        PaymentApproved: reloadRequest,
+        PaymentDenied: reloadRequest,
+        ClearanceUpdated: reloadRequest,
+        ClearanceCompleted: reloadRequest,
+        RegistrationApproved: reloadRequest,
+    },
+);
+
+useRealtimeOrPoll(reloadRequest, { intervalMs: 90000 });
 
 const payment = computed(() => props.request.payments?.[0] ?? null);
 const clearance = computed(() => props.request.clearances?.[0] ?? null);

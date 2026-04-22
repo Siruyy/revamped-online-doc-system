@@ -1,7 +1,7 @@
 # SVCI Online Document Request & Management System — Documentation
 
 > Project: **St. Vincent College Incorporated — Online Document Request and Management System (Revamped)**
-> Stack: **Laravel 11 + Inertia.js + Vue 3 + Tailwind CSS + Laravel Reverb**
+> Stack: **Laravel 13 + Inertia.js + Vue 3 + Tailwind CSS + Laravel Reverb**
 > Deployment: **DigitalOcean VPS via Dokploy**
 
 This documentation set is split into focused, single-topic files. Read them in order on first pass; reference individually after.

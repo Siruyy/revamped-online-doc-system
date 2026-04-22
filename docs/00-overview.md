@@ -4,7 +4,7 @@
 
 The **St. Vincent College Incorporated (SVCI) Online Document Request and Management System** allows students and alumni to request academic documents (e.g., transcripts, good moral certificates, certificates of enrollment) online, complete an online clearance process across multiple departments, upload payment receipts, and track their requests in real time — without setting foot on campus until they pick up the documents.
 
-This document set covers a **full rewrite** of the legacy vanilla-PHP system into a modern Laravel 11 + Inertia + Vue stack.
+This document set covers a **full rewrite** of the legacy vanilla-PHP system into a modern Laravel 13 + Inertia + Vue stack.
 
 ## Goals
 

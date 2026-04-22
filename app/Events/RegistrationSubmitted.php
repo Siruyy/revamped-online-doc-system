@@ -9,13 +9,15 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class PaymentSubmitted implements ShouldBroadcast
+class RegistrationSubmitted implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public function __construct(
-        public int $paymentId,
-        public int $studentId,
+        public int $userId,
+        public string $fullname,
+        public string $email,
+        public string $studentId,
     ) {}
 
     /**
@@ -23,7 +25,7 @@ class PaymentSubmitted implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('role.admin')];
+        return [new PrivateChannel('role.superadmin')];
     }
 
     /**
@@ -32,7 +34,9 @@ class PaymentSubmitted implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'payment_id' => $this->paymentId,
+            'user_id' => $this->userId,
+            'fullname' => $this->fullname,
+            'email' => $this->email,
             'student_id' => $this->studentId,
         ];
     }

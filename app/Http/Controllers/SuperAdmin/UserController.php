@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\SuperAdmin;
 
+use App\Events\RegistrationApproved as RegistrationApprovedEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SuperAdmin\BulkApproveUsersRequest;
 use App\Http\Requests\SuperAdmin\BulkDestroyUsersRequest;
@@ -166,6 +167,8 @@ class UserController extends Controller
 
         $user->notify(new RegistrationApprovedNotification);
 
+        RegistrationApprovedEvent::dispatch($user->id);
+
         ActivityLogger::log(
             'registration_approved',
             "SuperAdmin {$request->user()->email} approved {$user->email}.",
@@ -193,6 +196,7 @@ class UserController extends Controller
                 'approved_at' => now(),
             ]);
             $user->notify(new RegistrationApprovedNotification);
+            RegistrationApprovedEvent::dispatch($user->id);
             ActivityLogger::log(
                 'registration_approved',
                 "SuperAdmin {$request->user()->email} approved {$user->email} (bulk).",

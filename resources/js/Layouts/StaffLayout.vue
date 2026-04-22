@@ -1,5 +1,6 @@
 <script setup>
 import NavLink from '@/Components/NavLink.vue';
+import NotificationBell from '@/Components/NotificationBell.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { computed, ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
@@ -90,7 +91,7 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                         >
                             Menu
                         </button>
-                        <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                        <div class="flex flex-wrap items-center gap-3 text-sm text-slate-600">
                             <span v-if="departmentTitle" class="font-semibold text-indigo-800">{{
                                 departmentTitle
                             }}</span>
@@ -101,6 +102,7 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                             >
                             <span v-else>Staff Console</span>
                         </div>
+                        <NotificationBell />
                         <Link
                             :href="route('logout')"
                             method="post"

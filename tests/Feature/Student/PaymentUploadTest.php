@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -16,6 +17,7 @@ class PaymentUploadTest extends TestCase
 
     public function test_student_can_upload_payment_receipt(): void
     {
+        Event::fake();
         Storage::fake('local');
 
         $student = $this->createActiveStudent();

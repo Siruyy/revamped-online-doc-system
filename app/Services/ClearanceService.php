@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\ClearanceCompleted;
 use App\Events\ClearanceUpdated;
 use App\Models\Clearance;
 use App\Models\User;
@@ -117,6 +118,7 @@ class ClearanceService
             if ($locked->overall_status === 'completed' && $beforeOverall !== 'completed') {
                 $this->ensureStubClearancePdf($locked);
                 $locked->refresh();
+                ClearanceCompleted::dispatch($locked->id, $locked->user_id);
                 $locked->user->notify(new ClearanceCompletedNotification($locked));
             }
 

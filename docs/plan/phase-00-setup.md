@@ -18,7 +18,7 @@
 
 ## 0.2 Laravel Installation
 
-- [x] Install Laravel 11 via Composer: `composer create-project laravel/laravel app`.
+- [x] Install Laravel via Composer: `composer create-project laravel/laravel app` (started on Laravel 11, upgraded to Laravel 13).
 - [x] Verify PHP 8.3+ installed locally.
 - [x] Move generated files to repo root.
 - [x] Run `php artisan key:generate`.

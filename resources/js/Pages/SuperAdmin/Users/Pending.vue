@@ -1,4 +1,6 @@
 <script setup>
+import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
+import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -9,6 +11,20 @@ const props = defineProps({
 
 const page = usePage();
 const banner = computed(() => page.props.flash?.banner ?? null);
+const isSuperAdmin = computed(() => page.props.auth?.user?.role === 'superadmin');
+
+const reloadPending = () => {
+    router.reload({ only: ['users'], preserveScroll: true });
+};
+
+useEchoPrivateChannel(
+    () => (isSuperAdmin.value ? 'role.superadmin' : null),
+    {
+        RegistrationSubmitted: reloadPending,
+    },
+);
+
+useRealtimeOrPoll(reloadPending, { intervalMs: 120000 });
 
 const selected = ref([]);
 

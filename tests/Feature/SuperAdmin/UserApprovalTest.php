@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Notifications\RegistrationApprovedNotification;
 use App\Notifications\RegistrationRejectedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -25,6 +26,7 @@ class UserApprovalTest extends TestCase
 
     public function test_superadmin_can_approve_pending_user(): void
     {
+        Event::fake();
         Notification::fake();
 
         $superAdmin = User::factory()->superadmin()->create();

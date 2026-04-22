@@ -9,13 +9,14 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class PaymentSubmitted implements ShouldBroadcast
+class ClearanceCreated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public function __construct(
-        public int $paymentId,
+        public int $clearanceId,
         public int $studentId,
+        public ?int $documentRequestId,
     ) {}
 
     /**
@@ -23,7 +24,12 @@ class PaymentSubmitted implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('role.admin')];
+        return [
+            new PrivateChannel('role.department.teacher'),
+            new PrivateChannel('role.department.dean'),
+            new PrivateChannel('role.department.accounting'),
+            new PrivateChannel('role.department.sao'),
+        ];
     }
 
     /**
@@ -32,8 +38,9 @@ class PaymentSubmitted implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'payment_id' => $this->paymentId,
+            'clearance_id' => $this->clearanceId,
             'student_id' => $this->studentId,
+            'document_request_id' => $this->documentRequestId,
         ];
     }
 }

@@ -5,7 +5,7 @@
 | Layer | Technology | Version | Purpose |
 |-------|-----------|---------|---------|
 | Runtime | PHP | 8.3+ | Backend language |
-| Framework | Laravel | 11.x | MVC, ORM, routing, queues |
+| Framework | Laravel | 13.x | MVC, ORM, routing, queues |
 | Frontend bridge | Inertia.js | 2.x | SPA-like navigation, no API layer |
 | UI framework | Vue.js | 3.x (Composition API) | Component-based UI |
 | Styling | Tailwind CSS | 3.x | Utility-first CSS |
@@ -36,8 +36,8 @@
 
 ## Why These Choices
 
-### Laravel 11
-Mature, batteries-included PHP framework. Eloquent eliminates SQL injection by default. Built-in CSRF middleware, validation, queues, mail, and notifications. The legacy system already uses PHP, so the team's existing PHP knowledge transfers.
+### Laravel 13
+Mature, batteries-included PHP framework. Eloquent eliminates SQL injection by default. Built-in CSRF middleware, validation, queues, mail, and notifications. The legacy system already uses PHP, so the team's existing PHP knowledge transfers. Laravel 13 (released March 17, 2026) is the current LTS-supported version with security fixes through March 2028 and full PHP 8.5 compatibility.
 
 ### Inertia.js + Vue 3
 Inertia provides SPA-like navigation without building a separate API. Controllers return Vue components with props, sessions still work, and CSRF is automatic. Vue 3's Composition API gives clean reactivity for complex UIs (filtered tables, dynamic forms, real-time dashboards).
@@ -46,7 +46,7 @@ Inertia provides SPA-like navigation without building a separate API. Controller
 Utility-first CSS scales well with component-based frameworks. No CSS naming bikeshedding. Pairs naturally with Vue components.
 
 ### Laravel Reverb
-Official first-party Laravel WebSocket server (released with Laravel 11). Self-hosted, free, no Pusher subscription. Production-ready and integrates seamlessly with Laravel Echo.
+Official first-party Laravel WebSocket server. Self-hosted, free, no Pusher subscription. Production-ready and integrates seamlessly with Laravel Echo. Fully supported on Laravel 13.
 
 ### MySQL (not Postgres)
 The legacy system uses MySQL. Keeping the same engine simplifies data migration and matches the team's familiarity. Postgres would be technically nicer but the migration risk isn't worth it.
@@ -62,11 +62,15 @@ Single-VPS deployment with modest concurrent load. Database queue is dead-simple
 ```json
 {
   "php": "^8.3",
-  "laravel/framework": "^11.0",
+  "laravel/framework": "^13.0",
   "inertiajs/inertia-laravel": "^2.0",
   "laravel/reverb": "^1.0",
+  "laravel/tinker": "^3.0",
+  "laravel/sanctum": "^4.0",
+  "intervention/image-laravel": "^4.0",
   "barryvdh/laravel-dompdf": "^3.0",
   "maatwebsite/excel": "^3.1",
+  "tightenco/ziggy": "^2.0",
   "laravel/breeze": "^2.0"
 }
 ```
@@ -75,12 +79,12 @@ Single-VPS deployment with modest concurrent load. Database queue is dead-simple
 {
   "vue": "^3.4",
   "@inertiajs/vue3": "^2.0",
-  "@vitejs/plugin-vue": "^5.0",
+  "@vitejs/plugin-vue": "^6.0",
   "tailwindcss": "^3.4",
-  "laravel-echo": "^1.16",
-  "pusher-js": "^8.4",
+  "laravel-echo": "^2.3",
+  "pusher-js": "^8.5",
   "@headlessui/vue": "^1.7",
-  "@heroicons/vue": "^2.1"
+  "@heroicons/vue": "^2.2"
 }
 ```
 

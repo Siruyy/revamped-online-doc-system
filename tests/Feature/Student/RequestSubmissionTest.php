@@ -6,7 +6,9 @@ use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\User;
+use App\Events\RequestSubmitted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class RequestSubmissionTest extends TestCase
@@ -15,6 +17,7 @@ class RequestSubmissionTest extends TestCase
 
     public function test_student_can_submit_a_request_batch(): void
     {
+        Event::fake([RequestSubmitted::class]);
         $student = $this->createActiveStudent();
         $docA = DocumentType::factory()->create(['fee' => 100, 'is_active' => true]);
         $docB = DocumentType::factory()->create(['fee' => 250, 'is_active' => true]);

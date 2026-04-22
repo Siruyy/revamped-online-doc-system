@@ -1,6 +1,6 @@
 # Implementation Plan — SVCI Online Document System (Revamped)
 
-> Phased plan for the full Laravel 11 + Inertia + Vue rewrite. Each phase has its own file with checkboxed tasks. Tick them as you complete.
+> Phased plan for the full Laravel 13 + Inertia + Vue rewrite. Each phase has its own file with checkboxed tasks. Tick them as you complete.
 
 ## Phases
 

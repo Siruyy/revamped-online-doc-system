@@ -1,12 +1,17 @@
 <script setup>
+import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
+import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import { reactive } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { computed, reactive } from 'vue';
 
 const props = defineProps({
     requests: { type: Object, required: true },
     filters: { type: Object, required: true },
 });
+
+const page = usePage();
+const isAdmin = computed(() => ['admin', 'superadmin'].includes(page.props.auth?.user?.role ?? ''));
 
 const form = reactive({
     status: props.filters.status || '',
@@ -21,6 +26,21 @@ const form = reactive({
 const applyFilters = () => {
     router.get(route('admin.requests.index'), form, { preserveState: true, replace: true });
 };
+
+const reloadRequests = () => {
+    router.reload({ only: ['requests', 'filters'], preserveScroll: true });
+};
+
+useEchoPrivateChannel(
+    () => (isAdmin.value ? 'role.admin' : null),
+    {
+        RequestSubmitted: reloadRequests,
+        PaymentSubmitted: reloadRequests,
+        ClearanceUpdated: reloadRequests,
+    },
+);
+
+useRealtimeOrPoll(reloadRequests, { intervalMs: 90000 });
 </script>
 
 <template>

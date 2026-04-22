@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Events\RegistrationSubmitted as RegistrationSubmittedBroadcast;
 use App\Models\User;
 use App\Notifications\RegistrationSubmittedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -22,6 +24,7 @@ class RegistrationTest extends TestCase
     public function test_new_users_register_as_pending_students_and_notify_superadmins(): void
     {
         Notification::fake();
+        Event::fake([RegistrationSubmittedBroadcast::class]);
 
         $superAdmin = User::factory()->superadmin()->create();
 
@@ -46,5 +49,6 @@ class RegistrationTest extends TestCase
         ]);
 
         Notification::assertSentTo($superAdmin, RegistrationSubmittedNotification::class);
+        Event::assertDispatched(RegistrationSubmittedBroadcast::class);
     }
 }
