@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\FileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -27,6 +28,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
     Route::post('/profile/signature', [ProfileController::class, 'updateSignature'])->name('profile.signature');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/files/payment-receipt/{payment}', [FileController::class, 'paymentReceipt'])->name('files.payment-receipt');
+    Route::get('/files/clearance/{clearance}/pdf', [FileController::class, 'clearancePdf'])->name('files.clearance-pdf');
 });
 
 require __DIR__.'/auth.php';

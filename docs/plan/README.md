@@ -9,7 +9,7 @@
 | 00 | Project Setup & Tooling | [`phase-00-setup.md`](./phase-00-setup.md) | ✅ |
 | 01 | Database, Models & Seeders | [`phase-01-database-and-models.md`](./phase-01-database-and-models.md) | ✅ |
 | 02 | Auth, Roles & Approval Workflow | [`phase-02-auth-and-roles.md`](./phase-02-auth-and-roles.md) | ✅ |
-| 03 | Student Features | [`phase-03-student-features.md`](./phase-03-student-features.md) | ⬜ |
+| 03 | Student Features | [`phase-03-student-features.md`](./phase-03-student-features.md) | ✅ |
 | 04 | Admin Features | [`phase-04-admin-features.md`](./phase-04-admin-features.md) | ⬜ |
 | 05 | Department Clearance | [`phase-05-department-clearance.md`](./phase-05-department-clearance.md) | ⬜ |
 | 06 | SuperAdmin Features | [`phase-06-superadmin-features.md`](./phase-06-superadmin-features.md) | ⬜ |

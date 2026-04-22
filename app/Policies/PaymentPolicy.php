@@ -35,7 +35,7 @@ class PaymentPolicy
     {
         return $user->role === 'student'
             && $payment->user_id === $user->id
-            && $payment->status === 'pending';
+            && in_array($payment->status, ['pending', 'denied'], true);
     }
 
     public function approve(User $user, Payment $payment): bool
