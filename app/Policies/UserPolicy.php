@@ -49,4 +49,11 @@ class UserPolicy
     {
         return $user->role === 'superadmin' && $user->id !== $model->id;
     }
+
+    public function reactivate(User $user, User $model): bool
+    {
+        return $user->role === 'superadmin'
+            && $user->id !== $model->id
+            && $model->status === 'suspended';
+    }
 }

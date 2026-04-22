@@ -2,10 +2,12 @@
 
 namespace Tests\Unit\Policies;
 
+use App\Models\ActivityLog;
 use App\Models\Clearance;
 use App\Models\DocumentRequest;
 use App\Models\Payment;
 use App\Models\User;
+use App\Policies\ActivityLogPolicy;
 use App\Policies\ClearancePolicy;
 use App\Policies\DocumentRequestPolicy;
 use App\Policies\PaymentPolicy;
@@ -88,5 +90,21 @@ class PolicyTest extends TestCase
         $this->assertTrue($policy->reject($superAdmin, $pendingStudent));
         $this->assertTrue($policy->delete($superAdmin, $pendingStudent));
         $this->assertFalse($policy->delete($superAdmin, $superAdmin));
+
+        $suspended = User::factory()->admin()->create(['status' => 'suspended']);
+        $this->assertTrue($policy->reactivate($superAdmin, $suspended));
+        $this->assertFalse($policy->reactivate($superAdmin, $pendingStudent));
+    }
+
+    public function test_activity_log_policy_superadmin_only(): void
+    {
+        $superAdmin = User::factory()->superadmin()->create();
+        $admin = User::factory()->admin()->create();
+        $log = new ActivityLog(['action' => 'x', 'description' => 'y']);
+        $policy = new ActivityLogPolicy;
+
+        $this->assertTrue($policy->viewAny($superAdmin));
+        $this->assertTrue($policy->view($superAdmin, $log));
+        $this->assertFalse($policy->viewAny($admin));
     }
 }

@@ -1,5 +1,7 @@
 # Phase 06 — SuperAdmin Features
 
+> **Status:** Core MVP shipped (dashboard, user CRUD, bulk approve/delete with `DELETE` confirmation, suspend/reactivate, staff onboarding + reset email, activity log viewer, date-range reports). Stretch items (broadcast, session revoke, Excel exports, reusing admin CRUD under superadmin) remain below.
+
 > **Goal:** SuperAdmin power-user features: full user management, approval workflow, logs, reports, system overrides.
 
 **Subagents:** `tdd-guide`, `code-reviewer`, `security-reviewer` (mass operations).

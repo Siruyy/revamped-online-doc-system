@@ -24,7 +24,12 @@ const links = computed(() => {
     if (role.value === 'superadmin') {
         return [
             { route: 'superadmin.dashboard', label: 'Dashboard' },
-            { route: 'superadmin.users.pending', label: 'Pending Users' },
+            { route: 'superadmin.users.index', label: 'Users' },
+            { route: 'superadmin.users.pending', label: 'Pending registrations' },
+            { route: 'superadmin.users.create', label: 'Create staff' },
+            { route: 'superadmin.logs.index', label: 'Activity logs' },
+            { route: 'superadmin.reports.index', label: 'Reports' },
+            { route: 'superadmin.notifications.index', label: 'Notifications' },
             { route: 'superadmin.profile.edit', label: 'Profile' },
         ];
     }
@@ -86,12 +91,23 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                             Menu
                         </button>
                         <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                            <span v-if="departmentTitle" class="font-semibold text-indigo-800">{{ departmentTitle }}</span>
+                            <span v-if="departmentTitle" class="font-semibold text-indigo-800">{{
+                                departmentTitle
+                            }}</span>
                             <span v-if="departmentTitle">Department</span>
                             <span v-else-if="role === 'admin'">Admin Console</span>
+                            <span v-else-if="role === 'superadmin'" class="font-semibold text-violet-800"
+                                >SuperAdmin Console</span
+                            >
                             <span v-else>Staff Console</span>
                         </div>
-                        <Link :href="route('logout')" method="post" as="button" class="text-sm font-semibold text-slate-700">Log Out</Link>
+                        <Link
+                            :href="route('logout')"
+                            method="post"
+                            as="button"
+                            class="text-sm font-semibold text-slate-700"
+                            >Log Out</Link
+                        >
                     </div>
                 </header>
 

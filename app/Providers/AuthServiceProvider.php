@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\ActivityLog;
 use App\Models\Clearance;
 use App\Models\DocumentRequest;
 use App\Models\Payment;
 use App\Models\User;
+use App\Policies\ActivityLogPolicy;
 use App\Policies\ClearancePolicy;
 use App\Policies\DocumentRequestPolicy;
 use App\Policies\PaymentPolicy;
@@ -26,9 +28,6 @@ class AuthServiceProvider extends ServiceProvider
         Gate::policy(Payment::class, PaymentPolicy::class);
         Gate::policy(Clearance::class, ClearancePolicy::class);
         Gate::policy(User::class, UserPolicy::class);
-
-        Gate::before(function (User $user) {
-            return $user->role === 'superadmin' ? true : null;
-        });
+        Gate::policy(ActivityLog::class, ActivityLogPolicy::class);
     }
 }

@@ -12,7 +12,7 @@
 | 03 | Student Features | [`phase-03-student-features.md`](./phase-03-student-features.md) | ✅ |
 | 04 | Admin Features | [`phase-04-admin-features.md`](./phase-04-admin-features.md) | ✅ |
 | 05 | Department Clearance | [`phase-05-department-clearance.md`](./phase-05-department-clearance.md) | ✅ |
-| 06 | SuperAdmin Features | [`phase-06-superadmin-features.md`](./phase-06-superadmin-features.md) | ⬜ |
+| 06 | SuperAdmin Features | [`phase-06-superadmin-features.md`](./phase-06-superadmin-features.md) | ✅ |
 | 07 | Real-Time (Reverb) & Notifications | [`phase-07-realtime-and-notifications.md`](./phase-07-realtime-and-notifications.md) | ⬜ |
 | 08 | Messaging | [`phase-08-messaging.md`](./phase-08-messaging.md) | ⬜ |
 | 09 | PDF Generation & Excel Exports | [`phase-09-pdf-and-exports.md`](./phase-09-pdf-and-exports.md) | ⬜ |
