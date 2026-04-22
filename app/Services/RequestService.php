@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\RequestApproved;
 use App\Events\RequestSubmitted;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
@@ -72,5 +73,87 @@ class RequestService
                 'payment' => $payment,
             ];
         });
+    }
+
+    public function approveRequest(DocumentRequest $documentRequest, User $admin): DocumentRequest
+    {
+        if ($documentRequest->status !== 'pending') {
+            throw new \RuntimeException('Only pending requests can be approved.');
+        }
+
+        $documentRequest->update([
+            'status' => 'approved',
+            'processing_stage' => 'processing',
+            'approved_by' => $admin->id,
+            'approved_at' => now(),
+            'denial_reason' => null,
+        ]);
+
+        ActivityLogger::log(
+            'request_approved',
+            "Admin {$admin->email} approved request {$documentRequest->reference_no}.",
+            $admin,
+            $documentRequest->user,
+            ['document_request_id' => $documentRequest->id]
+        );
+
+        RequestApproved::dispatch($documentRequest->id, $documentRequest->user_id, $admin->id);
+
+        return $documentRequest->refresh();
+    }
+
+    public function denyRequest(DocumentRequest $documentRequest, User $admin, string $reason): DocumentRequest
+    {
+        if (! in_array($documentRequest->status, ['pending', 'approved'], true)) {
+            throw new \RuntimeException('This request can no longer be denied.');
+        }
+
+        $documentRequest->update([
+            'status' => 'denied',
+            'processing_stage' => 'not_started',
+            'approved_by' => $admin->id,
+            'approved_at' => now(),
+            'denial_reason' => $reason,
+        ]);
+
+        ActivityLogger::log(
+            'request_denied',
+            "Admin {$admin->email} denied request {$documentRequest->reference_no}.",
+            $admin,
+            $documentRequest->user,
+            ['document_request_id' => $documentRequest->id, 'reason' => $reason]
+        );
+
+        return $documentRequest->refresh();
+    }
+
+    public function updateStage(DocumentRequest $documentRequest, User $admin, string $stage): DocumentRequest
+    {
+        $allowedStages = ['processing', 'ready_for_pickup', 'released'];
+        if (! in_array($stage, $allowedStages, true)) {
+            throw new \InvalidArgumentException('Invalid processing stage.');
+        }
+
+        if ($documentRequest->status !== 'approved') {
+            throw new \RuntimeException('Only approved requests can move between processing stages.');
+        }
+
+        $updates = ['processing_stage' => $stage];
+        if ($stage === 'released') {
+            $updates['status'] = 'completed';
+            $updates['released_at'] = now();
+        }
+
+        $documentRequest->update($updates);
+
+        ActivityLogger::log(
+            'request_stage_updated',
+            "Admin {$admin->email} updated request {$documentRequest->reference_no} stage to {$stage}.",
+            $admin,
+            $documentRequest->user,
+            ['document_request_id' => $documentRequest->id, 'stage' => $stage]
+        );
+
+        return $documentRequest->refresh();
     }
 }

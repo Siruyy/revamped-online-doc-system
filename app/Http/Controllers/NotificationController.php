@@ -32,6 +32,12 @@ class NotificationController extends Controller
             'filters' => [
                 'read' => $request->string('read')->toString(),
             ],
+            'routePrefix' => match ($request->user()->role) {
+                'admin' => 'admin',
+                'superadmin' => 'admin',
+                'teacher', 'dean', 'accounting', 'sao' => 'admin',
+                default => 'student',
+            },
         ]);
     }
 

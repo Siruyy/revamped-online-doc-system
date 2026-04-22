@@ -1,8 +1,10 @@
 <script setup>
+import StaffLayout from '@/Layouts/StaffLayout.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
-const { notifications, filters } = defineProps({
+const { notifications, filters, routePrefix } = defineProps({
     notifications: {
         type: Object,
         required: true,
@@ -11,23 +13,28 @@ const { notifications, filters } = defineProps({
         type: Object,
         required: true,
     },
+    routePrefix: {
+        type: String,
+        default: 'student',
+    },
 });
 
 const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '').trim();
+const activeLayout = computed(() => (routePrefix === 'student' ? StudentLayout : StaffLayout));
 
 const filterByReadState = (value) => {
-    router.get(route('student.notifications.index'), { read: value }, { preserveState: true, replace: true });
+    router.get(route(`${routePrefix}.notifications.index`), { read: value }, { preserveState: true, replace: true });
 };
 
 const markAllAsRead = () => {
-    router.post(route('student.notifications.mark-all-read'));
+    router.post(route(`${routePrefix}.notifications.mark-all-read`));
 };
 </script>
 
 <template>
     <Head title="Notifications" />
 
-    <StudentLayout>
+    <component :is="activeLayout">
         <template #header>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-xl font-semibold leading-tight text-slate-900">Notifications</h2>
@@ -92,7 +99,7 @@ const markAllAsRead = () => {
                         v-if="!notification.read_at"
                         type="button"
                         class="mt-3 text-xs font-semibold text-indigo-600 hover:text-indigo-500"
-                        @click="router.post(route('student.notifications.mark-read', notification.id))"
+                        @click="router.post(route(`${routePrefix}.notifications.mark-read`, notification.id))"
                     >
                         Mark as read
                     </button>
@@ -115,5 +122,5 @@ const markAllAsRead = () => {
                 </Link>
             </div>
         </div>
-    </StudentLayout>
+    </component>
 </template>

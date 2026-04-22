@@ -11,91 +11,97 @@
 
 ## 4.1 Admin Layout
 
-- [ ] `Layouts/StaffLayout.vue` — sidebar (collapsible) + topbar with breadcrumbs.
-- [ ] Role-aware sidebar items.
-- [ ] Mobile drawer.
+- [x] `Layouts/StaffLayout.vue` — sidebar (collapsible) + topbar with breadcrumbs.
+- [x] Role-aware sidebar items.
+- [x] Mobile drawer.
 
 ## 4.2 Admin Dashboard
 
-- [ ] `Admin\DashboardController@index` returns:
+- [x] `Admin\DashboardController@index` returns:
     - Request counts by status
     - Payment counts by status
     - Today's submissions
     - Pending action queue (10 most recent)
-- [ ] `Pages/Admin/Dashboard.vue` with stat cards and quick action panels.
+- [x] `Pages/Admin/Dashboard.vue` with stat cards and quick action panels.
 - [ ] Charts (optional) — stretch goal, use Chart.js if added.
 
 ## 4.3 Requests Management
 
-- [ ] `Admin\RequestController@index` — paginated with filters (status, course, year, document type, date range, search).
-- [ ] `Pages/Admin/Requests/Index.vue` with `<DataTable>` and `<FilterBar>`.
-- [ ] `@show` — detail page with student info, all linked documents in batch, payment, clearance.
-- [ ] `@approve` — `RequestService::approveRequest($request, $admin)`:
+- [x] `Admin\RequestController@index` — paginated with filters (status, course, year, document type, date range, search).
+- [x] `Pages/Admin/Requests/Index.vue` with `<DataTable>` and `<FilterBar>`.
+- [x] `@show` — detail page with student info, all linked documents in batch, payment, clearance.
+- [x] `@approve` — `RequestService::approveRequest($request, $admin)`:
     - Update status, processing_stage, approved_by/at
     - Dispatch `RequestApproved` event
-- [ ] `@deny` — with required denial reason.
-- [ ] `@updateStage` — move to processing / ready_for_pickup / released.
-- [ ] Activity logged.
-- [ ] Tests: approval, denial, stage transitions, authorization.
+- [x] `@deny` — with required denial reason.
+- [x] `@updateStage` — move to processing / ready_for_pickup / released.
+- [x] Activity logged.
+- [x] Tests: approval, denial, stage transitions, authorization.
 
 ## 4.4 Payments Management
 
-- [ ] `Admin\PaymentController@index` — paginated, filter by status.
-- [ ] `Pages/Admin/Payments/Index.vue` — table with inline receipt preview link.
-- [ ] `@show` (or modal) — full receipt preview, student info, request details.
-- [ ] `@approve` — `PaymentService::approve($payment, $admin)`:
+- [x] `Admin\PaymentController@index` — paginated, filter by status.
+- [x] `Pages/Admin/Payments/Index.vue` — table with inline receipt preview link.
+- [x] `@show` (or modal) — full receipt preview, student info, request details.
+- [x] `@approve` — `PaymentService::approve($payment, $admin)`:
     - Update status
     - Initialize clearance row for related student/request
     - Dispatch `PaymentApproved` event
-- [ ] `@deny` — with reason.
-- [ ] Tests.
+- [x] `@deny` — with reason.
+- [x] Tests.
 
 ## 4.5 Document Types CRUD
 
-- [ ] `Admin\DocumentTypeController` resource.
-- [ ] `Pages/Admin/DocumentTypes/Index.vue` — table with inline create/edit modals.
-- [ ] Form fields: name, description, category, fee, processing_days, is_active.
-- [ ] Soft-disable (set `is_active=false`) instead of delete if there are existing requests referencing the type.
-- [ ] Tests.
+- [x] `Admin\DocumentTypeController` resource.
+- [x] `Pages/Admin/DocumentTypes/Index.vue` — table with inline create/edit modals.
+- [x] Form fields: name, description, category, fee, processing_days, is_active.
+- [x] Soft-disable (set `is_active=false`) instead of delete if there are existing requests referencing the type.
+- [x] Tests.
 
 ## 4.6 Announcements
 
-- [ ] `Admin\AnnouncementController` resource.
-- [ ] `Pages/Admin/Announcements/Index.vue` — list with create/edit, pin toggle, audience selector.
-- [ ] Plain text body for now (rich text v2).
-- [ ] `published_at` toggle (draft/published).
-- [ ] Tests.
+- [x] `Admin\AnnouncementController` resource.
+- [x] `Pages/Admin/Announcements/Index.vue` — list with create/edit, pin toggle, audience selector.
+- [x] Plain text body for now (rich text v2).
+- [x] `published_at` toggle (draft/published).
+- [x] Tests.
 
 ## 4.7 FAQs
 
-- [ ] `Admin\FaqController` resource.
-- [ ] `Pages/Admin/Faqs/Index.vue` — list with drag-handle to reorder (`sort_order`).
-- [ ] Audience selector (student/staff/all).
-- [ ] Tests.
+- [x] `Admin\FaqController` resource.
+- [x] `Pages/Admin/Faqs/Index.vue` — list with drag-handle to reorder (`sort_order`).
+- [x] Audience selector (student/staff/all).
+- [x] Tests.
 
 ## 4.8 Clearance Monitor (Read-Only)
 
-- [ ] `Admin\ClearanceMonitorController@index` — paginated with filters.
-- [ ] `Pages/Admin/Clearances/Index.vue` — table with all 4 dept statuses inline.
-- [ ] `@show` — detail view with full audit trail.
-- [ ] Cannot edit; admin can only observe.
+- [x] `Admin\ClearanceMonitorController@index` — paginated with filters.
+- [x] `Pages/Admin/Clearances/Index.vue` — table with all 4 dept statuses inline.
+- [x] `@show` — detail view with full audit trail.
+- [x] Cannot edit; admin can only observe.
 
 ## 4.9 Reports
 
-- [ ] `Admin\ReportController@index` — date range + filters page.
-- [ ] `Pages/Admin/Reports.vue` — report viewer with summary stats.
+- [x] `Admin\ReportController@index` — date range + filters page.
+- [x] `Pages/Admin/Reports.vue` — report viewer with summary stats.
 - [ ] Excel export wired in Phase 09.
 
 ## 4.10 Notifications & Messages
 
-- [ ] Verify shared `NotificationController` works for admin.
+- [x] Verify shared `NotificationController` works for admin.
 - [ ] Messages controller wired in Phase 08.
 
 ## 4.11 Tests
 
-- [ ] Feature test per controller action.
-- [ ] Policy enforcement tests.
+- [x] Feature test per controller action.
+- [x] Policy enforcement tests.
 - [ ] Coverage 80%+.
+
+### Phase 04 Notes
+
+- `Messages controller wired in Phase 08` remains intentionally deferred.
+- `Excel export wired in Phase 09` remains intentionally deferred.
+- Charting remains an optional stretch item and is not part of this phase completion.
 
 ---
 
