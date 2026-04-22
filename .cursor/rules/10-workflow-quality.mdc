@@ -1,0 +1,86 @@
+# SVCI Revamp Workflow and Quality Rules
+
+Scope: implementation workflow, tooling, and completion quality.
+
+## Default Skills
+
+Use these first before broad discovery:
+- `coding-standards`
+- `backend-patterns`
+- `frontend-patterns`
+- `tdd-workflow`
+- `verification-loop`
+- `security-review` (auth, uploads, sensitive flows)
+- `database-migrations` (schema/migration tasks)
+- `deployment-patterns`, `docker-patterns` (deploy/container work)
+- `ui-ux-pro-max` (UI polish phase)
+- `e2e-testing` (critical browser flows)
+
+## Subagent Defaults
+
+Invoke intentionally:
+- `planner` before large phase work
+- `tdd-guide` for feature/bug implementation
+- `database-reviewer` after migration changes
+- `security-reviewer` after auth/upload/security-sensitive edits
+- `code-reviewer` before merge/finalization
+- `verify-app` before deployment or phase completion
+- `doc-updater` after major phase progress
+
+## Hook Intent (Recommended)
+
+1. PreToolUse: prevent edits in generated/vendor paths.
+2. PostToolUse:
+   - run Pint after PHP edits
+   - run ESLint/Prettier after Vue or JS edits
+3. Stop:
+   - summarize verification (tests/lint/build)
+   - include security/audit status when relevant
+
+## Commit Discipline
+
+1. After each completed atomic task, create a small focused commit.
+2. Do not batch unrelated changes into one large commit.
+3. Use intent prefixes:
+   - `feat:`
+   - `fix:`
+   - `refactor:`
+   - `test:`
+   - `docs:`
+   - `chore:`
+4. Commit message should capture why and scope.
+5. Avoid noisy partial commits unless explicitly requested.
+
+## Definition of Done Per Task
+
+Before marking done:
+1. Behavior matches active phase + docs.
+2. Validation/authz/security implications are addressed.
+3. Tests are added or updated and passing.
+4. UI impact checked for mobile/responsiveness where applicable.
+5. Docs updated if contracts or behavior changed.
+6. Atomic commit created.
+
+If any item is not done, call it out explicitly.
+
+## High-Value Project Paths
+
+Planning:
+- `docs/plan/README.md`
+- `docs/plan/phase-*.md`
+
+Architecture/contracts:
+- `docs/02-architecture.md`
+- `docs/03-roles-and-permissions.md`
+- `docs/04-database-schema.md`
+- `docs/07-routes-and-controllers.md`
+- `docs/10-security.md`
+- `docs/15-testing-strategy.md`
+
+Expected implementation paths:
+- `app/Http/Controllers/`, `app/Http/Requests/`, `app/Policies/`, `app/Services/`
+- `app/Events/`, `app/Notifications/`
+- `resources/js/Pages/`, `resources/js/Components/`, `resources/js/Layouts/`
+- `routes/student.php`, `routes/admin.php`, `routes/department.php`, `routes/superadmin.php`, `routes/channels.php`
+- `database/migrations/`, `database/factories/`, `database/seeders/`
+- `tests/Unit/`, `tests/Feature/`, `tests/Browser/`

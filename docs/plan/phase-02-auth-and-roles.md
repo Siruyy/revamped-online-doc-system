@@ -1,0 +1,133 @@
+# Phase 02 — Auth, Roles & Approval Workflow
+
+> **Goal:** Login, registration with approval, password reset, role middleware, policies. The foundation for all role-gated features.
+
+**Subagents:** `tdd-guide`, `security-reviewer` (mandatory at end of phase), `code-reviewer`.
+**Skills:** `security-review`, `tdd-workflow`.
+**Depends on:** Phase 01.
+
+---
+
+## 2.1 Breeze Customization
+
+- [ ] Customize `RegisteredUserController@store`:
+    - Force role = `student`
+    - Force status = `pending`
+    - Send `RegistrationSubmittedNotification` to all SuperAdmins
+    - Redirect to "registration pending approval" page (not auto-login)
+- [ ] Customize `LoginRequest::authenticate()`:
+    - After credential check, verify `user.status === 'active'`
+    - If `pending`: redirect with message
+    - If `suspended` or `rejected`: redirect with message
+- [ ] Update Vue pages: `Auth/Register.vue` adds course, year_level, student_id, contact_number fields.
+- [ ] Update `Auth/Login.vue` styling per design system.
+- [ ] Add `Auth/RegistrationPending.vue` page.
+
+## 2.2 Email Verification (Optional but recommended)
+
+- [ ] Enable email verification on `User` model (`MustVerifyEmail`).
+- [ ] Configure email driver (use Mailhog locally).
+- [ ] Test verification email sends.
+- [ ] Add `verified` middleware to student routes (after status check).
+
+## 2.3 Custom Middleware
+
+- [ ] `EnsureRole` middleware — accepts comma-separated roles, e.g., `role:admin,superadmin`.
+- [ ] `EnsureApprovedAccount` middleware — `user.status === 'active'`.
+- [ ] Register middleware aliases in `bootstrap/app.php`.
+- [ ] Tests: middleware blocks/allows correctly.
+
+## 2.4 Route Files
+
+- [ ] Create `routes/student.php`, `admin.php`, `department.php`, `superadmin.php`.
+- [ ] Wire from `web.php` with appropriate middleware groups (per [`docs/07-routes-and-controllers.md`](../docs/07-routes-and-controllers.md)).
+- [ ] Add stub controllers for each role's dashboard.
+- [ ] Test: each role redirected appropriately, others receive 403.
+
+## 2.5 Policies
+
+- [ ] `DocumentRequestPolicy` — view, cancel, approve, deny, updateStage, delete.
+- [ ] `PaymentPolicy` — view, upload, approve, deny.
+- [ ] `ClearancePolicy` — view, sign, signFor (column-aware), deny, downloadPdf.
+- [ ] `UserPolicy` — view, approve, reject, suspend, delete.
+- [ ] Register all policies in `AuthServiceProvider`.
+- [ ] `Gate::before` for SuperAdmin override.
+- [ ] Policy unit tests for every method.
+
+## 2.6 Password Reset
+
+- [ ] Verify Breeze password reset flow works.
+- [ ] Customize email template with brand styling.
+- [ ] Add throttling: max 3 reset requests per hour per email.
+- [ ] After reset, invalidate all other sessions.
+- [ ] Test full flow.
+
+## 2.7 Login Throttling
+
+- [ ] Confirm Laravel's default throttle (`throttle:5,1`) on login route.
+- [ ] Add account lockout after 10 consecutive failures (24h cooldown).
+- [ ] Log all failed login attempts to `activity_logs` with IP.
+- [ ] Test brute-force scenario gets locked out.
+
+## 2.8 Profile Management
+
+- [ ] `ProfileController` (per role or shared) — `edit`, `update`, `updatePassword`, `updateAvatar`, `updateSignature` (department only).
+- [ ] Form Requests with strict validation.
+- [ ] Avatar upload to public disk (with image resize via Intervention).
+- [ ] Signature upload to private disk (department roles only).
+- [ ] Vue pages: `Student/Profile.vue`, `Admin/Profile.vue`, `Department/Profile.vue`, `SuperAdmin/Profile.vue`.
+
+## 2.9 SuperAdmin Approval Endpoints (early stub)
+
+This unblocks the registration → approval → login flow in dev.
+
+- [ ] `SuperAdmin\UserController@pending` — list pending users.
+- [ ] `@approve` — set status=active, send `RegistrationApprovedNotification`.
+- [ ] `@reject` — set status=rejected with reason, notify.
+- [ ] Vue page: `SuperAdmin/Users/Pending.vue` with approve/reject buttons.
+
+## 2.10 Activity Logging
+
+- [ ] `ActivityLogger` service or model observer.
+- [ ] Log: register, approve registration, reject registration, login (success/fail), logout, password change, profile update.
+- [ ] Test: log rows exist after each action.
+
+## 2.11 Security Headers Middleware
+
+- [ ] Create `SecurityHeaders` middleware (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, CSP, Permissions-Policy).
+- [ ] Apply globally.
+- [ ] Test headers present in response.
+
+## 2.12 Rate Limiting Configuration
+
+- [ ] Define limiters in `RouteServiceProvider`: `login`, `registration`, `password-reset`, `api`.
+- [ ] Apply to relevant routes.
+- [ ] Test rate limit triggers 429.
+
+## 2.13 Tests
+
+- [ ] `RegistrationTest` — successful registration creates pending user, notifies superadmin.
+- [ ] `RegistrationTest` — pending user cannot log in.
+- [ ] `RegistrationTest` — approved user can log in.
+- [ ] `LoginTest` — happy path, wrong password, suspended account, rate limit.
+- [ ] `PasswordResetTest` — full flow, expiry, throttling.
+- [ ] `RoleMiddlewareTest` — role checks pass/fail correctly.
+- [ ] `PolicyTest` — comprehensive coverage per policy.
+- [ ] All pass.
+
+## 2.14 Security Review
+
+- [ ] Invoke `security-reviewer` subagent on auth-related code.
+- [ ] Address all CRITICAL and HIGH findings.
+- [ ] Document accepted MEDIUM findings.
+
+---
+
+## Exit Criteria
+
+- ✅ Self-registration → pending → SuperAdmin approves → login works end-to-end.
+- ✅ All four department roles can log in and reach a stub dashboard.
+- ✅ Cross-role access attempts return 403.
+- ✅ Security headers present, rate limits enforced, password reset works.
+- ✅ Coverage 80%+ on auth code.
+- ✅ Security review passed.

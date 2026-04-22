@@ -1,0 +1,14 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    phpVersion: 80300
+    level: 6
+    paths:
+        - app
+
+    ignoreErrors:
+        # Laravel magic method calls (e.g. Model::factory())
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder.*#'
+
+    checkMissingIterableValueType: false

@@ -1,0 +1,68 @@
+# SVCI Revamp Core Rules
+
+Scope: entire repository.
+
+## Objective
+
+Build the revamp according to project docs and phased plan.
+When docs conflict with assumptions, prefer docs and flag uncertainty.
+
+## Phase Discipline
+
+1. Implement by active phase from `docs/plan/`.
+2. Do not pull future-phase features unless explicitly requested.
+3. Validate each task against phase exit criteria.
+
+## Architecture Discipline
+
+1. Thin controllers, service-based business logic.
+2. Form Requests for validation; avoid inline controller validation.
+3. Policies + middleware for authorization; avoid ad-hoc role checks.
+4. Use events/listeners for side effects (notifications, logs, broadcasts).
+5. Keep route structure aligned with role route files and naming conventions.
+
+## Data and Query Rules
+
+1. Prefer Eloquent and query builder.
+2. Avoid raw SQL unless justified and parameterized.
+3. Respect schema/index guidance from `docs/04-database-schema.md`.
+4. Keep status transitions consistent with documented state machines.
+
+## Security Baseline
+
+1. Apply least privilege by role and resource policy.
+2. Enforce strict validation for all state-changing endpoints.
+3. File uploads must validate extension + MIME + size.
+4. Never expose private files directly; serve through authorized routes.
+5. Follow `docs/10-security.md` for headers, throttling, and session safety.
+
+## Realtime Baseline
+
+1. Realtime is enhancement, not source of truth.
+2. App behavior must still work with refresh/poll fallback.
+3. Broadcast minimal payloads; avoid large event payloads.
+
+## UI Baseline
+
+1. Mobile-first and accessible by default.
+2. Reuse shared components before creating new ones.
+3. Keep styling consistent with `docs/09-frontend-design.md`.
+
+## Testing Baseline
+
+1. Prefer TDD flow where practical.
+2. Add/adjust tests with behavior changes.
+3. Keep targets aligned with `docs/15-testing-strategy.md`.
+
+## Required Context Files
+
+Read as needed before implementation:
+- `docs/02-architecture.md`
+- `docs/03-roles-and-permissions.md`
+- `docs/04-database-schema.md`
+- `docs/06-user-flows.md`
+- `docs/07-routes-and-controllers.md`
+- `docs/10-security.md`
+- `docs/11-file-storage.md`
+- `docs/12-notifications-and-email.md`
+- `docs/15-testing-strategy.md`
