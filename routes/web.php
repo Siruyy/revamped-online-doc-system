@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\ProfileController;
+use App\Models\User;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -16,7 +17,7 @@ Route::get('/', function () {
 });
 
 Route::middleware('auth')->get('/dashboard', function () {
-    /** @var \App\Models\User $user */
+    /** @var User $user */
     $user = auth()->user();
 
     return redirect()->route($user->roleHomeRoute());
@@ -31,6 +32,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/files/payment-receipt/{payment}', [FileController::class, 'paymentReceipt'])->name('files.payment-receipt');
     Route::get('/files/clearance/{clearance}/pdf', [FileController::class, 'clearancePdf'])->name('files.clearance-pdf');
+    Route::get('/files/clearance/{clearance}/supporting', [FileController::class, 'clearanceSupportingFile'])->name('files.clearance-supporting');
 });
 
 require __DIR__.'/auth.php';
@@ -45,7 +47,7 @@ Route::middleware(['auth', 'role:admin', 'approved', 'verified'])
     ->name('admin.')
     ->group(base_path('routes/admin.php'));
 
-Route::middleware(['auth', 'role:teacher,dean,accounting,sao', 'approved', 'verified'])
+Route::middleware(['auth', 'role:teacher|dean|accounting|sao', 'approved', 'verified'])
     ->prefix('department')
     ->name('department.')
     ->group(base_path('routes/department.php'));

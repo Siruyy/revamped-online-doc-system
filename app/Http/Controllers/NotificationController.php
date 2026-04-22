@@ -35,7 +35,7 @@ class NotificationController extends Controller
             'routePrefix' => match ($request->user()->role) {
                 'admin' => 'admin',
                 'superadmin' => 'admin',
-                'teacher', 'dean', 'accounting', 'sao' => 'admin',
+                'teacher', 'dean', 'accounting', 'sao' => 'department',
                 default => 'student',
             },
         ]);

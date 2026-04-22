@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Clearance;
 use App\Models\Payment;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -36,5 +35,19 @@ class FileController extends Controller
         );
 
         return Storage::disk('local')->download($clearance->pdf_path);
+    }
+
+    public function clearanceSupportingFile(Clearance $clearance): StreamedResponse
+    {
+        $this->authorize('view', $clearance);
+
+        abort_if(
+            empty($clearance->uploaded_file_path)
+                || ! str_starts_with($clearance->uploaded_file_path, "clearance-files/{$clearance->user_id}/")
+                || ! Storage::disk('local')->exists($clearance->uploaded_file_path),
+            404
+        );
+
+        return Storage::disk('local')->download($clearance->uploaded_file_path);
     }
 }

@@ -11,7 +11,7 @@ class EnsureRole
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next, string $roles): Response
     {
@@ -21,7 +21,9 @@ class EnsureRole
             abort(401);
         }
 
-        $allowedRoles = array_map('trim', explode(',', $roles));
+        // Use "|" in route definitions (e.g. role:teacher|dean). Commas break Laravel's
+        // middleware parser, which splits the middleware list on ",".
+        $allowedRoles = array_map('trim', explode('|', $roles));
 
         if (! in_array($user->role, $allowedRoles, true)) {
             abort(403);

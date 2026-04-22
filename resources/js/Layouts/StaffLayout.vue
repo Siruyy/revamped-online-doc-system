@@ -9,12 +9,33 @@ const page = usePage();
 
 const role = computed(() => page.props.auth?.user?.role ?? 'admin');
 
+const departmentTitle = computed(() => {
+    const labels = {
+        teacher: 'Teacher',
+        dean: 'Dean',
+        accounting: 'Accounting',
+        sao: 'SAO',
+    };
+
+    return labels[role.value] ?? '';
+});
+
 const links = computed(() => {
     if (role.value === 'superadmin') {
         return [
             { route: 'superadmin.dashboard', label: 'Dashboard' },
             { route: 'superadmin.users.pending', label: 'Pending Users' },
             { route: 'superadmin.profile.edit', label: 'Profile' },
+        ];
+    }
+
+    if (['teacher', 'dean', 'accounting', 'sao'].includes(role.value)) {
+        return [
+            { route: 'department.dashboard', label: 'Dashboard' },
+            { route: 'department.clearances.index', label: 'Clearances' },
+            { route: 'department.notifications.index', label: 'Notifications' },
+            { route: 'department.faq.index', label: 'FAQ' },
+            { route: 'department.profile.edit', label: 'Profile' },
         ];
     }
 
@@ -64,8 +85,11 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                         >
                             Menu
                         </button>
-                        <div class="text-sm text-slate-500">
-                            {{ role === 'admin' ? 'Admin' : 'Staff' }} Console
+                        <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                            <span v-if="departmentTitle" class="font-semibold text-indigo-800">{{ departmentTitle }}</span>
+                            <span v-if="departmentTitle">Department</span>
+                            <span v-else-if="role === 'admin'">Admin Console</span>
+                            <span v-else>Staff Console</span>
                         </div>
                         <Link :href="route('logout')" method="post" as="button" class="text-sm font-semibold text-slate-700">Log Out</Link>
                     </div>

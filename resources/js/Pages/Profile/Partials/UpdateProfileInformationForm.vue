@@ -5,12 +5,16 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 
-defineProps({
+const props = defineProps({
     mustVerifyEmail: {
         type: Boolean,
     },
     status: {
         type: String,
+    },
+    profileUpdateRoute: {
+        type: String,
+        default: 'profile.update',
     },
 });
 
@@ -35,7 +39,7 @@ const form = useForm({
         </header>
 
         <form
-            @submit.prevent="form.patch(route('profile.update'))"
+            @submit.prevent="form.patch(route(props.profileUpdateRoute))"
             class="mt-6 space-y-6"
         >
             <div>

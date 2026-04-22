@@ -1,5 +1,7 @@
 # Phase 05 — Department Clearance
 
+> **Status:** Core MVP shipped (department routes, clearance sign/deny, policy, services, tests). Items deferred to later phases (real-time bell, messaging) remain below.
+
 > **Goal:** Teacher/Dean/Accounting/SAO can sign or deny student clearances. Department-scoped views and policies.
 
 **Subagents:** `tdd-guide`, `code-reviewer`.

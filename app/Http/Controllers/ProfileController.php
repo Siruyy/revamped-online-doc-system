@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -12,9 +13,9 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Intervention\Image\Laravel\Facades\Image;
 use Inertia\Inertia;
 use Inertia\Response;
+use Intervention\Image\Laravel\Facades\Image;
 
 class ProfileController extends Controller
 {
@@ -50,7 +51,7 @@ class ProfileController extends Controller
             $user
         );
 
-        return Redirect::route('profile.edit');
+        return Redirect::route($this->profileEditRouteName($user));
     }
 
     public function updateAvatar(Request $request): RedirectResponse
@@ -89,7 +90,7 @@ class ProfileController extends Controller
             $user
         );
 
-        return Redirect::route('profile.edit')->with('status', 'Avatar updated successfully.');
+        return Redirect::route($this->profileEditRouteName($user))->with('status', 'Avatar updated successfully.');
     }
 
     public function updateSignature(Request $request): RedirectResponse
@@ -120,7 +121,18 @@ class ProfileController extends Controller
             $user
         );
 
-        return Redirect::route('profile.edit')->with('status', 'Signature updated successfully.');
+        return Redirect::route($this->profileEditRouteName($user))->with('status', 'Signature updated successfully.');
+    }
+
+    private function profileEditRouteName(User $user): string
+    {
+        return match ($user->role) {
+            'student' => 'student.profile.edit',
+            'admin' => 'admin.profile.edit',
+            'teacher', 'dean', 'accounting', 'sao' => 'department.profile.edit',
+            'superadmin' => 'superadmin.profile.edit',
+            default => 'profile.edit',
+        };
     }
 
     private function resolveProfileView(string $role): string

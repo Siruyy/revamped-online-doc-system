@@ -31,6 +31,20 @@ class RoleMiddlewareTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_department_route_allows_all_department_officer_roles(): void
+    {
+        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
+            $officer = User::factory()->{$role}()->create([
+                'status' => 'active',
+                'email_verified_at' => now(),
+            ]);
+
+            $this->actingAs($officer)
+                ->get(route('department.dashboard'))
+                ->assertOk();
+        }
+    }
+
     public function test_approved_middleware_rejects_pending_user(): void
     {
         $pendingStudent = User::factory()->pending()->create([

@@ -22,7 +22,12 @@ class ClearancePolicy
             return $clearance->user_id === $user->id;
         }
 
-        return $this->sign($user, $clearance);
+        // Department officers may view any clearance (sign actions remain scoped per column).
+        if (in_array($user->role, ['teacher', 'dean', 'accounting', 'sao'], true)) {
+            return true;
+        }
+
+        return false;
     }
 
     public function create(User $user): bool
@@ -38,10 +43,10 @@ class ClearancePolicy
     public function sign(User $user, Clearance $clearance): bool
     {
         return match ($user->role) {
-            'teacher' => in_array($clearance->teacher_status, ['pending', 'rejected'], true),
-            'dean' => in_array($clearance->dean_status, ['pending', 'rejected'], true),
-            'accounting' => in_array($clearance->accounting_status, ['pending', 'rejected'], true),
-            'sao' => in_array($clearance->sao_status, ['pending', 'rejected'], true),
+            'teacher' => $clearance->teacher_status === 'pending',
+            'dean' => $clearance->dean_status === 'pending',
+            'accounting' => $clearance->accounting_status === 'pending',
+            'sao' => $clearance->sao_status === 'pending',
             default => false,
         };
     }
@@ -63,7 +68,32 @@ class ClearancePolicy
         return $column === $allowedColumn && $this->sign($user, $clearance);
     }
 
-    public function deny(User $user, Clearance $clearance): bool
+    /**
+     * Authorize signing the column that matches the current user's department role.
+     * (Gate only receives the clearance model from {@see Controller::authorize}.)
+     */
+    public function signOwnDepartment(User $user, Clearance $clearance): bool
+    {
+        $column = match ($user->role) {
+            'teacher' => 'teacher',
+            'dean' => 'dean',
+            'accounting' => 'accounting',
+            'sao' => 'sao',
+            default => null,
+        };
+
+        if (! $column) {
+            return false;
+        }
+
+        return $this->signFor($user, $clearance, $column);
+    }
+
+    /**
+     * Department officer denies their department section (remarks required in request).
+     * Named `rejectDepartment` because `deny` collides with Laravel's authorization helper naming.
+     */
+    public function rejectDepartment(User $user, Clearance $clearance): bool
     {
         return $this->sign($user, $clearance);
     }

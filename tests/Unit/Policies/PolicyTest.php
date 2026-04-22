@@ -23,7 +23,7 @@ class PolicyTest extends TestCase
         $admin = User::factory()->admin()->create();
         $otherStudent = User::factory()->student()->create();
         $request = DocumentRequest::factory()->for($student)->pending()->create();
-        $policy = new DocumentRequestPolicy();
+        $policy = new DocumentRequestPolicy;
 
         $this->assertTrue($policy->view($student, $request));
         $this->assertFalse($policy->view($otherStudent, $request));
@@ -37,7 +37,7 @@ class PolicyTest extends TestCase
         $student = User::factory()->student()->create();
         $admin = User::factory()->admin()->create();
         $payment = Payment::factory()->for($student)->pending()->create();
-        $policy = new PaymentPolicy();
+        $policy = new PaymentPolicy;
 
         $this->assertTrue($policy->view($student, $payment));
         $this->assertTrue($policy->upload($student, $payment));
@@ -51,20 +51,37 @@ class PolicyTest extends TestCase
         $dean = User::factory()->dean()->create();
         $student = User::factory()->student()->create();
         $clearance = Clearance::factory()->for($student)->create();
-        $policy = new ClearancePolicy();
+        $policy = new ClearancePolicy;
 
+        $this->assertTrue($policy->view($teacher, $clearance));
         $this->assertTrue($policy->sign($teacher, $clearance));
         $this->assertTrue($policy->signFor($teacher, $clearance, 'teacher'));
         $this->assertFalse($policy->signFor($teacher, $clearance, 'dean'));
         $this->assertTrue($policy->sign($dean, $clearance));
         $this->assertTrue($policy->downloadPdf($student, $clearance));
+
+        $clearedTeacher = Clearance::factory()->for($student)->create([
+            'teacher_status' => 'cleared',
+            'dean_status' => 'pending',
+            'accounting_status' => 'pending',
+            'sao_status' => 'pending',
+        ]);
+        $this->assertFalse($policy->sign($teacher, $clearedTeacher));
+
+        $deniedTeacher = Clearance::factory()->for($student)->create([
+            'teacher_status' => 'denied',
+            'dean_status' => 'pending',
+            'accounting_status' => 'pending',
+            'sao_status' => 'pending',
+        ]);
+        $this->assertFalse($policy->sign($teacher, $deniedTeacher));
     }
 
     public function test_user_policy_superadmin_controls(): void
     {
         $superAdmin = User::factory()->superadmin()->create();
         $pendingStudent = User::factory()->pending()->create();
-        $policy = new UserPolicy();
+        $policy = new UserPolicy;
 
         $this->assertTrue($policy->viewAny($superAdmin));
         $this->assertTrue($policy->approve($superAdmin, $pendingStudent));
