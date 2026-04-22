@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Notifications\RegistrationSubmittedNotification;
+use App\Services\ActivityLogger;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -34,19 +36,37 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'course' => 'required|string|max:150',
+            'year_level' => 'required|integer|min:1|max:8',
+            'student_id' => 'required|string|max:100|unique:'.User::class.',student_id',
+            'contact_number' => 'required|string|max:30',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $user = User::create([
-            'name' => $request->name,
+            'fullname' => $request->string('name')->toString(),
             'email' => $request->email,
+            'course' => $request->course,
+            'year_level' => $request->year_level,
+            'student_id' => $request->student_id,
+            'contact_number' => $request->contact_number,
+            'role' => 'student',
+            'status' => 'pending',
             'password' => Hash::make($request->password),
         ]);
 
         event(new Registered($user));
 
-        Auth::login($user);
+        $superAdmins = User::query()->where('role', 'superadmin')->get();
+        Notification::send($superAdmins, new RegistrationSubmittedNotification($user));
 
-        return redirect(route('dashboard', absolute: false));
+        ActivityLogger::log(
+            'registration_submitted',
+            "User {$user->email} submitted a new registration request.",
+            $user,
+            $user
+        );
+
+        return redirect()->route('registration.pending');
     }
 }

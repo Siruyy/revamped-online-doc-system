@@ -9,6 +9,10 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 const form = useForm({
     name: '',
     email: '',
+    course: '',
+    year_level: '',
+    student_id: '',
+    contact_number: '',
     password: '',
     password_confirmation: '',
 });
@@ -26,7 +30,7 @@ const submit = () => {
 
         <form @submit.prevent="submit">
             <div>
-                <InputLabel for="name" value="Name" />
+                <InputLabel for="name" value="Full Name" />
 
                 <TextInput
                     id="name"
@@ -54,6 +58,66 @@ const submit = () => {
                 />
 
                 <InputError class="mt-2" :message="form.errors.email" />
+            </div>
+
+            <div class="mt-4">
+                <InputLabel for="course" value="Course" />
+
+                <TextInput
+                    id="course"
+                    type="text"
+                    class="mt-1 block w-full"
+                    v-model="form.course"
+                    required
+                />
+
+                <InputError class="mt-2" :message="form.errors.course" />
+            </div>
+
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                    <InputLabel for="year_level" value="Year Level" />
+
+                    <TextInput
+                        id="year_level"
+                        type="number"
+                        min="1"
+                        max="8"
+                        class="mt-1 block w-full"
+                        v-model="form.year_level"
+                        required
+                    />
+
+                    <InputError class="mt-2" :message="form.errors.year_level" />
+                </div>
+
+                <div>
+                    <InputLabel for="student_id" value="Student ID" />
+
+                    <TextInput
+                        id="student_id"
+                        type="text"
+                        class="mt-1 block w-full"
+                        v-model="form.student_id"
+                        required
+                    />
+
+                    <InputError class="mt-2" :message="form.errors.student_id" />
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <InputLabel for="contact_number" value="Contact Number" />
+
+                <TextInput
+                    id="contact_number"
+                    type="text"
+                    class="mt-1 block w-full"
+                    v-model="form.contact_number"
+                    required
+                />
+
+                <InputError class="mt-2" :message="form.errors.contact_number" />
             </div>
 
             <div class="mt-4">

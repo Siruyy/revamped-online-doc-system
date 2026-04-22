@@ -2,7 +2,10 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\User;
+use App\Notifications\RegistrationSubmittedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -16,16 +19,32 @@ class RegistrationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_new_users_can_register(): void
+    public function test_new_users_register_as_pending_students_and_notify_superadmins(): void
     {
+        Notification::fake();
+
+        $superAdmin = User::factory()->superadmin()->create();
+
         $response = $this->post('/register', [
-            'name' => 'Test User',
+            'name' => 'Test Student',
             'email' => 'test@example.com',
+            'course' => 'BSIT',
+            'year_level' => 2,
+            'student_id' => 'SVCI-000001',
+            'contact_number' => '09171234567',
             'password' => 'password',
             'password_confirmation' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $this->assertGuest();
+        $response->assertRedirect(route('registration.pending'));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'test@example.com',
+            'role' => 'student',
+            'status' => 'pending',
+        ]);
+
+        Notification::assertSentTo($superAdmin, RegistrationSubmittedNotification::class);
     }
 }

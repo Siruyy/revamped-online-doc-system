@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Notifications\BrandedResetPasswordNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory;
     use Notifiable;
@@ -136,6 +138,17 @@ class User extends Authenticatable
         return $this->role === 'superadmin';
     }
 
+    public function roleHomeRoute(): string
+    {
+        return match ($this->role) {
+            'student' => 'student.dashboard',
+            'admin' => 'admin.dashboard',
+            'teacher', 'dean', 'accounting', 'sao' => 'department.dashboard',
+            'superadmin' => 'superadmin.dashboard',
+            default => 'login',
+        };
+    }
+
     public function getNameAttribute(): string
     {
         return $this->fullname;
@@ -144,5 +157,10 @@ class User extends Authenticatable
     public function setNameAttribute(string $value): void
     {
         $this->attributes['fullname'] = $value;
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new BrandedResetPasswordNotification($token));
     }
 }
