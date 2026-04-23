@@ -14,22 +14,25 @@ export default {
         extend: {
             colors: {
                 brand: {
-                    50: '#f0f5fa',
-                    100: '#dbe6f1',
-                    500: '#3b6ea3',
-                    600: '#2c5984',
-                    700: '#1e3a5f',
-                    800: '#172d4a',
-                    900: '#0f1e33',
+                    50: '#eff6ff',
+                    100: '#dbeafe',
+                    200: '#bfdbfe',
+                    300: '#93c5fd',
+                    400: '#60a5fa',
+                    500: '#3b82f6',
+                    600: '#2563eb', // Primary
+                    700: '#1d4ed8',
+                    800: '#1e40af',
+                    900: '#1e3a8a',
                 },
                 accent: {
-                    500: '#f59e0b',
-                    600: '#d97706',
+                    500: '#f97316', // CTA
+                    600: '#ea580c',
                 },
             },
             fontFamily: {
-                sans: ['Inter', ...defaultTheme.fontFamily.sans],
-                display: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                sans: ['"Nunito Sans"', ...defaultTheme.fontFamily.sans],
+                display: ['Rubik', '"Nunito Sans"', 'sans-serif'],
             },
         },
     },
