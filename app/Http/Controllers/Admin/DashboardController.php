@@ -7,6 +7,7 @@ use App\Models\ClaimSlip;
 use App\Models\DocumentRequest;
 use App\Models\Payment;
 use App\Models\RequestRequirement;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -14,18 +15,30 @@ class DashboardController extends Controller
 {
     public function index(): Response
     {
+        $requestStatusCounts = DocumentRequest::query()
+            ->selectRaw('status, count(*) as aggregate')
+            ->whereIn('status', ['pending', 'approved', 'denied', 'completed'])
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
         $requestCounts = [
-            'pending' => DocumentRequest::query()->where('status', 'pending')->count(),
-            'approved' => DocumentRequest::query()->where('status', 'approved')->count(),
-            'denied' => DocumentRequest::query()->where('status', 'denied')->count(),
-            'completed' => DocumentRequest::query()->where('status', 'completed')->count(),
+            'pending' => $this->countFor($requestStatusCounts, 'pending'),
+            'approved' => $this->countFor($requestStatusCounts, 'approved'),
+            'denied' => $this->countFor($requestStatusCounts, 'denied'),
+            'completed' => $this->countFor($requestStatusCounts, 'completed'),
         ];
 
+        $paymentStatusCounts = Payment::query()
+            ->selectRaw('status, count(*) as aggregate')
+            ->whereIn('status', ['pending', 'pending_approval', 'approved', 'denied'])
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
         $paymentCounts = [
-            'pending' => Payment::query()->where('status', 'pending')->count(),
-            'pending_approval' => Payment::query()->where('status', 'pending_approval')->count(),
-            'approved' => Payment::query()->where('status', 'approved')->count(),
-            'denied' => Payment::query()->where('status', 'denied')->count(),
+            'pending' => $this->countFor($paymentStatusCounts, 'pending'),
+            'pending_approval' => $this->countFor($paymentStatusCounts, 'pending_approval'),
+            'approved' => $this->countFor($paymentStatusCounts, 'approved'),
+            'denied' => $this->countFor($paymentStatusCounts, 'denied'),
         ];
 
         $todaySubmissions = DocumentRequest::query()
@@ -87,5 +100,13 @@ class DashboardController extends Controller
             'overdueRequests' => $overdueRequests,
             'claimToday' => $claimToday,
         ]);
+    }
+
+    /**
+     * @param  Collection<string, int|string>  $counts
+     */
+    private function countFor(Collection $counts, string $status): int
+    {
+        return (int) ($counts[$status] ?? 0);
     }
 }
