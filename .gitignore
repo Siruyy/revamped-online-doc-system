@@ -3,6 +3,7 @@
 /public/build
 /public/hot
 /public/storage
+playwright-report/
 /storage/*.key
 /storage/pail
 /storage/app/private/*
@@ -16,6 +17,7 @@
 Homestead.json
 Homestead.yaml
 npm-debug.log
+test-results/
 yarn-error.log
 /auth.json
 /.fleet

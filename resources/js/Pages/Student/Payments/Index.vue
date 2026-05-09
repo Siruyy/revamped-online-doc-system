@@ -192,6 +192,7 @@ function requestItems(payment) {
             <div
                 v-for="payment in payments.data"
                 :key="payment.id"
+                :data-testid="`payment-card-${payment.document_request?.reference_no || payment.id}`"
                 class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200"
             >
                 <!-- Payment header -->

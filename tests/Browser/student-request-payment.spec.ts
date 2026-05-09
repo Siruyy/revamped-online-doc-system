@@ -23,7 +23,7 @@ test('student submits a document request and uploads a payment receipt', async (
     await login(page, 'e2e.payment.student@example.com');
     await page.goto('/student/payments');
 
-    const payment = page.getByText('E2E-PAYMENT-REQ').locator('xpath=ancestor::div[contains(@class, "rounded-2xl")][1]');
+    const payment = page.getByTestId('payment-card-E2E-PAYMENT-REQ');
     await expect(payment).toBeVisible();
     await payment.getByLabel('Payment Method').selectOption('bank_transfer');
     await payment.getByPlaceholder('e.g. TXN-2026-XXXXXX').fill(`E2E-${Date.now()}`);

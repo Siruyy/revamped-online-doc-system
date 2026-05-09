@@ -1,6 +1,6 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const props = defineProps({
@@ -8,6 +8,8 @@ const props = defineProps({
     department: { type: String, required: true },
 });
 
+const page = usePage();
+const banner = computed(() => page.props.flash?.banner ?? null);
 const deptStatusKey = computed(() => `${props.department}_status`);
 const deptRemarksKey = computed(() => `${props.department}_remarks`);
 const canAct = computed(() => props.clearance[deptStatusKey.value] === 'pending');
@@ -30,6 +32,13 @@ const submitDeny = () => denyForm.post(route('department.clearances.deny', props
         </template>
 
         <div class="mx-auto max-w-6xl space-y-6 px-4 sm:px-6 lg:px-8">
+            <div
+                v-if="banner"
+                class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+            >
+                {{ banner }}
+            </div>
+
             <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">Student</h3>
                 <p class="mt-2 text-sm text-slate-700">{{ clearance.user?.fullname }} ({{ clearance.user?.email }})</p>

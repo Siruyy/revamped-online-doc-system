@@ -10,7 +10,6 @@ use App\Models\Payment;
 use App\Models\PaymentProfile;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class E2eSeeder extends Seeder
@@ -19,7 +18,7 @@ class E2eSeeder extends Seeder
     {
         $this->call(DocumentTypeSeeder::class);
 
-        $password = Hash::make('password');
+        $password = 'password';
 
         $superAdmin = $this->user('e2e.superadmin@example.com', 'E2E SuperAdmin', 'superadmin', $password);
         $admin = $this->user('e2e.admin@example.com', 'E2E Admin', 'admin', $password);
