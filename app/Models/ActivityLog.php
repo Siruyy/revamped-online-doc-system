@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\App;
 
 class ActivityLog extends Model
 {
@@ -42,10 +43,10 @@ class ActivityLog extends Model
     protected static function booted(): void
     {
         static::creating(function (self $log): void {
-            $request = request();
+            $request = App::bound('request') ? request() : null;
 
-            $log->ip_address ??= $request->ip();
-            $log->user_agent ??= $request->userAgent();
+            $log->ip_address ??= $request?->ip();
+            $log->user_agent ??= $request?->userAgent();
             $log->created_at ??= now();
         });
     }
