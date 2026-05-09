@@ -22,6 +22,7 @@ use App\Notifications\WorkflowStatusNotification;
 use App\Services\ClearanceService;
 use App\Services\PaymentService;
 use App\Services\RequestService;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
@@ -236,11 +237,17 @@ class BroadcastNotificationRegressionTest extends TestCase
 
         Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $clearance->id && $event->department === 'sao');
         Event::assertDispatched(ClearanceCompleted::class, fn (ClearanceCompleted $event) => $event->clearanceId === $clearance->id && $event->studentId === $student->id);
+        $this->assertNotificationSentWithType($student, 'clearance_updated');
         NotificationFake::assertSentTo(
             $student,
             ClearanceCompletedNotification::class,
             fn (ClearanceCompletedNotification $notification) => ($notification->toArray($student)['type'] ?? null) === 'clearance_completed',
         );
+    }
+
+    public function test_workflow_status_notification_is_queued(): void
+    {
+        $this->assertContains(ShouldQueue::class, class_implements(WorkflowStatusNotification::class));
     }
 
     private function activeUser(string $role): User
