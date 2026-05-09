@@ -52,10 +52,12 @@ class PerformanceCheckCommand extends Command
         $requestListQueries = $this->countQueries(fn () => $requestController->index(Request::create('/admin/requests', 'GET', [
             'status' => 'pending',
         ])));
+        $requestListExplain = $this->explainRequestListIndex($documentTypeIds[0]);
 
         $this->info('Seeded performance volume: '.$students.' students, '.$requests.' requests, '.$payments.' payments, '.$clearances.' clearances, '.$logs.' logs.');
         $this->info('Admin dashboard queries: '.$dashboardQueries);
         $this->info('Admin request list queries: '.$requestListQueries);
+        $this->info('Admin request list EXPLAIN: '.$requestListExplain);
 
         return self::SUCCESS;
     }
@@ -116,9 +118,11 @@ class PerformanceCheckCommand extends Command
      */
     private function seedRequests(int $count, array $studentIds, array $documentTypeIds, string $runId): array
     {
+        $referencePrefix = 'P'.Str::upper(Str::substr(Str::replace('-', '', $runId), -7));
+
         DocumentRequest::factory()->count($count)->sequence(
             fn ($sequence) => [
-                'reference_no' => sprintf('PERF-%s-%06d', Str::upper(Str::replace('-', '', $runId)), $sequence->index + 1),
+                'reference_no' => sprintf('%s-%06d', $referencePrefix, $sequence->index + 1),
                 'user_id' => $studentIds[$sequence->index % count($studentIds)],
                 'document_type_id' => $documentTypeIds[$sequence->index % count($documentTypeIds)],
                 'status' => ['pending', 'approved', 'denied', 'completed'][$sequence->index % 4],
@@ -175,14 +179,46 @@ class PerformanceCheckCommand extends Command
 
     private function countQueries(callable $callback): int
     {
-        $queries = 0;
+        DB::flushQueryLog();
+        DB::enableQueryLog();
 
-        DB::listen(function () use (&$queries): void {
-            $queries++;
-        });
+        try {
+            $callback();
 
-        $callback();
+            return count(DB::getQueryLog());
+        } finally {
+            DB::disableQueryLog();
+            DB::flushQueryLog();
+        }
+    }
 
-        return $queries;
+    private function explainRequestListIndex(int $documentTypeId): string
+    {
+        $driver = DB::connection()->getDriverName();
+        $bindings = ['pending', $documentTypeId];
+
+        if ($driver === 'sqlite') {
+            $plan = collect(DB::select(
+                'EXPLAIN QUERY PLAN SELECT * FROM document_requests WHERE status = ? AND document_type_id = ? ORDER BY created_at DESC LIMIT 15',
+                $bindings,
+            ))->pluck('detail')->implode(' ');
+
+            return str_contains($plan, 'document_requests_admin_type_filter_index')
+                ? 'using document_requests_admin_type_filter_index'
+                : 'not using document_requests_admin_type_filter_index';
+        }
+
+        if ($driver === 'mysql') {
+            $plan = collect(DB::select(
+                'EXPLAIN SELECT * FROM document_requests WHERE status = ? AND document_type_id = ? ORDER BY created_at DESC LIMIT 15',
+                $bindings,
+            ));
+
+            return $plan->contains(fn (object $row): bool => ($row->key ?? null) === 'document_requests_admin_type_filter_index')
+                ? 'using document_requests_admin_type_filter_index'
+                : 'not using document_requests_admin_type_filter_index';
+        }
+
+        return 'skipped for unsupported driver '.$driver;
     }
 }

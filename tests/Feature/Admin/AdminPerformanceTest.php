@@ -34,7 +34,8 @@ class AdminPerformanceTest extends TestCase
                 ->component('Admin/Requests/Index')
                 ->has('requests.data', 15)));
 
-        $this->assertLessThanOrEqual(18, $dashboardQueries, "Admin dashboard used {$dashboardQueries} queries.");
+        // Keep this close to the measured value so dashboard N+1 regressions fail fast.
+        $this->assertLessThanOrEqual(17, $dashboardQueries, "Admin dashboard used {$dashboardQueries} queries.");
         $this->assertLessThanOrEqual(8, $requestListQueries, "Admin request list used {$requestListQueries} queries.");
     }
 
@@ -50,10 +51,12 @@ class AdminPerformanceTest extends TestCase
             ->expectsOutputToContain('Seeded performance volume')
             ->expectsOutputToContain('Admin dashboard queries:')
             ->expectsOutputToContain('Admin request list queries:')
+            ->expectsOutputToContain('Admin request list EXPLAIN: using document_requests_admin_type_filter_index')
             ->assertExitCode(0);
 
         $this->assertSame(8, User::query()->where('role', 'student')->count());
         $this->assertSame(24, DocumentRequest::query()->count());
+        $this->assertSame(0, DocumentRequest::query()->whereRaw('length(reference_no) > 20')->count());
         $this->assertSame(24, Payment::query()->count());
         $this->assertSame(24, Clearance::query()->count());
         $this->assertSame(24, ActivityLog::query()->count());
@@ -102,14 +105,16 @@ class AdminPerformanceTest extends TestCase
 
     private function countQueries(callable $callback): int
     {
-        $queries = 0;
+        DB::flushQueryLog();
+        DB::enableQueryLog();
 
-        DB::listen(function () use (&$queries): void {
-            $queries++;
-        });
+        try {
+            $callback();
 
-        $callback();
-
-        return $queries;
+            return count(DB::getQueryLog());
+        } finally {
+            DB::disableQueryLog();
+            DB::flushQueryLog();
+        }
     }
 }
