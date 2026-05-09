@@ -10,7 +10,9 @@ use App\Models\Clearance;
 use App\Models\DocumentRequest;
 use App\Models\Payment;
 use App\Models\User;
+use App\Notifications\WorkflowStatusNotification;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -56,6 +58,17 @@ class PaymentService
 
         PaymentSubmitted::dispatch($payment->id, $payment->user_id);
 
+        Notification::send(
+            User::query()->whereIn('role', ['admin', 'superadmin'])->where('status', 'active')->get(),
+            new WorkflowStatusNotification([
+                'type' => 'payment_submitted',
+                'title' => 'Payment submitted',
+                'message' => "{$payment->user->fullname} uploaded a payment receipt.",
+                'payment_id' => $payment->id,
+                'student_id' => $payment->user_id,
+            ]),
+        );
+
         return $payment->refresh();
     }
 
@@ -95,6 +108,13 @@ class PaymentService
 
         PaymentApproved::dispatch($payment->id, $payment->user_id, $admin->id);
 
+        $payment->user->notify(new WorkflowStatusNotification([
+            'type' => 'payment_approved',
+            'title' => 'Payment approved',
+            'message' => 'Your payment receipt was approved.',
+            'payment_id' => $payment->id,
+        ]));
+
         return $payment->refresh();
     }
 
@@ -120,6 +140,14 @@ class PaymentService
         );
 
         PaymentDenied::dispatch($payment->id, $payment->user_id, $admin->id, $reason);
+
+        $payment->user->notify(new WorkflowStatusNotification([
+            'type' => 'payment_denied',
+            'title' => 'Payment denied',
+            'message' => 'Your payment receipt was denied.',
+            'payment_id' => $payment->id,
+            'reason' => $reason,
+        ]));
 
         return $payment->refresh();
     }
@@ -165,6 +193,18 @@ class PaymentService
                 $clearance->id,
                 $clearance->user_id,
                 $clearance->document_request_id
+            );
+
+            Notification::send(
+                User::query()->whereIn('role', ['teacher', 'dean', 'accounting', 'sao'])->where('status', 'active')->get(),
+                new WorkflowStatusNotification([
+                    'type' => 'clearance_created',
+                    'title' => 'Clearance ready for review',
+                    'message' => 'A student clearance is ready for department review.',
+                    'clearance_id' => $clearance->id,
+                    'document_request_id' => $clearance->document_request_id,
+                    'student_id' => $clearance->user_id,
+                ]),
             );
         }
     }

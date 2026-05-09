@@ -13,6 +13,7 @@ use App\Models\Payment;
 use App\Models\RequestRequirement;
 use App\Models\User;
 use App\Notifications\RequestCancelledNotification;
+use App\Notifications\WorkflowStatusNotification;
 use App\Services\Policy\ClaimSlipService;
 use App\Services\Policy\RequestRulesEngine;
 use App\Services\Policy\SlaCalculator;
@@ -161,6 +162,15 @@ class RequestService
 
             RequestSubmitted::dispatch([$request->id], $payment->id, $user->id);
 
+            $this->notifyActiveRoles(['admin', 'superadmin'], [
+                'type' => 'request_submitted',
+                'title' => 'New document request',
+                'message' => "{$user->fullname} submitted a document request.",
+                'document_request_ids' => [$request->id],
+                'payment_id' => $payment->id,
+                'student_id' => $user->id,
+            ]);
+
             return ['request' => $request->refresh(), 'payment' => $payment->refresh()];
         });
     }
@@ -240,6 +250,15 @@ class RequestService
 
             RequestSubmitted::dispatch($createdRequests->pluck('id')->all(), $payment->id, $user->id);
 
+            $this->notifyActiveRoles(['admin', 'superadmin'], [
+                'type' => 'request_submitted',
+                'title' => 'New document request',
+                'message' => "{$user->fullname} submitted document requests.",
+                'document_request_ids' => $createdRequests->pluck('id')->all(),
+                'payment_id' => $payment->id,
+                'student_id' => $user->id,
+            ]);
+
             return [
                 'requests' => $createdRequests,
                 'payment' => $payment,
@@ -312,6 +331,13 @@ class RequestService
 
         RequestApproved::dispatch($documentRequest->id, $documentRequest->user_id, $admin->id);
 
+        User::query()->findOrFail($documentRequest->user_id)->notify(new WorkflowStatusNotification([
+            'type' => 'request_approved',
+            'title' => 'Request approved',
+            'message' => "Your request {$documentRequest->reference_no} was approved.",
+            'document_request_id' => $documentRequest->id,
+        ]));
+
         return $documentRequest->refresh();
     }
 
@@ -343,6 +369,14 @@ class RequestService
             $admin->id,
             $reason
         );
+
+        User::query()->findOrFail($documentRequest->user_id)->notify(new WorkflowStatusNotification([
+            'type' => 'request_denied',
+            'title' => 'Request denied',
+            'message' => "Your request {$documentRequest->reference_no} was denied.",
+            'document_request_id' => $documentRequest->id,
+            'reason' => $reason,
+        ]));
 
         return $documentRequest->refresh();
     }
@@ -425,6 +459,15 @@ class RequestService
             $documentRequest->processing_stage,
             $documentRequest->status,
         );
+
+        User::query()->findOrFail($documentRequest->user_id)->notify(new WorkflowStatusNotification([
+            'type' => 'request_stage_updated',
+            'title' => 'Request status updated',
+            'message' => "Your request {$documentRequest->reference_no} moved to {$documentRequest->processing_stage}.",
+            'document_request_id' => $documentRequest->id,
+            'processing_stage' => $documentRequest->processing_stage,
+            'status' => $documentRequest->status,
+        ]));
 
         return $documentRequest;
     }
@@ -534,5 +577,17 @@ class RequestService
                 ]
             );
         }
+    }
+
+    /**
+     * @param  array<int, string>  $roles
+     * @param  array<string, mixed>  $data
+     */
+    private function notifyActiveRoles(array $roles, array $data): void
+    {
+        Notification::send(
+            User::query()->whereIn('role', $roles)->where('status', 'active')->get(),
+            new WorkflowStatusNotification($data),
+        );
     }
 }

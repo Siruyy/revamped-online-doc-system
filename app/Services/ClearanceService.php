@@ -7,6 +7,7 @@ use App\Events\ClearanceUpdated;
 use App\Models\Clearance;
 use App\Models\User;
 use App\Notifications\ClearanceCompletedNotification;
+use App\Notifications\WorkflowStatusNotification;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -113,6 +114,16 @@ class ClearanceService
                 $locked->overall_status
             );
 
+            $locked->user->notify(new WorkflowStatusNotification([
+                'type' => 'clearance_updated',
+                'title' => 'Clearance updated',
+                'message' => "Your {$department} clearance was signed.",
+                'clearance_id' => $locked->id,
+                'department' => $department,
+                'action' => 'signed',
+                'overall_status' => $locked->overall_status,
+            ]));
+
             $locked->refresh();
 
             if ($locked->overall_status === 'completed' && $beforeOverall !== 'completed') {
@@ -159,6 +170,16 @@ class ClearanceService
                 'denied',
                 $locked->overall_status
             );
+
+            $locked->user->notify(new WorkflowStatusNotification([
+                'type' => 'clearance_updated',
+                'title' => 'Clearance denied',
+                'message' => "Your {$department} clearance was denied.",
+                'clearance_id' => $locked->id,
+                'department' => $department,
+                'action' => 'denied',
+                'overall_status' => $locked->overall_status,
+            ]));
 
             return $locked->refresh();
         });

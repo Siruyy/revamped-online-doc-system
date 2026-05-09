@@ -1,0 +1,213 @@
+<?php
+
+namespace Tests\Feature\Notifications;
+
+use App\Events\ClearanceCompleted;
+use App\Events\ClearanceCreated;
+use App\Events\ClearanceUpdated;
+use App\Events\PaymentApproved;
+use App\Events\PaymentDenied;
+use App\Events\PaymentSubmitted;
+use App\Events\RequestApproved;
+use App\Events\RequestDenied;
+use App\Events\RequestStageUpdated;
+use App\Events\RequestSubmitted;
+use App\Models\Clearance;
+use App\Models\DocumentRequest;
+use App\Models\DocumentType;
+use App\Models\Payment;
+use App\Models\User;
+use App\Notifications\ClearanceCompletedNotification;
+use App\Notifications\WorkflowStatusNotification;
+use App\Services\ClearanceService;
+use App\Services\PaymentService;
+use App\Services\RequestService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification as NotificationFake;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
+
+class BroadcastNotificationRegressionTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_request_submission_dispatches_event_and_notifies_admins(): void
+    {
+        $student = $this->activeUser('student');
+        $admin = $this->activeUser('admin');
+        $superadmin = $this->activeUser('superadmin');
+        $documentType = DocumentType::factory()->create(['fee' => 100, 'default_page_count' => 1]);
+
+        Event::fake([RequestSubmitted::class]);
+        NotificationFake::fake();
+
+        app(RequestService::class)->createRequestBatch($student, [$documentType->id], 'Board exam');
+
+        Event::assertDispatched(RequestSubmitted::class, fn (RequestSubmitted $event) => $event->studentId === $student->id);
+        $this->assertNotificationSentWithType($admin, 'request_submitted');
+        $this->assertNotificationSentWithType($superadmin, 'request_submitted');
+    }
+
+    public function test_request_approval_dispatches_event_and_notifies_student(): void
+    {
+        $admin = $this->activeUser('admin');
+        $student = $this->activeUser('student');
+        $request = DocumentRequest::factory()->for($student)->pending()->create();
+
+        Event::fake([RequestApproved::class]);
+        NotificationFake::fake();
+
+        app(RequestService::class)->approveRequest($request, $admin);
+
+        Event::assertDispatched(RequestApproved::class, fn (RequestApproved $event) => $event->documentRequestId === $request->id && $event->studentId === $student->id);
+        $this->assertNotificationSentWithType($student, 'request_approved');
+    }
+
+    public function test_request_denial_dispatches_event_and_notifies_student(): void
+    {
+        $admin = $this->activeUser('admin');
+        $student = $this->activeUser('student');
+        $request = DocumentRequest::factory()->for($student)->pending()->create();
+
+        Event::fake([RequestDenied::class]);
+        NotificationFake::fake();
+
+        app(RequestService::class)->denyRequest($request, $admin, 'Invalid records');
+
+        Event::assertDispatched(RequestDenied::class, fn (RequestDenied $event) => $event->documentRequestId === $request->id && $event->reason === 'Invalid records');
+        $this->assertNotificationSentWithType($student, 'request_denied');
+    }
+
+    public function test_request_stage_update_dispatches_event_and_notifies_student(): void
+    {
+        $admin = $this->activeUser('admin');
+        $student = $this->activeUser('student');
+        $request = DocumentRequest::factory()->for($student)->approved()->create();
+
+        Event::fake([RequestStageUpdated::class]);
+        NotificationFake::fake();
+
+        app(RequestService::class)->updateStage($request, $admin, 'ready_for_pickup');
+
+        Event::assertDispatched(RequestStageUpdated::class, fn (RequestStageUpdated $event) => $event->documentRequestId === $request->id && $event->processingStage === 'ready_for_pickup');
+        $this->assertNotificationSentWithType($student, 'request_stage_updated');
+    }
+
+    public function test_payment_submission_dispatches_event_and_notifies_admins(): void
+    {
+        Storage::fake('local');
+        $student = $this->activeUser('student');
+        $admin = $this->activeUser('admin');
+        $superadmin = $this->activeUser('superadmin');
+        $request = DocumentRequest::factory()->for($student)->approved()->create();
+        $payment = Payment::factory()->for($student)->for($request)->pending()->create();
+
+        Event::fake([PaymentSubmitted::class]);
+        NotificationFake::fake();
+
+        app(PaymentService::class)->uploadReceipt($payment, UploadedFile::fake()->image('receipt.jpg'), 'GCash', 'GCASH-123');
+
+        Event::assertDispatched(PaymentSubmitted::class, fn (PaymentSubmitted $event) => $event->paymentId === $payment->id && $event->studentId === $student->id);
+        $this->assertNotificationSentWithType($admin, 'payment_submitted');
+        $this->assertNotificationSentWithType($superadmin, 'payment_submitted');
+    }
+
+    public function test_payment_approval_dispatches_events_and_notifies_student_and_department_roles(): void
+    {
+        $admin = $this->activeUser('admin');
+        $student = $this->activeUser('student');
+        $teacher = $this->activeUser('teacher');
+        $dean = $this->activeUser('dean');
+        $accounting = $this->activeUser('accounting');
+        $sao = $this->activeUser('sao');
+        $request = DocumentRequest::factory()->for($student)->pending()->create();
+        $payment = Payment::factory()->for($student)->for($request)->pendingApproval()->create();
+
+        Event::fake([PaymentApproved::class, ClearanceCreated::class]);
+        NotificationFake::fake();
+
+        app(PaymentService::class)->approve($payment, $admin);
+
+        Event::assertDispatched(PaymentApproved::class, fn (PaymentApproved $event) => $event->paymentId === $payment->id && $event->studentId === $student->id);
+        Event::assertDispatched(ClearanceCreated::class, fn (ClearanceCreated $event) => $event->studentId === $student->id && $event->documentRequestId === $request->id);
+        $this->assertNotificationSentWithType($student, 'payment_approved');
+
+        foreach ([$teacher, $dean, $accounting, $sao] as $officer) {
+            $this->assertNotificationSentWithType($officer, 'clearance_created');
+        }
+    }
+
+    public function test_payment_denial_dispatches_event_and_notifies_student(): void
+    {
+        $admin = $this->activeUser('admin');
+        $student = $this->activeUser('student');
+        $payment = Payment::factory()->for($student)->pendingApproval()->create();
+
+        Event::fake([PaymentDenied::class]);
+        NotificationFake::fake();
+
+        app(PaymentService::class)->deny($payment, $admin, 'Unreadable receipt');
+
+        Event::assertDispatched(PaymentDenied::class, fn (PaymentDenied $event) => $event->paymentId === $payment->id && $event->reason === 'Unreadable receipt');
+        $this->assertNotificationSentWithType($student, 'payment_denied');
+    }
+
+    public function test_clearance_update_dispatches_event_and_notifies_student(): void
+    {
+        $student = $this->activeUser('student');
+        $teacher = $this->activeUser('teacher');
+        $clearance = Clearance::factory()->for($student)->create(['teacher_status' => 'pending']);
+
+        Event::fake([ClearanceUpdated::class]);
+        NotificationFake::fake();
+
+        app(ClearanceService::class)->signFor($clearance, $teacher, 'teacher', 'Verified');
+
+        Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $clearance->id && $event->department === 'teacher');
+        $this->assertNotificationSentWithType($student, 'clearance_updated');
+    }
+
+    public function test_clearance_completion_dispatches_event_and_notifies_student(): void
+    {
+        Storage::fake('local');
+        $student = $this->activeUser('student');
+        $clearance = Clearance::factory()->for($student)->create([
+            'teacher_status' => 'cleared',
+            'dean_status' => 'cleared',
+            'accounting_status' => 'cleared',
+            'sao_status' => 'pending',
+        ]);
+
+        Event::fake([ClearanceUpdated::class, ClearanceCompleted::class]);
+        NotificationFake::fake();
+
+        app(ClearanceService::class)->signFor($clearance, $this->activeUser('sao'), 'sao');
+
+        Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $clearance->id && $event->department === 'sao');
+        Event::assertDispatched(ClearanceCompleted::class, fn (ClearanceCompleted $event) => $event->clearanceId === $clearance->id && $event->studentId === $student->id);
+        NotificationFake::assertSentTo(
+            $student,
+            ClearanceCompletedNotification::class,
+            fn (ClearanceCompletedNotification $notification) => ($notification->toArray($student)['type'] ?? null) === 'clearance_completed',
+        );
+    }
+
+    private function activeUser(string $role): User
+    {
+        return User::factory()->{$role}()->create([
+            'status' => 'active',
+            'email_verified_at' => now(),
+        ]);
+    }
+
+    private function assertNotificationSentWithType(User $user, string $type): void
+    {
+        NotificationFake::assertSentTo(
+            $user,
+            WorkflowStatusNotification::class,
+            fn (WorkflowStatusNotification $notification) => ($notification->toArray($user)['type'] ?? null) === $type,
+        );
+    }
+}
