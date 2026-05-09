@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\Policy\ClaimSlipService;
 use App\Services\Policy\RequestRulesEngine;
 use App\Services\Policy\SlaCalculator;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -43,6 +44,7 @@ class RequestService
      *   }
      * }
      *
+     * @param  array<string, mixed>  $spec
      * @return array{request: DocumentRequest, payment: Payment}
      */
     public function createMultiItemRequest(User $user, array $spec): array
@@ -246,6 +248,7 @@ class RequestService
     /**
      * Policy-aware single-type wizard submission. Delegates to createMultiItemRequest.
      *
+     * @param  array<string, mixed>  $spec
      * @return array{request: DocumentRequest, payment: Payment}
      */
     public function createPolicyAwareRequest(User $user, array $spec): array
@@ -416,10 +419,14 @@ class RequestService
             return $request;
         }
 
-        $pausedFor = $request->sla_paused_at->diffInMinutes(now());
+        $pausedAt = CarbonImmutable::parse($request->sla_paused_at);
 
-        $newExpected = $request->expected_release_on
-            ? $request->expected_release_on->copy()->addMinutes($pausedFor)
+        $pausedFor = $pausedAt->diffInMinutes(now());
+
+        $expectedRelease = $request->expected_release_on ? CarbonImmutable::parse($request->expected_release_on) : null;
+
+        $newExpected = $expectedRelease
+            ? $expectedRelease->copy()->addMinutes($pausedFor)
             : null;
 
         $request->update([

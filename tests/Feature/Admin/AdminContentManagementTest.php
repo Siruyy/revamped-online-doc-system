@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\ActivityLog;
 use App\Models\Announcement;
 use App\Models\Clearance;
 use App\Models\DocumentRequest;
@@ -86,6 +87,15 @@ class AdminContentManagementTest extends TestCase
 
         $this->actingAs($admin)->delete(route('admin.announcements.destroy', $announcement))->assertRedirect();
         $this->actingAs($admin)->delete(route('admin.faqs.destroy', $faq))->assertRedirect();
+
+        $this->assertDatabaseHas(ActivityLog::class, [
+            'user_id' => $admin->id,
+            'action' => 'announcement_deleted',
+        ]);
+        $this->assertDatabaseHas(ActivityLog::class, [
+            'user_id' => $admin->id,
+            'action' => 'faq_deleted',
+        ]);
     }
 
     public function test_admin_can_view_clearance_monitor_and_reports(): void

@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
+use App\Models\Clearance;
 use App\Models\DocumentRequest;
 use App\Models\Faq;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -67,7 +70,7 @@ class DashboardController extends Controller
             'stats' => [
                 'active_requests' => $activeRequests,
                 'pending_payments' => $pendingPayments,
-                'clearance_status' => $latestClearance?->overall_status ?? 'none',
+                'clearance_status' => $latestClearance instanceof Clearance ? $latestClearance->overall_status : 'none',
             ],
             'latestRequest' => $latestRequest,
             'nextAction' => $nextAction,
@@ -153,10 +156,19 @@ class DashboardController extends Controller
         return [
             'title' => 'Processing in progress',
             'description' => 'The Office of the Registrar is working on your request. Expected release: '
-                .($request->expected_release_on?->format('M d, Y') ?? 'TBD').'.',
+                .$this->formatExpectedRelease($request->expected_release_on).'.',
             'cta_label' => 'Open request',
             'cta_href' => route('student.requests.show', $request),
             'tone' => 'info',
         ];
+    }
+
+    private function formatExpectedRelease(mixed $date): string
+    {
+        if (! $date) {
+            return 'TBD';
+        }
+
+        return ($date instanceof CarbonInterface ? $date : CarbonImmutable::parse($date))->format('M d, Y');
     }
 }

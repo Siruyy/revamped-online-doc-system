@@ -44,8 +44,8 @@ class ActivityLog extends Model
         static::creating(function (self $log): void {
             $request = request();
 
-            $log->ip_address ??= $request?->ip();
-            $log->user_agent ??= $request?->userAgent();
+            $log->ip_address ??= $request->ip();
+            $log->user_agent ??= $request->userAgent();
             $log->created_at ??= now();
         });
     }

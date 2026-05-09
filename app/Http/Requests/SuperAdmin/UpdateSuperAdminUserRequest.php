@@ -4,6 +4,7 @@ namespace App\Http\Requests\SuperAdmin;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateSuperAdminUserRequest extends FormRequest
 {
@@ -42,7 +43,7 @@ class UpdateSuperAdminUserRequest extends FormRequest
         ];
     }
 
-    public function withValidator($validator): void
+    public function withValidator(Validator $validator): void
     {
         $validator->after(function ($validator): void {
             if ($this->input('role') === 'student' && blank($this->input('student_id'))) {

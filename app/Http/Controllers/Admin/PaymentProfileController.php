@@ -120,6 +120,9 @@ class PaymentProfileController extends Controller
 
     // ──────────────────────────────────────────────────────────────────────────
 
+    /**
+     * @return array<string, mixed>
+     */
     private function serializeProfile(PaymentProfile $p): array
     {
         return [

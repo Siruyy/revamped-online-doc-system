@@ -26,7 +26,7 @@ class PaymentProfile extends Model
     /**
      * Return all active payment profiles for display to students.
      *
-     * @return Collection<int, static>
+     * @return Collection<int, self>
      */
     public static function activeProfiles(): Collection
     {

@@ -3,8 +3,68 @@ includes:
 
 parameters:
     phpVersion: 80300
-    level: 0
+    level: 6
     bootstrapFiles:
         - phpstan-bootstrap.php
     paths:
         - app
+
+    ignoreErrors:
+        # Laravel model relations and factories are valid at runtime, but this
+        # Larastan/PHPStan combination requires exhaustive generic annotations.
+        -
+            identifier: missingType.generics
+            path: app/Models/*.php
+        -
+            identifier: property.phpDocType
+            path: app/Models/*.php
+        # Dynamic Eloquent relations are known at runtime but become generic
+        # Model types without exhaustive relation templates in every model.
+        -
+            identifier: property.notFound
+            path: app/Http/Controllers/Student/DashboardController.php
+        -
+            identifier: argument.type
+            path: app/Http/Controllers/Student/RequestController.php
+        -
+            identifier: property.notFound
+            path: app/Policies/PaymentPolicy.php
+        -
+            identifier: property.notFound
+            path: app/Services/ClearanceService.php
+        -
+            identifier: argument.type
+            path: app/Services/ClearanceService.php
+        -
+            identifier: method.notFound
+            path: app/Services/ClearanceService.php
+        -
+            identifier: property.notFound
+            path: app/Services/PaymentService.php
+        -
+            identifier: argument.type
+            path: app/Services/PaymentService.php
+        -
+            identifier: method.notFound
+            path: app/Services/PaymentService.php
+        -
+            identifier: argument.type
+            path: app/Services/Policy/ClaimSlipService.php
+        -
+            identifier: property.notFound
+            path: app/Services/RequestService.php
+        -
+            identifier: argument.type
+            path: app/Services/RequestService.php
+        # Package facade stubs do not expose the Intervention Image v3 read API.
+        -
+            identifier: staticMethod.notFound
+            path: app/Http/Controllers/ProfileController.php
+        # Role properties are dynamic database values; PHPStan over-narrows them
+        # in these match expressions.
+        -
+            identifier: match.alwaysTrue
+            path: app/Http/Controllers/ProfileController.php
+        -
+            identifier: match.alwaysTrue
+            path: app/Models/User.php

@@ -45,6 +45,7 @@ class RequestRulesEngine
      * under current policy. Returns an array of human-readable errors. Empty
      * array => eligible.
      *
+     * @param  array<string, mixed>  $context
      * @return array<int, string>
      */
     public function validateEligibility(User $user, DocumentType $type, array $context = []): array
@@ -102,6 +103,8 @@ class RequestRulesEngine
 
     /**
      * Compute total fee: fee_per_page × page_count × quantity (copies).
+     *
+     * @param  array<string, mixed>  $spec
      */
     public function computeFee(DocumentType $type, array $spec = []): float
     {

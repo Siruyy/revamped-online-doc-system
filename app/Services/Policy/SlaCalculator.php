@@ -18,9 +18,10 @@ class SlaCalculator
     {
         $date = CarbonImmutable::instance($start);
 
-        $holidays = collect(config('policy.sla.holidays', []))
-            ->map(fn ($h) => CarbonImmutable::parse($h)->toDateString())
-            ->all();
+        $holidays = array_map(
+            fn (mixed $holiday): string => CarbonImmutable::parse($holiday)->toDateString(),
+            (array) config('policy.sla.holidays', []),
+        );
 
         $added = 0;
 
