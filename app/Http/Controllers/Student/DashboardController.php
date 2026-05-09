@@ -119,6 +119,7 @@ class DashboardController extends Controller
         }
 
         $missingRequirement = $request->requirements->firstWhere('status', '!=', 'validated');
+
         if ($missingRequirement) {
             return [
                 'title' => 'Complete your attachments',

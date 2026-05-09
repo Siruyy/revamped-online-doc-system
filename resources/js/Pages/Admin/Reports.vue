@@ -40,8 +40,17 @@ const applyFilters = () => {
                     <option value="completed">Completed</option>
                     <option value="cancelled">Cancelled</option>
                 </select>
-                <input v-model="form.course" type="text" placeholder="Course" class="rounded-md border-slate-300 text-sm shadow-sm" />
-                <button type="button" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 md:col-span-4" @click="applyFilters">
+                <input
+                    v-model="form.course"
+                    type="text"
+                    placeholder="Course"
+                    class="rounded-md border-slate-300 text-sm shadow-sm"
+                />
+                <button
+                    type="button"
+                    class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 md:col-span-4"
+                    @click="applyFilters"
+                >
                     Generate
                 </button>
             </section>

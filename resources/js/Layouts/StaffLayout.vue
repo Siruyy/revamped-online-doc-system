@@ -17,7 +17,6 @@ import {
     MegaphoneIcon,
     QuestionMarkCircleIcon,
     Bars3Icon,
-    Bars2Icon,
     XMarkIcon,
     ArrowLeftOnRectangleIcon,
     CogIcon,
@@ -27,9 +26,8 @@ import {
 
 // ─── Sidebar collapse state ─────────────────────────────────────────────────
 // Persist preference in localStorage so it survives page navigations
-const storedCollapsed = typeof localStorage !== 'undefined'
-    ? localStorage.getItem('sidebar_collapsed') === 'true'
-    : false;
+const storedCollapsed =
+    typeof localStorage !== 'undefined' ? localStorage.getItem('sidebar_collapsed') === 'true' : false;
 const sidebarCollapsed = ref(storedCollapsed);
 
 watch(sidebarCollapsed, (val) => {
@@ -57,12 +55,15 @@ const userInitials = computed(() => {
     return (first + last).toUpperCase() || 'S';
 });
 
-const departmentTitle = computed(() => ({
-    teacher: 'Teacher',
-    dean: 'Dean',
-    accounting: 'Accounting',
-    sao: 'SAO',
-}[role.value] ?? ''));
+const departmentTitle = computed(
+    () =>
+        ({
+            teacher: 'Teacher',
+            dean: 'Dean',
+            accounting: 'Accounting',
+            sao: 'SAO',
+        })[role.value] ?? '',
+);
 
 const roleLabel = computed(() => {
     if (departmentTitle.value) return `${departmentTitle.value} Dept`;
@@ -70,14 +71,17 @@ const roleLabel = computed(() => {
     return 'Admin';
 });
 
-const roleBadgeClass = computed(() => ({
-    superadmin: 'bg-violet-100 text-violet-700',
-    admin: 'bg-emerald-100 text-emerald-700',
-    teacher: 'bg-sky-100 text-sky-700',
-    dean: 'bg-indigo-100 text-indigo-700',
-    accounting: 'bg-amber-100 text-amber-700',
-    sao: 'bg-rose-100 text-rose-700',
-}[role.value] ?? 'bg-slate-100 text-slate-600'));
+const roleBadgeClass = computed(
+    () =>
+        ({
+            superadmin: 'bg-violet-100 text-violet-700',
+            admin: 'bg-emerald-100 text-emerald-700',
+            teacher: 'bg-sky-100 text-sky-700',
+            dean: 'bg-indigo-100 text-indigo-700',
+            accounting: 'bg-amber-100 text-amber-700',
+            sao: 'bg-rose-100 text-rose-700',
+        })[role.value] ?? 'bg-slate-100 text-slate-600',
+);
 
 const getIconForRoute = (routeName) => {
     if (routeName.includes('dashboard')) return HomeIcon;
@@ -99,9 +103,8 @@ const getIconForRoute = (routeName) => {
 };
 
 const links = computed(() => {
-    let rawLinks = [];
     if (role.value === 'superadmin') {
-        rawLinks = [
+        return [
             { route: 'superadmin.dashboard', label: 'Dashboard' },
             { route: 'superadmin.users.index', label: 'Users' },
             { route: 'superadmin.users.pending', label: 'Pending registrations' },
@@ -110,54 +113,60 @@ const links = computed(() => {
             { route: 'superadmin.reports.index', label: 'Reports' },
             { route: 'superadmin.notifications.index', label: 'Notifications' },
             { route: 'superadmin.profile.edit', label: 'Profile' },
-        ];
-    } else if (['teacher', 'dean', 'accounting', 'sao'].includes(role.value)) {
-        rawLinks = [
+        ].map((link) => ({ ...link, icon: getIconForRoute(link.route) }));
+    }
+
+    if (['teacher', 'dean', 'accounting', 'sao'].includes(role.value)) {
+        return [
             { route: 'department.dashboard', label: 'Dashboard' },
             { route: 'department.clearances.index', label: 'Clearances' },
             { route: 'department.notifications.index', label: 'Notifications' },
             { route: 'department.faq.index', label: 'FAQ' },
             { route: 'department.profile.edit', label: 'Profile' },
-        ];
-    } else {
-        rawLinks = [
-            { route: 'admin.dashboard', label: 'Dashboard' },
-            { route: 'admin.requests.index', label: 'Requests' },
-            { route: 'admin.payments.index', label: 'Payments' },
-            { route: 'admin.releases.index', label: 'Releases' },
-            { route: 'admin.clearances.index', label: 'Clearance Monitor' },
-            { route: 'admin.document-types.index', label: 'Document Types' },
-            { route: 'admin.announcements.index', label: 'Announcements' },
-            { route: 'admin.faqs.index', label: 'FAQs' },
-            { route: 'admin.settings.payment-profile.index', label: 'Payment Settings' },
-            { route: 'admin.reports.index', label: 'Reports' },
-            { route: 'admin.notifications.index', label: 'Notifications' },
-            { route: 'admin.profile.edit', label: 'Profile' },
-        ];
+        ].map((link) => ({ ...link, icon: getIconForRoute(link.route) }));
     }
-    return rawLinks.map(link => ({ ...link, icon: getIconForRoute(link.route) }));
+
+    return [
+        { route: 'admin.dashboard', label: 'Dashboard' },
+        { route: 'admin.requests.index', label: 'Requests' },
+        { route: 'admin.payments.index', label: 'Payments' },
+        { route: 'admin.releases.index', label: 'Releases' },
+        { route: 'admin.clearances.index', label: 'Clearance Monitor' },
+        { route: 'admin.document-types.index', label: 'Document Types' },
+        { route: 'admin.announcements.index', label: 'Announcements' },
+        { route: 'admin.faqs.index', label: 'FAQs' },
+        { route: 'admin.settings.payment-profile.index', label: 'Payment Settings' },
+        { route: 'admin.reports.index', label: 'Reports' },
+        { route: 'admin.notifications.index', label: 'Notifications' },
+        { route: 'admin.profile.edit', label: 'Profile' },
+    ].map((link) => ({ ...link, icon: getIconForRoute(link.route) }));
 });
 
-const isActive = (routeName) =>
-    route().current(routeName) || route().current(routeName.replace('.index', '.*'));
+const isActive = (routeName) => route().current(routeName) || route().current(routeName.replace('.index', '.*'));
 </script>
 
 <template>
     <div class="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-brand-600 selection:text-white flex">
-
         <!-- ── Desktop Sidebar ──────────────────────────────────────────── -->
         <aside
             class="hidden lg:flex lg:flex-col bg-slate-900 text-slate-300 shrink-0 shadow-xl fixed h-screen z-50 transition-all duration-300"
             :class="sidebarCollapsed ? 'w-16' : 'w-64'"
         >
             <!-- Logo -->
-            <div class="h-14 flex items-center border-b border-slate-800 bg-slate-950"
-                :class="sidebarCollapsed ? 'justify-center px-0' : 'px-5 gap-3'">
+            <div
+                class="h-14 flex items-center border-b border-slate-800 bg-slate-950"
+                :class="sidebarCollapsed ? 'justify-center px-0' : 'px-5 gap-3'"
+            >
                 <Link :href="route(links[0]?.route ?? 'admin.dashboard')" class="flex items-center gap-3 group">
-                    <div class="bg-brand-500 p-1.5 rounded-lg shadow-sm group-hover:bg-brand-400 transition-colors shrink-0">
+                    <div
+                        class="bg-brand-500 p-1.5 rounded-lg shadow-sm group-hover:bg-brand-400 transition-colors shrink-0"
+                    >
                         <DocumentTextIcon class="w-5 h-5 text-white" />
                     </div>
-                    <span v-if="!sidebarCollapsed" class="font-display font-bold text-base text-white tracking-tight whitespace-nowrap overflow-hidden">
+                    <span
+                        v-if="!sidebarCollapsed"
+                        class="font-display font-bold text-base text-white tracking-tight whitespace-nowrap overflow-hidden"
+                    >
                         SVCI Staff
                     </span>
                 </Link>
@@ -166,13 +175,17 @@ const isActive = (routeName) =>
             <!-- User info (expanded only) -->
             <div v-if="!sidebarCollapsed" class="px-4 py-4 border-b border-slate-800/60">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full bg-brand-700 flex items-center justify-center text-white text-sm font-bold shadow-inner shrink-0">
+                    <div
+                        class="w-9 h-9 rounded-full bg-brand-700 flex items-center justify-center text-white text-sm font-bold shadow-inner shrink-0"
+                    >
                         {{ userInitials }}
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="truncate text-sm font-medium text-white leading-tight">{{ userDisplayName }}</p>
-                        <span :class="roleBadgeClass"
-                            class="inline-block mt-0.5 rounded-full px-1.5 py-0.5 text-xs font-semibold">
+                        <span
+                            :class="roleBadgeClass"
+                            class="inline-block mt-0.5 rounded-full px-1.5 py-0.5 text-xs font-semibold"
+                        >
                             {{ roleLabel }}
                         </span>
                     </div>
@@ -180,14 +193,18 @@ const isActive = (routeName) =>
             </div>
             <!-- Collapsed avatar -->
             <div v-else class="flex justify-center py-3 border-b border-slate-800/60">
-                <div class="w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-white text-xs font-bold">
+                <div
+                    class="w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-white text-xs font-bold"
+                >
                     {{ userInitials }}
                 </div>
             </div>
 
             <!-- Nav Links -->
-            <nav class="flex-1 overflow-y-auto py-3 space-y-0.5 custom-scrollbar"
-                :class="sidebarCollapsed ? 'px-2' : 'px-3'">
+            <nav
+                class="flex-1 overflow-y-auto py-3 space-y-0.5 custom-scrollbar"
+                :class="sidebarCollapsed ? 'px-2' : 'px-3'"
+            >
                 <Link
                     v-for="item in links"
                     :key="item.route"
@@ -198,7 +215,7 @@ const isActive = (routeName) =>
                         sidebarCollapsed ? 'justify-center px-0 py-2.5 h-10' : 'gap-3 px-3 py-2.5',
                         isActive(item.route)
                             ? 'bg-brand-600 text-white shadow-sm'
-                            : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-800',
                     ]"
                 >
                     <component
@@ -211,7 +228,10 @@ const isActive = (routeName) =>
             </nav>
 
             <!-- Bottom: collapse toggle + logout -->
-            <div class="border-t border-slate-800 bg-slate-950 py-2" :class="sidebarCollapsed ? 'px-2 space-y-1' : 'px-3 space-y-0.5'">
+            <div
+                class="border-t border-slate-800 bg-slate-950 py-2"
+                :class="sidebarCollapsed ? 'px-2 space-y-1' : 'px-3 space-y-0.5'"
+            >
                 <!-- Collapse toggle -->
                 <button
                     type="button"
@@ -240,12 +260,14 @@ const isActive = (routeName) =>
         </aside>
 
         <!-- ── Main Content ─────────────────────────────────────────────── -->
-        <div class="flex-1 flex flex-col min-w-0 transition-all duration-300"
-            :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'">
-
+        <div
+            class="flex-1 flex flex-col min-w-0 transition-all duration-300"
+            :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'"
+        >
             <!-- Top Header -->
-            <header class="h-14 bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40 flex items-center justify-between gap-4 px-4 sm:px-6">
-
+            <header
+                class="h-14 bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40 flex items-center justify-between gap-4 px-4 sm:px-6"
+            >
                 <!-- Mobile hamburger + brand -->
                 <div class="flex items-center gap-3 lg:hidden">
                     <button
@@ -260,8 +282,7 @@ const isActive = (routeName) =>
 
                 <!-- Role chip (desktop) — subtle, no "Admin Console" text -->
                 <div class="hidden lg:block">
-                    <span :class="roleBadgeClass"
-                        class="rounded-full px-3 py-1 text-xs font-semibold">
+                    <span :class="roleBadgeClass" class="rounded-full px-3 py-1 text-xs font-semibold">
                         {{ roleLabel }}
                     </span>
                 </div>
@@ -289,7 +310,10 @@ const isActive = (routeName) =>
                     <aside class="absolute inset-y-0 left-0 w-64 bg-slate-900 text-slate-300 shadow-2xl flex flex-col">
                         <div class="h-14 flex items-center justify-between px-5 bg-slate-950 border-b border-slate-800">
                             <span class="font-display font-bold text-base text-white">SVCI Staff</span>
-                            <button @click="showSidebar = false" class="p-1.5 text-slate-400 hover:text-white rounded-lg">
+                            <button
+                                class="p-1.5 text-slate-400 hover:text-white rounded-lg"
+                                @click="showSidebar = false"
+                            >
                                 <XMarkIcon class="w-5 h-5" />
                             </button>
                         </div>
@@ -299,19 +323,28 @@ const isActive = (routeName) =>
                                 :key="`m-${item.route}`"
                                 :href="route(item.route)"
                                 class="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium"
-                                :class="isActive(item.route)
-                                    ? 'bg-brand-600 text-white'
-                                    : 'text-slate-400 hover:text-white hover:bg-slate-800'"
+                                :class="
+                                    isActive(item.route)
+                                        ? 'bg-brand-600 text-white'
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                "
                                 @click="showSidebar = false"
                             >
-                                <component :is="item.icon" class="w-5 h-5 shrink-0"
-                                    :class="isActive(item.route) ? 'text-white' : 'text-slate-500'" />
+                                <component
+                                    :is="item.icon"
+                                    class="w-5 h-5 shrink-0"
+                                    :class="isActive(item.route) ? 'text-white' : 'text-slate-500'"
+                                />
                                 {{ item.label }}
                             </Link>
                         </nav>
                         <div class="px-3 pb-3 border-t border-slate-800 pt-3">
-                            <Link :href="route('logout')" method="post" as="button"
-                                class="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                            <Link
+                                :href="route('logout')"
+                                method="post"
+                                as="button"
+                                class="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                            >
                                 <ArrowLeftOnRectangleIcon class="w-5 h-5 text-slate-500" />
                                 Log Out
                             </Link>
@@ -338,11 +371,26 @@ const isActive = (routeName) =>
 </template>
 
 <style>
-.custom-scrollbar::-webkit-scrollbar { width: 3px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+.custom-scrollbar::-webkit-scrollbar {
+    width: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
 
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.2s;
+}
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
 </style>

@@ -35,9 +35,25 @@ const applyFilters = () => {
                     <option value="completed">Completed</option>
                     <option value="denied">Denied</option>
                 </select>
-                <input v-model="form.course" type="text" placeholder="Course" class="rounded-md border-slate-300 text-sm shadow-sm" />
-                <input v-model="form.year" type="number" min="1" max="8" placeholder="Year" class="rounded-md border-slate-300 text-sm shadow-sm" />
-                <button type="button" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" @click="applyFilters">
+                <input
+                    v-model="form.course"
+                    type="text"
+                    placeholder="Course"
+                    class="rounded-md border-slate-300 text-sm shadow-sm"
+                />
+                <input
+                    v-model="form.year"
+                    type="number"
+                    min="1"
+                    max="8"
+                    placeholder="Year"
+                    class="rounded-md border-slate-300 text-sm shadow-sm"
+                />
+                <button
+                    type="button"
+                    class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                    @click="applyFilters"
+                >
                     Apply
                 </button>
             </div>
@@ -66,7 +82,11 @@ const applyFilters = () => {
                             <td class="px-4 py-3 capitalize">{{ item.sao_status }}</td>
                             <td class="px-4 py-3 capitalize">{{ item.overall_status }}</td>
                             <td class="px-4 py-3">
-                                <Link :href="route('admin.clearances.show', item.id)" class="font-semibold text-indigo-600 hover:text-indigo-500">View</Link>
+                                <Link
+                                    :href="route('admin.clearances.show', item.id)"
+                                    class="font-semibold text-indigo-600 hover:text-indigo-500"
+                                    >View</Link
+                                >
                             </td>
                         </tr>
                         <tr v-if="clearances.data.length === 0">

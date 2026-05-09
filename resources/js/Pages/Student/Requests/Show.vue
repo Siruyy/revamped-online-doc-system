@@ -36,19 +36,16 @@ const reloadRequest = () => {
     router.reload({ only: ['request'], preserveScroll: true });
 };
 
-useEchoPrivateChannel(
-    () => (studentId.value ? `user.${studentId.value}` : null),
-    {
-        RequestApproved: reloadRequest,
-        RequestDenied: reloadRequest,
-        RequestStageUpdated: reloadRequest,
-        PaymentApproved: reloadRequest,
-        PaymentDenied: reloadRequest,
-        ClearanceUpdated: reloadRequest,
-        ClearanceCompleted: reloadRequest,
-        RegistrationApproved: reloadRequest,
-    },
-);
+useEchoPrivateChannel(() => (studentId.value ? `user.${studentId.value}` : null), {
+    RequestApproved: reloadRequest,
+    RequestDenied: reloadRequest,
+    RequestStageUpdated: reloadRequest,
+    PaymentApproved: reloadRequest,
+    PaymentDenied: reloadRequest,
+    ClearanceUpdated: reloadRequest,
+    ClearanceCompleted: reloadRequest,
+    RegistrationApproved: reloadRequest,
+});
 
 useRealtimeOrPoll(reloadRequest, { intervalMs: 90000 });
 
@@ -60,23 +57,21 @@ const docType = computed(() => props.request.document_type);
 const requestItems = computed(() => props.request.items ?? []);
 
 // Policy-initial: student can cancel while request is still pending (before admin approves)
-const canCancel = computed(
-    () => props.request.status === 'pending'
-);
+const canCancel = computed(() => props.request.status === 'pending');
 
 // Show payment instructions only after admin approves — policy-initial gate.
 const showPaymentInstructions = computed(() => {
     const paymentStatus = payment.value?.status;
-    return props.paymentProfile
-        && props.request.status === 'approved'
-        && !['pending_approval', 'approved'].includes(paymentStatus);
+    return (
+        props.paymentProfile &&
+        props.request.status === 'approved' &&
+        !['pending_approval', 'approved'].includes(paymentStatus)
+    );
 });
 
 // Show upload reminder when request is approved but no receipt yet submitted
 const showReceiptUpload = computed(() => {
-    return props.request.status === 'approved'
-        && payment.value
-        && !payment.value.receipt_path;
+    return props.request.status === 'approved' && payment.value && !payment.value.receipt_path;
 });
 
 function cancelRequest() {
@@ -122,11 +117,12 @@ const timeline = computed(() => {
         },
         {
             key: 'admin_review',
-            label: props.request.status === 'approved' || props.request.status === 'completed'
-                ? 'Request approved by admin'
-                : props.request.status === 'denied'
-                    ? 'Request denied'
-                    : 'Awaiting admin review',
+            label:
+                props.request.status === 'approved' || props.request.status === 'completed'
+                    ? 'Request approved by admin'
+                    : props.request.status === 'denied'
+                      ? 'Request denied'
+                      : 'Awaiting admin review',
             done: requestApproved,
             active: props.request.status === 'pending',
             failed: props.request.status === 'denied',
@@ -135,7 +131,9 @@ const timeline = computed(() => {
         {
             key: 'payment_upload',
             label: receiptUploaded
-                ? (paymentStatus === 'denied' ? 'Receipt rejected – re-upload required' : 'Receipt uploaded')
+                ? paymentStatus === 'denied'
+                    ? 'Receipt rejected – re-upload required'
+                    : 'Receipt uploaded'
                 : 'Upload payment receipt',
             done: receiptUploaded && paymentStatus !== 'denied',
             active: requestApproved && (!receiptUploaded || paymentStatus === 'denied'),
@@ -186,45 +184,48 @@ function openRequirement(id) {
 
 function submitRequirement(requirement) {
     if (!requirementForm.file) return;
-    requirementForm.post(
-        route('student.requests.requirements.upload', [props.request.id, requirement.id]),
-        {
-            forceFormData: true,
-            preserveScroll: true,
-            onSuccess: () => {
-                activeRequirementId.value = null;
-                requirementForm.reset();
-            },
+    requirementForm.post(route('student.requests.requirements.upload', [props.request.id, requirement.id]), {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => {
+            activeRequirementId.value = null;
+            requirementForm.reset();
         },
-    );
+    });
 }
 
 function statusBadge(status) {
-    return ({
-        pending: 'bg-amber-100 text-amber-800',
-        approved: 'bg-sky-100 text-sky-800',
-        completed: 'bg-emerald-100 text-emerald-800',
-        denied: 'bg-rose-100 text-rose-800',
-        cancelled: 'bg-slate-100 text-slate-600',
-    })[status] ?? 'bg-slate-100 text-slate-600';
+    return (
+        {
+            pending: 'bg-amber-100 text-amber-800',
+            approved: 'bg-sky-100 text-sky-800',
+            completed: 'bg-emerald-100 text-emerald-800',
+            denied: 'bg-rose-100 text-rose-800',
+            cancelled: 'bg-slate-100 text-slate-600',
+        }[status] ?? 'bg-slate-100 text-slate-600'
+    );
 }
 
 function requirementBadge(status) {
-    return ({
-        missing: 'bg-slate-100 text-slate-700',
-        submitted: 'bg-amber-100 text-amber-800',
-        validated: 'bg-emerald-100 text-emerald-800',
-        rejected: 'bg-rose-100 text-rose-800',
-    })[status] ?? 'bg-slate-100 text-slate-600';
+    return (
+        {
+            missing: 'bg-slate-100 text-slate-700',
+            submitted: 'bg-amber-100 text-amber-800',
+            validated: 'bg-emerald-100 text-emerald-800',
+            rejected: 'bg-rose-100 text-rose-800',
+        }[status] ?? 'bg-slate-100 text-slate-600'
+    );
 }
 
 function paymentStatusBadge(status) {
-    return ({
-        pending: 'bg-slate-100 text-slate-600',
-        pending_approval: 'bg-amber-100 text-amber-800',
-        approved: 'bg-emerald-100 text-emerald-800',
-        denied: 'bg-rose-100 text-rose-800',
-    })[status] ?? 'bg-slate-100 text-slate-600';
+    return (
+        {
+            pending: 'bg-slate-100 text-slate-600',
+            pending_approval: 'bg-amber-100 text-amber-800',
+            approved: 'bg-emerald-100 text-emerald-800',
+            denied: 'bg-rose-100 text-rose-800',
+        }[status] ?? 'bg-slate-100 text-slate-600'
+    );
 }
 </script>
 
@@ -236,11 +237,18 @@ function paymentStatusBadge(status) {
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Document Request</p>
-                    <h2 class="mt-1 text-2xl font-display font-bold text-slate-900">{{ docType?.name || 'Request' }}</h2>
+                    <h2 class="mt-1 text-2xl font-display font-bold text-slate-900">
+                        {{ docType?.name || 'Request' }}
+                    </h2>
                     <p class="text-xs text-slate-500">Ref. {{ request.reference_no }}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span :class="['inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold capitalize', statusBadge(request.status)]">
+                    <span
+                        :class="[
+                            'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold capitalize',
+                            statusBadge(request.status),
+                        ]"
+                    >
                         <CheckCircleIcon v-if="request.status === 'completed'" class="h-4 w-4" />
                         <ExclamationTriangleIcon v-else-if="request.status === 'denied'" class="h-4 w-4" />
                         <ClockIcon v-else class="h-4 w-4" />
@@ -260,7 +268,6 @@ function paymentStatusBadge(status) {
         </template>
 
         <div class="mx-auto max-w-6xl space-y-6 px-4 pb-12 sm:px-6 lg:px-8">
-
             <!-- Denial alert -->
             <div
                 v-if="request.status === 'denied' && request.denial_reason"
@@ -300,14 +307,18 @@ function paymentStatusBadge(status) {
                 class="rounded-2xl border-2 border-brand-300 bg-gradient-to-br from-brand-50 to-blue-50 p-6 shadow-sm"
             >
                 <div class="flex items-start gap-3">
-                    <div class="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-brand-600 text-white shadow">
+                    <div
+                        class="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-brand-600 text-white shadow"
+                    >
                         <BanknotesIcon class="h-6 w-6" />
                     </div>
                     <div>
-                        <h3 class="text-base font-display font-bold text-brand-900">Your Request is Approved — Now Pay</h3>
+                        <h3 class="text-base font-display font-bold text-brand-900">
+                            Your Request is Approved — Now Pay
+                        </h3>
                         <p class="mt-0.5 text-sm text-brand-700">
-                            Transfer the amount below to the school's account, then upload your receipt.
-                            Admin will verify your payment before processing begins.
+                            Transfer the amount below to the school's account, then upload your receipt. Admin will
+                            verify your payment before processing begins.
                         </p>
                     </div>
                 </div>
@@ -315,18 +326,24 @@ function paymentStatusBadge(status) {
                 <div class="mt-5 grid gap-5 sm:grid-cols-2">
                     <!-- Bank details -->
                     <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-brand-200">
-                        <h4 class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
+                        <h4
+                            class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-600"
+                        >
                             <BanknotesIcon class="h-4 w-4 text-brand-600" />
                             Bank Account Details
                         </h4>
                         <dl class="mt-4 space-y-3 text-sm">
                             <div>
                                 <dt class="text-xs text-slate-500">Bank</dt>
-                                <dd class="mt-0.5 font-semibold text-slate-900">{{ paymentProfile?.bank_name || '—' }}</dd>
+                                <dd class="mt-0.5 font-semibold text-slate-900">
+                                    {{ paymentProfile?.bank_name || '—' }}
+                                </dd>
                             </div>
                             <div>
                                 <dt class="text-xs text-slate-500">Account Name</dt>
-                                <dd class="mt-0.5 font-semibold text-slate-900">{{ paymentProfile?.account_name || '—' }}</dd>
+                                <dd class="mt-0.5 font-semibold text-slate-900">
+                                    {{ paymentProfile?.account_name || '—' }}
+                                </dd>
                             </div>
                             <div>
                                 <dt class="text-xs text-slate-500">Account Number</dt>
@@ -337,7 +354,11 @@ function paymentStatusBadge(status) {
                             <div>
                                 <dt class="text-xs text-slate-500">Amount to Pay</dt>
                                 <dd class="mt-0.5 text-xl font-display font-bold text-emerald-700">
-                                    ₱{{ Number(payment?.total_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}
+                                    ₱{{
+                                        Number(payment?.total_amount || 0).toLocaleString('en-PH', {
+                                            minimumFractionDigits: 2,
+                                        })
+                                    }}
                                 </dd>
                             </div>
                         </dl>
@@ -345,8 +366,13 @@ function paymentStatusBadge(status) {
 
                     <!-- QR code + instructions -->
                     <div class="flex flex-col gap-4">
-                        <div v-if="paymentProfile?.qr_url" class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-brand-200 flex flex-col items-center">
-                            <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-600 mb-3">
+                        <div
+                            v-if="paymentProfile?.qr_url"
+                            class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-brand-200 flex flex-col items-center"
+                        >
+                            <div
+                                class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-600 mb-3"
+                            >
                                 <QrCodeIcon class="h-4 w-4 text-brand-600" />
                                 Scan to Pay
                             </div>
@@ -356,13 +382,21 @@ function paymentStatusBadge(status) {
                                 class="h-40 w-40 object-contain rounded-lg"
                             />
                         </div>
-                        <div v-else class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-brand-100 flex items-center justify-center gap-3 text-slate-400">
+                        <div
+                            v-else
+                            class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-brand-100 flex items-center justify-center gap-3 text-slate-400"
+                        >
                             <QrCodeIcon class="h-8 w-8" />
                             <span class="text-sm">QR code not yet configured</span>
                         </div>
 
-                        <div v-if="paymentProfile?.instructions" class="rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200 text-sm text-amber-900">
-                            <div class="flex items-center gap-2 mb-2 text-xs font-semibold uppercase tracking-wider text-amber-700">
+                        <div
+                            v-if="paymentProfile?.instructions"
+                            class="rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200 text-sm text-amber-900"
+                        >
+                            <div
+                                class="flex items-center gap-2 mb-2 text-xs font-semibold uppercase tracking-wider text-amber-700"
+                            >
                                 <InformationCircleIcon class="h-4 w-4" />
                                 Instructions
                             </div>
@@ -392,8 +426,11 @@ function paymentStatusBadge(status) {
                 <ClockIcon class="h-5 w-5 flex-none animate-pulse" />
                 <div>
                     <p class="font-semibold">Waiting for payment receipt</p>
-                    <p>You haven't uploaded your payment receipt yet.
-                        <Link :href="route('student.payments.index')" class="font-semibold underline">Upload now →</Link>
+                    <p>
+                        You haven't uploaded your payment receipt yet.
+                        <Link :href="route('student.payments.index')" class="font-semibold underline"
+                            >Upload now →</Link
+                        >
                     </p>
                 </div>
             </div>
@@ -416,7 +453,9 @@ function paymentStatusBadge(status) {
                     <div class="flex items-center gap-2 text-xs uppercase tracking-wider text-slate-500">
                         <CalendarDaysIcon class="h-4 w-4" /> Expected release
                     </div>
-                    <p class="mt-2 font-display font-semibold text-slate-900">{{ formatDateOnly(request.expected_release_on) }}</p>
+                    <p class="mt-2 font-display font-semibold text-slate-900">
+                        {{ formatDateOnly(request.expected_release_on) }}
+                    </p>
                 </div>
                 <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                     <div class="flex items-center gap-2 text-xs uppercase tracking-wider text-slate-500">
@@ -444,11 +483,17 @@ function paymentStatusBadge(status) {
                         <tr v-for="item in requestItems" :key="item.id" class="text-slate-700">
                             <td class="py-2.5">
                                 <p class="font-medium text-slate-900">{{ item.document_type?.name }}</p>
-                                <p class="text-xs text-slate-400">{{ formatPeso(item.fee_per_page_snapshot) }}/{{ item.document_type?.fee_formula?.replace('_', ' ') || 'flat' }}</p>
+                                <p class="text-xs text-slate-400">
+                                    {{ formatPeso(item.fee_per_page_snapshot) }}/{{
+                                        item.document_type?.fee_formula?.replace('_', ' ') || 'flat'
+                                    }}
+                                </p>
                             </td>
                             <td class="py-2.5 text-center text-slate-600">{{ item.page_count_snapshot }}</td>
                             <td class="py-2.5 text-center text-slate-600">{{ item.copies }}</td>
-                            <td class="py-2.5 text-right font-semibold text-slate-900">{{ formatPeso(item.line_total) }}</td>
+                            <td class="py-2.5 text-right font-semibold text-slate-900">
+                                {{ formatPeso(item.line_total) }}
+                            </td>
                         </tr>
                     </tbody>
                     <tfoot>
@@ -469,20 +514,33 @@ function paymentStatusBadge(status) {
                     <li v-for="step in timeline" :key="step.key" class="relative">
                         <span
                             class="absolute -left-[33px] mt-1 flex h-6 w-6 items-center justify-center rounded-full"
-                            :class="step.failed
-                                ? 'bg-rose-500 text-white'
-                                : step.done
-                                    ? 'bg-brand-600 text-white'
-                                    : step.active
+                            :class="
+                                step.failed
+                                    ? 'bg-rose-500 text-white'
+                                    : step.done
+                                      ? 'bg-brand-600 text-white'
+                                      : step.active
                                         ? 'bg-amber-500 text-white ring-4 ring-amber-100'
-                                        : 'bg-slate-200 text-slate-500'"
+                                        : 'bg-slate-200 text-slate-500'
+                            "
                         >
                             <XCircleIcon v-if="step.failed" class="h-4 w-4" />
                             <CheckCircleIcon v-else-if="step.done" class="h-4 w-4" />
                             <ClockIcon v-else-if="step.active" class="h-4 w-4 animate-pulse" />
                             <span v-else class="h-2 w-2 rounded-full bg-white"></span>
                         </span>
-                        <p :class="['font-medium', step.failed ? 'text-rose-700' : step.active ? 'text-amber-700' : step.done ? 'text-slate-900' : 'text-slate-500']">
+                        <p
+                            :class="[
+                                'font-medium',
+                                step.failed
+                                    ? 'text-rose-700'
+                                    : step.active
+                                      ? 'text-amber-700'
+                                      : step.done
+                                        ? 'text-slate-900'
+                                        : 'text-slate-500',
+                            ]"
+                        >
                             {{ step.label }}
                         </p>
                         <p class="text-xs text-slate-400">{{ formatDate(step.timestamp) }}</p>
@@ -494,7 +552,10 @@ function paymentStatusBadge(status) {
             <section v-if="requirements.length" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
                 <div class="flex items-center justify-between">
                     <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Attachments</h3>
-                    <span class="text-xs text-slate-500">{{ requirements.filter(r => r.status === 'validated').length }} / {{ requirements.length }} validated</span>
+                    <span class="text-xs text-slate-500"
+                        >{{ requirements.filter((r) => r.status === 'validated').length }} /
+                        {{ requirements.length }} validated</span
+                    >
                 </div>
                 <ul class="mt-4 divide-y divide-slate-100">
                     <li v-for="req in requirements" :key="req.id" class="py-4">
@@ -505,14 +566,24 @@ function paymentStatusBadge(status) {
                                 </div>
                                 <div>
                                     <p class="font-medium text-slate-900">{{ req.label }}</p>
-                                    <p v-if="policy.requirements_catalog?.[req.requirement_key]?.hint" class="text-xs text-slate-500">
+                                    <p
+                                        v-if="policy.requirements_catalog?.[req.requirement_key]?.hint"
+                                        class="text-xs text-slate-500"
+                                    >
                                         {{ policy.requirements_catalog[req.requirement_key].hint }}
                                     </p>
-                                    <p v-if="req.notes" class="mt-1 text-xs italic text-slate-500">Notes: {{ req.notes }}</p>
+                                    <p v-if="req.notes" class="mt-1 text-xs italic text-slate-500">
+                                        Notes: {{ req.notes }}
+                                    </p>
                                 </div>
                             </div>
                             <div class="flex flex-col items-end gap-2">
-                                <span :class="['inline-flex items-center rounded-full px-3 py-0.5 text-xs font-semibold capitalize', requirementBadge(req.status)]">
+                                <span
+                                    :class="[
+                                        'inline-flex items-center rounded-full px-3 py-0.5 text-xs font-semibold capitalize',
+                                        requirementBadge(req.status),
+                                    ]"
+                                >
                                     {{ req.status }}
                                 </span>
                                 <button
@@ -531,7 +602,9 @@ function paymentStatusBadge(status) {
                             v-if="activeRequirementId === req.id"
                             class="mt-3 rounded-xl border border-dashed border-brand-300 bg-brand-50/40 p-4"
                         >
-                            <label class="block text-xs font-medium text-slate-700">File (PDF, JPG, PNG; max 5MB)</label>
+                            <label class="block text-xs font-medium text-slate-700"
+                                >File (PDF, JPG, PNG; max 5MB)</label
+                            >
                             <input
                                 type="file"
                                 accept=".pdf,image/png,image/jpeg"
@@ -580,14 +653,25 @@ function paymentStatusBadge(status) {
                         <div class="flex justify-between">
                             <dt class="text-slate-500">Status</dt>
                             <dd>
-                                <span :class="['inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize', paymentStatusBadge(payment?.status)]">
+                                <span
+                                    :class="[
+                                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
+                                        paymentStatusBadge(payment?.status),
+                                    ]"
+                                >
                                     {{ (payment?.status || 'n/a').replaceAll('_', ' ') }}
                                 </span>
                             </dd>
                         </div>
                         <div class="flex justify-between">
                             <dt class="text-slate-500">Amount</dt>
-                            <dd class="font-semibold text-slate-900">₱{{ Number(payment?.total_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</dd>
+                            <dd class="font-semibold text-slate-900">
+                                ₱{{
+                                    Number(payment?.total_amount || 0).toLocaleString('en-PH', {
+                                        minimumFractionDigits: 2,
+                                    })
+                                }}
+                            </dd>
                         </div>
                         <div v-if="payment?.reference_number" class="flex justify-between">
                             <dt class="text-slate-500">Reference #</dt>
@@ -595,7 +679,9 @@ function paymentStatusBadge(status) {
                         </div>
                         <div v-if="payment?.payment_method" class="flex justify-between">
                             <dt class="text-slate-500">Method</dt>
-                            <dd class="capitalize text-slate-900">{{ payment.payment_method?.replaceAll('_', ' ') }}</dd>
+                            <dd class="capitalize text-slate-900">
+                                {{ payment.payment_method?.replaceAll('_', ' ') }}
+                            </dd>
                         </div>
                     </dl>
                     <div class="mt-4 flex items-center gap-2">
@@ -625,17 +711,36 @@ function paymentStatusBadge(status) {
                     </div>
                     <div v-if="!clearance" class="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-500">
                         <p v-if="!request.payment_verified_at">
-                            Clearance routing starts automatically once your payment is verified and the request is approved.
+                            Clearance routing starts automatically once your payment is verified and the request is
+                            approved.
                         </p>
-                        <p v-else>
-                            No clearance required for this document type.
-                        </p>
+                        <p v-else>No clearance required for this document type.</p>
                     </div>
                     <dl v-else class="mt-4 space-y-2 text-sm">
-                        <div v-for="(status, key) in { teacher: clearance.teacher_status, dean: clearance.dean_status, accounting: clearance.accounting_status, sao: clearance.sao_status }" :key="key" class="flex justify-between">
+                        <div
+                            v-for="(status, key) in {
+                                teacher: clearance.teacher_status,
+                                dean: clearance.dean_status,
+                                accounting: clearance.accounting_status,
+                                sao: clearance.sao_status,
+                            }"
+                            :key="key"
+                            class="flex justify-between"
+                        >
                             <dt class="capitalize text-slate-500">{{ key }}</dt>
                             <dd>
-                                <span :class="['inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize', requirementBadge(status === 'cleared' ? 'validated' : status === 'denied' ? 'rejected' : 'submitted')]">
+                                <span
+                                    :class="[
+                                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
+                                        requirementBadge(
+                                            status === 'cleared'
+                                                ? 'validated'
+                                                : status === 'denied'
+                                                  ? 'rejected'
+                                                  : 'submitted',
+                                        ),
+                                    ]"
+                                >
                                     {{ status }}
                                 </span>
                             </dd>
@@ -643,7 +748,18 @@ function paymentStatusBadge(status) {
                         <div class="mt-3 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
                             <dt class="font-medium text-slate-600">Overall</dt>
                             <dd>
-                                <span :class="['inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize', statusBadge(clearance.overall_status === 'completed' ? 'completed' : clearance.overall_status === 'denied' ? 'denied' : 'pending')]">
+                                <span
+                                    :class="[
+                                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
+                                        statusBadge(
+                                            clearance.overall_status === 'completed'
+                                                ? 'completed'
+                                                : clearance.overall_status === 'denied'
+                                                  ? 'denied'
+                                                  : 'pending',
+                                        ),
+                                    ]"
+                                >
                                     {{ clearance.overall_status?.replaceAll('_', ' ') }}
                                 </span>
                             </dd>
@@ -653,7 +769,10 @@ function paymentStatusBadge(status) {
             </section>
 
             <!-- Claim slip -->
-            <section v-if="claimSlip" class="rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 p-6 text-white shadow-lg">
+            <section
+                v-if="claimSlip"
+                class="rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 p-6 text-white shadow-lg"
+            >
                 <div class="flex items-start gap-3">
                     <TicketIcon class="h-8 w-8 flex-none opacity-90" />
                     <div class="flex-1">
@@ -661,11 +780,16 @@ function paymentStatusBadge(status) {
                         <h3 class="mt-1 text-2xl font-display font-bold">{{ claimSlip.claim_number }}</h3>
                         <p class="mt-1 text-sm opacity-90">
                             Please present this slip and a valid ID at
-                            <strong>{{ policy.release_channels?.[claimSlip.release_channel] ?? claimSlip.release_channel }}</strong>
-                            on <strong>{{ formatDateOnly(claimSlip.claim_date) }}</strong>.
+                            <strong>{{
+                                policy.release_channels?.[claimSlip.release_channel] ?? claimSlip.release_channel
+                            }}</strong>
+                            on <strong>{{ formatDateOnly(claimSlip.claim_date) }}</strong
+                            >.
                         </p>
                         <p v-if="claimSlip.state === 'released'" class="mt-2 text-sm">
-                            Released {{ formatDate(claimSlip.released_at) }} to <strong>{{ claimSlip.claimant_name }}</strong>.
+                            Released {{ formatDate(claimSlip.released_at) }} to
+                            <strong>{{ claimSlip.claimant_name }}</strong
+                            >.
                         </p>
                     </div>
                 </div>

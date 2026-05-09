@@ -67,7 +67,9 @@ const submitSignature = () => {
                 <div v-if="isDepartmentOfficer" class="bg-white p-4 shadow sm:rounded-lg sm:p-8">
                     <header>
                         <h2 class="text-lg font-medium text-gray-900">Department signature</h2>
-                        <p class="mt-1 text-sm text-gray-600">Upload a PNG or JPG signature (transparent PNG recommended).</p>
+                        <p class="mt-1 text-sm text-gray-600">
+                            Upload a PNG or JPG signature (transparent PNG recommended).
+                        </p>
                     </header>
                     <form class="mt-6 space-y-4" @submit.prevent="submitSignature">
                         <div>

@@ -55,6 +55,7 @@ class RequestService
             }
 
             $items = $spec['items'] ?? [];
+
             if (empty($items)) {
                 throw new \InvalidArgumentException('At least one document type must be selected.');
             }
@@ -68,6 +69,7 @@ class RequestService
 
             // Pre-validate all items before creating anything.
             $resolvedItems = [];
+
             foreach ($items as $itemSpec) {
                 $typeId = (int) ($itemSpec['document_type_id'] ?? 0);
                 $copies = max(1, (int) ($itemSpec['copies'] ?? 1));
@@ -78,6 +80,7 @@ class RequestService
                     ->firstOrFail();
 
                 $errors = $this->rules->validateEligibility($user, $type, $context);
+
                 if ($errors) {
                     throw new \RuntimeException(implode(' ', $errors));
                 }
@@ -187,6 +190,7 @@ class RequestService
 
             foreach ($documentTypes as $documentType) {
                 $errors = $this->rules->validateEligibility($user, $documentType);
+
                 if ($errors) {
                     throw new \RuntimeException(implode(' ', $errors));
                 }
@@ -473,6 +477,7 @@ class RequestService
     protected function seedRequirements(DocumentRequest $request, DocumentType $type): void
     {
         $catalog = config('policy.requirements', []);
+
         foreach ((array) $type->requirements as $key) {
             $label = $catalog[$key]['label'] ?? $key;
             RequestRequirement::query()->updateOrCreate(

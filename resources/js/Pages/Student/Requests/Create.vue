@@ -17,7 +17,6 @@ import {
     ClipboardDocumentCheckIcon,
     PlusCircleIcon,
     MinusCircleIcon,
-    TrashIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -39,9 +38,7 @@ const sortedGroups = computed(() => {
     });
 });
 
-const allDocumentTypes = computed(() =>
-    Object.values(props.documentTypeGroups || {}).flat()
-);
+const allDocumentTypes = computed(() => Object.values(props.documentTypeGroups || {}).flat());
 
 // Cart: { [docTypeId]: { copies: number } }
 const cart = ref({});
@@ -55,12 +52,10 @@ const cartItems = computed(() =>
             const lineTotal = computeLineTotal(type, pageCount, data.copies);
             return { type, copies: data.copies, pageCount, lineTotal };
         })
-        .filter(Boolean)
+        .filter(Boolean),
 );
 
-const grandTotal = computed(() =>
-    cartItems.value.reduce((sum, item) => sum + item.lineTotal, 0)
-);
+const grandTotal = computed(() => cartItems.value.reduce((sum, item) => sum + item.lineTotal, 0));
 
 function computeLineTotal(type, pageCount, copies) {
     return +(Number(type.fee) * pageCount * copies).toFixed(2);
@@ -81,10 +76,6 @@ function setCopies(typeId, val) {
     }
 }
 
-function removeItem(typeId) {
-    delete cart.value[typeId];
-}
-
 const form = useForm({
     items: [],
     purpose: '',
@@ -99,11 +90,9 @@ const form = useForm({
 
 // Policy flags across selected items
 const hasSpecialClass = computed(() =>
-    cartItems.value.some((i) => i.type.flags?.includes('eligibility_special_class'))
+    cartItems.value.some((i) => i.type.flags?.includes('eligibility_special_class')),
 );
-const isTransferredStudent = computed(() =>
-    ['transferred', 'dismissed'].includes(props.student.academic_status)
-);
+const isTransferredStudent = computed(() => ['transferred', 'dismissed'].includes(props.student.academic_status));
 
 function prev() {
     if (step.value > 1) step.value -= 1;
@@ -154,9 +143,7 @@ function feeLabel(type) {
     <StudentLayout>
         <template #header>
             <div class="flex flex-col gap-1">
-                <h2 class="font-display text-2xl font-bold tracking-tight text-slate-900">
-                    Submit a Document Request
-                </h2>
+                <h2 class="font-display text-2xl font-bold tracking-tight text-slate-900">Submit a Document Request</h2>
                 <p class="text-sm text-slate-500">
                     Select one or more documents, set copies, then follow the guided steps.
                 </p>
@@ -177,7 +164,9 @@ function feeLabel(type) {
             </div>
 
             <!-- Stepper -->
-            <ol class="mb-8 flex items-center justify-between gap-2 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+            <ol
+                class="mb-8 flex items-center justify-between gap-2 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
+            >
                 <li
                     v-for="(label, index) in ['Select Documents', 'Details', 'Fees & Timeline', 'Review']"
                     :key="label"
@@ -185,11 +174,13 @@ function feeLabel(type) {
                 >
                     <div
                         class="flex h-8 w-8 flex-none items-center justify-center rounded-full text-xs font-semibold transition"
-                        :class="step > index + 1
-                            ? 'bg-brand-600 text-white'
-                            : step === index + 1
-                                ? 'bg-brand-100 text-brand-700 ring-2 ring-brand-500'
-                                : 'bg-slate-100 text-slate-500'"
+                        :class="
+                            step > index + 1
+                                ? 'bg-brand-600 text-white'
+                                : step === index + 1
+                                  ? 'bg-brand-100 text-brand-700 ring-2 ring-brand-500'
+                                  : 'bg-slate-100 text-slate-500'
+                        "
                     >
                         <CheckCircleIcon v-if="step > index + 1" class="h-5 w-5" />
                         <span v-else>{{ index + 1 }}</span>
@@ -213,10 +204,13 @@ function feeLabel(type) {
                         class="flex flex-wrap items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 px-5 py-3"
                     >
                         <span class="text-sm font-semibold text-brand-700">
-                            {{ Object.keys(cart).length }} document{{ Object.keys(cart).length !== 1 ? 's' : '' }} selected
+                            {{ Object.keys(cart).length }} document{{ Object.keys(cart).length !== 1 ? 's' : '' }}
+                            selected
                         </span>
                         <span class="text-sm text-brand-600">·</span>
-                        <span class="text-sm font-bold text-brand-700">{{ formatPeso(grandTotal) }} estimated total</span>
+                        <span class="text-sm font-bold text-brand-700"
+                            >{{ formatPeso(grandTotal) }} estimated total</span
+                        >
                     </div>
 
                     <div
@@ -260,7 +254,9 @@ function feeLabel(type) {
                                             </span>
                                         </div>
                                     </div>
-                                    <p v-if="doc.description" class="mt-0.5 text-sm text-slate-500">{{ doc.description }}</p>
+                                    <p v-if="doc.description" class="mt-0.5 text-sm text-slate-500">
+                                        {{ doc.description }}
+                                    </p>
                                 </div>
                                 <!-- Copies stepper (only when selected) -->
                                 <div v-if="cart[doc.id]" class="flex flex-none items-center gap-2" @click.stop>
@@ -291,7 +287,10 @@ function feeLabel(type) {
                         </div>
                     </div>
                     <InputError :message="form.errors.items" />
-                    <p v-if="!Object.keys(cart).length && !form.errors.items" class="text-center text-sm text-slate-500">
+                    <p
+                        v-if="!Object.keys(cart).length && !form.errors.items"
+                        class="text-center text-sm text-slate-500"
+                    >
                         Check the documents you need above. You can request multiple at once.
                     </p>
                 </section>
@@ -300,7 +299,9 @@ function feeLabel(type) {
                 <section v-else-if="step === 2" class="space-y-6">
                     <!-- Selected items quick list -->
                     <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                        <h4 class="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-600">Selected Documents</h4>
+                        <h4 class="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-600">
+                            Selected Documents
+                        </h4>
                         <ul class="space-y-2 text-sm">
                             <li
                                 v-for="item in cartItems"
@@ -308,7 +309,9 @@ function feeLabel(type) {
                                 class="flex items-center justify-between gap-4 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2"
                             >
                                 <span class="font-medium text-slate-800">{{ item.type.name }}</span>
-                                <span class="text-slate-500">{{ item.copies }} {{ item.copies === 1 ? 'copy' : 'copies' }}</span>
+                                <span class="text-slate-500"
+                                    >{{ item.copies }} {{ item.copies === 1 ? 'copy' : 'copies' }}</span
+                                >
                             </li>
                         </ul>
                     </div>
@@ -327,57 +330,77 @@ function feeLabel(type) {
                                 class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                 :class="{ 'border-rose-400': form.errors.purpose }"
                             ></textarea>
-                            <p class="mt-1 text-xs text-slate-500">Briefly describe why you need these documents (minimum 5 characters).</p>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Briefly describe why you need these documents (minimum 5 characters).
+                            </p>
                             <InputError :message="form.errors.purpose" class="mt-1" />
                         </div>
                     </div>
 
                     <!-- Special class eligibility gate -->
-                    <div
-                        v-if="hasSpecialClass"
-                        class="rounded-2xl border border-amber-200 bg-amber-50 p-5"
-                    >
+                    <div v-if="hasSpecialClass" class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
                         <h4 class="flex items-center gap-2 font-semibold text-amber-800">
                             <ClipboardDocumentCheckIcon class="h-5 w-5" />
                             Special Class Eligibility (Policy §12.1)
                         </h4>
-                        <p class="mt-1 text-sm text-amber-800">You must confirm at least one eligibility criterion below.</p>
+                        <p class="mt-1 text-sm text-amber-800">
+                            You must confirm at least one eligibility criterion below.
+                        </p>
                         <div class="mt-4 space-y-3 text-sm text-amber-900">
                             <label class="flex items-start gap-3">
-                                <input v-model="form.special_class_eligibility.graduating_this_term" type="checkbox" class="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500" />
+                                <input
+                                    v-model="form.special_class_eligibility.graduating_this_term"
+                                    type="checkbox"
+                                    class="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                                />
                                 I am graduating in the immediate term.
                             </label>
                             <label class="flex items-start gap-3">
-                                <input v-model="form.special_class_eligibility.subject_deficiency_certified" type="checkbox" class="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500" />
+                                <input
+                                    v-model="form.special_class_eligibility.subject_deficiency_certified"
+                                    type="checkbox"
+                                    class="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                                />
                                 I have a subject deficiency certified by the Office of the Registrar.
                             </label>
                             <label class="flex items-start gap-3">
-                                <input v-model="form.special_class_eligibility.subject_conflict" type="checkbox" class="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500" />
+                                <input
+                                    v-model="form.special_class_eligibility.subject_conflict"
+                                    type="checkbox"
+                                    class="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                                />
                                 I have a subject conflict with other enrolled subjects this term.
                             </label>
                         </div>
                     </div>
 
                     <!-- §16 transferred-student gate -->
-                    <div
-                        v-if="isTransferredStudent"
-                        class="rounded-2xl border border-rose-200 bg-rose-50 p-5"
-                    >
+                    <div v-if="isTransferredStudent" class="rounded-2xl border border-rose-200 bg-rose-50 p-5">
                         <h4 class="flex items-center gap-2 font-semibold text-rose-800">
                             <InformationCircleIcon class="h-5 w-5" />
                             Transferred / Dismissed Student Notice (Policy §16)
                         </h4>
                         <p class="mt-1 text-sm text-rose-800">
-                            SVCI no longer releases records for transferred students. You may only proceed if you can submit a
-                            <strong>Certificate of No Objection (CNO)</strong> from your receiving institution and an official external notice.
+                            SVCI no longer releases records for transferred students. You may only proceed if you can
+                            submit a
+                            <strong>Certificate of No Objection (CNO)</strong> from your receiving institution and an
+                            official external notice.
                         </p>
                         <div class="mt-4 space-y-3 text-sm text-rose-900">
                             <label class="flex items-start gap-3">
-                                <input v-model="form.has_cno" type="checkbox" class="mt-0.5 rounded border-rose-400 text-rose-600 focus:ring-rose-500" />
+                                <input
+                                    v-model="form.has_cno"
+                                    type="checkbox"
+                                    class="mt-0.5 rounded border-rose-400 text-rose-600 focus:ring-rose-500"
+                                />
                                 I have a Certificate of No Objection from my receiving institution.
                             </label>
                             <label class="flex items-start gap-3">
-                                <input v-model="form.has_external_notice" type="checkbox" class="mt-0.5 rounded border-rose-400 text-rose-600 focus:ring-rose-500" />
+                                <input
+                                    v-model="form.has_external_notice"
+                                    type="checkbox"
+                                    class="mt-0.5 rounded border-rose-400 text-rose-600 focus:ring-rose-500"
+                                />
                                 I have the official external notice from the requesting agency/employer.
                             </label>
                         </div>
@@ -388,7 +411,9 @@ function feeLabel(type) {
                 <section v-else-if="step === 3" class="space-y-6">
                     <!-- Fee breakdown table -->
                     <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                        <h4 class="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-600">
+                        <h4
+                            class="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-600"
+                        >
                             <CurrencyDollarIcon class="h-5 w-5 text-brand-600" />
                             Itemized Fee Breakdown
                         </h4>
@@ -411,18 +436,23 @@ function feeLabel(type) {
                                         {{ item.pageCount }}
                                     </td>
                                     <td class="py-2.5 text-center">{{ item.copies }}</td>
-                                    <td class="py-2.5 text-right font-semibold text-slate-900">{{ formatPeso(item.lineTotal) }}</td>
+                                    <td class="py-2.5 text-right font-semibold text-slate-900">
+                                        {{ formatPeso(item.lineTotal) }}
+                                    </td>
                                 </tr>
                             </tbody>
                             <tfoot>
                                 <tr class="border-t border-slate-200">
                                     <td colspan="3" class="pt-3 text-sm font-semibold text-slate-700">Grand Total</td>
-                                    <td class="pt-3 text-right text-xl font-bold text-brand-700">{{ formatPeso(grandTotal) }}</td>
+                                    <td class="pt-3 text-right text-xl font-bold text-brand-700">
+                                        {{ formatPeso(grandTotal) }}
+                                    </td>
                                 </tr>
                             </tfoot>
                         </table>
                         <p class="mt-3 text-xs text-slate-500">
-                            The Accounting Office may adjust the final amount (e.g., actual TOR pages). <strong>You pay only after admin approval of your request.</strong>
+                            The Accounting Office may adjust the final amount (e.g., actual TOR pages).
+                            <strong>You pay only after admin approval of your request.</strong>
                         </p>
                     </div>
 
@@ -457,7 +487,9 @@ function feeLabel(type) {
                 <!-- STEP 4: Review & Submit -->
                 <section v-else class="space-y-6">
                     <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                        <h4 class="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-600">Review Your Request</h4>
+                        <h4 class="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-600">
+                            Review Your Request
+                        </h4>
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500">
@@ -478,12 +510,16 @@ function feeLabel(type) {
                             <tfoot>
                                 <tr class="border-t border-slate-200">
                                     <td colspan="3" class="pt-3 font-semibold text-slate-700">Grand Total</td>
-                                    <td class="pt-3 text-right text-xl font-bold text-brand-700">{{ formatPeso(grandTotal) }}</td>
+                                    <td class="pt-3 text-right text-xl font-bold text-brand-700">
+                                        {{ formatPeso(grandTotal) }}
+                                    </td>
                                 </tr>
                             </tfoot>
                         </table>
                         <div class="mt-4 border-t border-slate-100 pt-4">
-                            <p class="text-sm text-slate-500"><span class="font-medium text-slate-700">Purpose:</span> {{ form.purpose }}</p>
+                            <p class="text-sm text-slate-500">
+                                <span class="font-medium text-slate-700">Purpose:</span> {{ form.purpose }}
+                            </p>
                         </div>
                     </div>
 
@@ -492,24 +528,56 @@ function feeLabel(type) {
                         <h4 class="text-sm font-semibold uppercase tracking-wider text-brand-700">What Happens Next</h4>
                         <ol class="mt-3 space-y-3 text-sm text-brand-900">
                             <li class="flex items-start gap-3">
-                                <span class="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">1</span>
-                                <span><strong>Admin reviews</strong> your request for policy eligibility and approves it.</span>
+                                <span
+                                    class="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white"
+                                    >1</span
+                                >
+                                <span
+                                    ><strong>Admin reviews</strong> your request for policy eligibility and approves
+                                    it.</span
+                                >
                             </li>
                             <li class="flex items-start gap-3">
-                                <span class="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">2</span>
-                                <span><strong>Once approved,</strong> you'll see the payment details (bank account or QR code) on your request page. The estimated amount is <strong>{{ formatPeso(grandTotal) }}</strong>.</span>
+                                <span
+                                    class="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white"
+                                    >2</span
+                                >
+                                <span
+                                    ><strong>Once approved,</strong> you'll see the payment details (bank account or QR
+                                    code) on your request page. The estimated amount is
+                                    <strong>{{ formatPeso(grandTotal) }}</strong
+                                    >.</span
+                                >
                             </li>
                             <li class="flex items-start gap-3">
-                                <span class="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">3</span>
-                                <span><strong>Upload your payment receipt</strong> (screenshot or scan of your transfer confirmation).</span>
+                                <span
+                                    class="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white"
+                                    >3</span
+                                >
+                                <span
+                                    ><strong>Upload your payment receipt</strong> (screenshot or scan of your transfer
+                                    confirmation).</span
+                                >
                             </li>
                             <li class="flex items-start gap-3">
-                                <span class="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">4</span>
-                                <span><strong>Admin verifies</strong> your payment, then department offices sign off on clearance.</span>
+                                <span
+                                    class="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white"
+                                    >4</span
+                                >
+                                <span
+                                    ><strong>Admin verifies</strong> your payment, then department offices sign off on
+                                    clearance.</span
+                                >
                             </li>
                             <li class="flex items-start gap-3">
-                                <span class="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">5</span>
-                                <span><strong>Claim slip issued</strong> once processing is complete — present it at the releasing window.</span>
+                                <span
+                                    class="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white"
+                                    >5</span
+                                >
+                                <span
+                                    ><strong>Claim slip issued</strong> once processing is complete — present it at the
+                                    releasing window.</span
+                                >
                             </li>
                         </ol>
                     </div>
@@ -523,12 +591,7 @@ function feeLabel(type) {
                     </SecondaryButton>
                     <div v-else></div>
 
-                    <PrimaryButton
-                        v-if="step < totalSteps"
-                        type="button"
-                        :disabled="!canAdvance"
-                        @click="next"
-                    >
+                    <PrimaryButton v-if="step < totalSteps" type="button" :disabled="!canAdvance" @click="next">
                         Continue
                         <ChevronRightIcon class="ml-1 h-4 w-4" />
                     </PrimaryButton>

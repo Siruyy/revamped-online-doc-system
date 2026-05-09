@@ -7,12 +7,12 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Message>
+ * @extends Factory<\App\Message>
  */
 class MessageFactory extends Factory
 {
     /**
-     * @var class-string<\App\Models\Message>
+     * @var class-string<Message>
      */
     protected $model = Message::class;
 

@@ -83,6 +83,9 @@ class AdminContentManagementTest extends TestCase
             'answer' => 'Updated answer',
             'sort_order' => 2,
         ])->assertRedirect();
+
+        $this->actingAs($admin)->delete(route('admin.announcements.destroy', $announcement))->assertRedirect();
+        $this->actingAs($admin)->delete(route('admin.faqs.destroy', $faq))->assertRedirect();
     }
 
     public function test_admin_can_view_clearance_monitor_and_reports(): void

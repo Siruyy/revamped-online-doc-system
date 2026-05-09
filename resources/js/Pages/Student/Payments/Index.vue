@@ -14,7 +14,7 @@ import {
     XCircleIcon,
 } from '@heroicons/vue/24/outline';
 
-const props = defineProps({
+defineProps({
     payments: { type: Object, required: true },
     paymentProfiles: { type: Array, default: () => [] },
     paymentProfile: { type: Object, default: null }, // legacy compat
@@ -39,27 +39,31 @@ const submit = (paymentId) => {
 };
 
 function statusBadge(status) {
-    return ({
-        pending: 'bg-slate-100 text-slate-600',
-        pending_approval: 'bg-amber-100 text-amber-800',
-        approved: 'bg-emerald-100 text-emerald-800',
-        denied: 'bg-rose-100 text-rose-800',
-    })[status] ?? 'bg-slate-100 text-slate-600';
+    return (
+        {
+            pending: 'bg-slate-100 text-slate-600',
+            pending_approval: 'bg-amber-100 text-amber-800',
+            approved: 'bg-emerald-100 text-emerald-800',
+            denied: 'bg-rose-100 text-rose-800',
+        }[status] ?? 'bg-slate-100 text-slate-600'
+    );
 }
 
 function statusLabel(status) {
-    return {
-        pending: 'Awaiting Receipt',
-        pending_approval: 'Receipt Under Review',
-        approved: 'Payment Approved',
-        denied: 'Receipt Rejected',
-    }[status] ?? status;
+    return (
+        {
+            pending: 'Awaiting Receipt',
+            pending_approval: 'Receipt Under Review',
+            approved: 'Payment Approved',
+            denied: 'Receipt Rejected',
+        }[status] ?? status
+    );
 }
 
 // Policy-initial gate: upload only allowed after request is approved by admin
 const canUpload = (payment) =>
-    !['approved', 'pending_approval'].includes(payment.status)
-    && ['approved', 'completed'].includes(payment.document_request?.status);
+    !['approved', 'pending_approval'].includes(payment.status) &&
+    ['approved', 'completed'].includes(payment.document_request?.status);
 
 function formatPeso(n) {
     return `₱${Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -78,40 +82,54 @@ function requestItems(payment) {
             <div>
                 <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">My Account</p>
                 <h2 class="mt-1 text-2xl font-display font-bold text-slate-900">Payments</h2>
-                <p class="text-sm text-slate-500 mt-0.5">Upload your payment receipts to proceed with document processing.</p>
+                <p class="text-sm text-slate-500 mt-0.5">
+                    Upload your payment receipts to proceed with document processing.
+                </p>
             </div>
         </template>
 
         <div class="mx-auto max-w-6xl space-y-8 px-4 pb-12 sm:px-6 lg:px-8">
-
             <!-- ════════════════════════
                  SCHOOL PAYMENT DETAILS (all active profiles)
                  ════════════════════════ -->
             <section v-if="paymentProfiles.length" class="space-y-4">
                 <div class="flex items-start gap-3 mb-1">
-                    <div class="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-brand-600 text-white shadow">
+                    <div
+                        class="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-brand-600 text-white shadow"
+                    >
                         <BanknotesIcon class="h-6 w-6" />
                     </div>
                     <div>
                         <h3 class="text-base font-display font-bold text-brand-900">School Payment Details</h3>
-                        <p class="text-sm text-brand-700 mt-0.5">Choose any of the payment channels below. Transfer your payment then upload your receipt.</p>
+                        <p class="text-sm text-brand-700 mt-0.5">
+                            Choose any of the payment channels below. Transfer your payment then upload your receipt.
+                        </p>
                     </div>
                 </div>
 
-                <div v-for="profile in paymentProfiles" :key="profile.id"
-                    class="rounded-2xl border-2 border-brand-200 bg-gradient-to-br from-brand-50 to-blue-50 p-5 shadow-sm">
+                <div
+                    v-for="profile in paymentProfiles"
+                    :key="profile.id"
+                    class="rounded-2xl border-2 border-brand-200 bg-gradient-to-br from-brand-50 to-blue-50 p-5 shadow-sm"
+                >
                     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                         <!-- Bank info -->
                         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-brand-200">
-                            <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">{{ profile.bank_name }}</h4>
+                            <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
+                                {{ profile.bank_name }}
+                            </h4>
                             <dl class="space-y-3 text-sm">
                                 <div>
                                     <dt class="text-xs text-slate-400">Account Name</dt>
-                                    <dd class="font-semibold text-slate-900 mt-0.5">{{ profile.account_name || '—' }}</dd>
+                                    <dd class="font-semibold text-slate-900 mt-0.5">
+                                        {{ profile.account_name || '—' }}
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt class="text-xs text-slate-400">Account Number</dt>
-                                    <dd class="font-mono text-xl font-bold tracking-widest text-brand-700 mt-0.5 select-all">
+                                    <dd
+                                        class="font-mono text-xl font-bold tracking-widest text-brand-700 mt-0.5 select-all"
+                                    >
                                         {{ profile.account_number || '—' }}
                                     </dd>
                                 </div>
@@ -119,14 +137,25 @@ function requestItems(payment) {
                         </div>
 
                         <!-- QR code -->
-                        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-brand-200 flex flex-col items-center justify-center gap-3">
-                            <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        <div
+                            class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-brand-200 flex flex-col items-center justify-center gap-3"
+                        >
+                            <div
+                                class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                            >
                                 <QrCodeIcon class="h-4 w-4 text-brand-600" />
                                 Scan to Pay
                             </div>
-                            <img v-if="profile.qr_url" :src="profile.qr_url" alt="Payment QR Code"
-                                class="h-36 w-36 object-contain rounded-lg" />
-                            <div v-else class="flex h-36 w-36 flex-col items-center justify-center rounded-lg bg-slate-100 text-slate-400 gap-2">
+                            <img
+                                v-if="profile.qr_url"
+                                :src="profile.qr_url"
+                                alt="Payment QR Code"
+                                class="h-36 w-36 object-contain rounded-lg"
+                            />
+                            <div
+                                v-else
+                                class="flex h-36 w-36 flex-col items-center justify-center rounded-lg bg-slate-100 text-slate-400 gap-2"
+                            >
                                 <QrCodeIcon class="h-10 w-10" />
                                 <span class="text-xs text-center">QR not configured</span>
                             </div>
@@ -134,11 +163,15 @@ function requestItems(payment) {
 
                         <!-- Instructions -->
                         <div v-if="profile.instructions" class="rounded-xl bg-amber-50 p-5 ring-1 ring-amber-200">
-                            <h4 class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-700 mb-3">
+                            <h4
+                                class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-700 mb-3"
+                            >
                                 <InformationCircleIcon class="h-4 w-4" />
                                 How to Pay
                             </h4>
-                            <p class="text-sm text-amber-900 whitespace-pre-line leading-relaxed">{{ profile.instructions }}</p>
+                            <p class="text-sm text-amber-900 whitespace-pre-line leading-relaxed">
+                                {{ profile.instructions }}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -147,7 +180,8 @@ function requestItems(payment) {
             <!-- ════════════════════════
                  PAYMENTS LIST
                  ════════════════════════ -->
-            <div v-if="payments.data.length === 0"
+            <div
+                v-if="payments.data.length === 0"
                 class="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm"
             >
                 <BanknotesIcon class="h-12 w-12 text-slate-300" />
@@ -155,7 +189,11 @@ function requestItems(payment) {
                 <p class="text-sm text-slate-500">Once you submit a document request, your payment will appear here.</p>
             </div>
 
-            <div v-for="payment in payments.data" :key="payment.id" class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+            <div
+                v-for="payment in payments.data"
+                :key="payment.id"
+                class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200"
+            >
                 <!-- Payment header -->
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-4">
                     <div>
@@ -170,7 +208,12 @@ function requestItems(payment) {
                         <span class="text-lg font-display font-bold text-slate-900">
                             ₱{{ Number(payment.total_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}
                         </span>
-                        <span :class="['inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold', statusBadge(payment.status)]">
+                        <span
+                            :class="[
+                                'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold',
+                                statusBadge(payment.status),
+                            ]"
+                        >
                             <CheckCircleIcon v-if="payment.status === 'approved'" class="h-3.5 w-3.5" />
                             <XCircleIcon v-else-if="payment.status === 'denied'" class="h-3.5 w-3.5" />
                             <ClockIcon v-else class="h-3.5 w-3.5" />
@@ -180,7 +223,8 @@ function requestItems(payment) {
                 </div>
 
                 <!-- Rejection message -->
-                <div v-if="payment.status === 'denied' && payment.denial_reason"
+                <div
+                    v-if="payment.status === 'denied' && payment.denial_reason"
                     class="mx-6 mt-4 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
                 >
                     <XCircleIcon class="h-4 w-4 mt-0.5 flex-none" />
@@ -191,7 +235,8 @@ function requestItems(payment) {
                 </div>
 
                 <!-- Approved message -->
-                <div v-else-if="payment.status === 'approved'"
+                <div
+                    v-else-if="payment.status === 'approved'"
                     class="mx-6 mt-4 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
                 >
                     <CheckCircleIcon class="h-4 w-4 mt-0.5 flex-none" />
@@ -199,11 +244,14 @@ function requestItems(payment) {
                 </div>
 
                 <!-- Under review message -->
-                <div v-else-if="payment.status === 'pending_approval'"
+                <div
+                    v-else-if="payment.status === 'pending_approval'"
                     class="mx-6 mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
                 >
                     <ClockIcon class="h-4 w-4 mt-0.5 flex-none animate-pulse" />
-                    <p>Your receipt has been submitted and is under admin review. We'll notify you once it's verified.</p>
+                    <p>
+                        Your receipt has been submitted and is under admin review. We'll notify you once it's verified.
+                    </p>
                 </div>
 
                 <!-- Itemized breakdown -->
@@ -224,7 +272,10 @@ function requestItems(payment) {
 
                 <!-- Locked notice when request not yet approved -->
                 <div
-                    v-if="payment.document_request?.status === 'pending' && !['approved', 'pending_approval'].includes(payment.status)"
+                    v-if="
+                        payment.document_request?.status === 'pending' &&
+                        !['approved', 'pending_approval'].includes(payment.status)
+                    "
                     class="mx-6 mt-4 mb-4 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
                 >
                     <ClockIcon class="h-4 w-4 mt-0.5 flex-none" />
@@ -257,7 +308,9 @@ function requestItems(payment) {
                                 <InputError class="mt-1" :message="getForm(payment.id).errors.payment_method" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700">Reference / Transaction No.</label>
+                                <label class="block text-sm font-medium text-slate-700"
+                                    >Reference / Transaction No.</label
+                                >
                                 <input
                                     v-model="getForm(payment.id).reference_number"
                                     type="text"
@@ -273,7 +326,9 @@ function requestItems(payment) {
                                 Receipt Screenshot / File <span class="text-rose-500">*</span>
                             </label>
                             <div class="flex items-center justify-center w-full">
-                                <label class="flex flex-col items-center justify-center w-full h-36 border-2 border-brand-300 border-dashed rounded-xl cursor-pointer bg-brand-50 hover:bg-brand-100 transition-colors">
+                                <label
+                                    class="flex flex-col items-center justify-center w-full h-36 border-2 border-brand-300 border-dashed rounded-xl cursor-pointer bg-brand-50 hover:bg-brand-100 transition-colors"
+                                >
                                     <div class="flex flex-col items-center justify-center py-4 text-brand-700">
                                         <ArrowUpTrayIcon class="w-8 h-8 mb-2 text-brand-500" />
                                         <p class="text-sm font-medium">

@@ -3,7 +3,6 @@
 namespace Tests\Feature\Student;
 
 use App\Models\Clearance;
-use App\Models\DocumentRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;

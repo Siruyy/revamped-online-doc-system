@@ -13,7 +13,7 @@ import {
     XMarkIcon,
 } from '@heroicons/vue/24/outline';
 
-const props = defineProps({
+defineProps({
     profiles: { type: Array, default: () => [] },
 });
 
@@ -36,7 +36,9 @@ function onCreateQrChange(e) {
     if (!file) return;
     createForm.qr_image = file;
     const reader = new FileReader();
-    reader.onload = (ev) => { createQrPreview.value = ev.target.result; };
+    reader.onload = (ev) => {
+        createQrPreview.value = ev.target.result;
+    };
     reader.readAsDataURL(file);
 }
 
@@ -89,7 +91,9 @@ function onEditQrChange(profileId, e) {
     if (!file) return;
     editForms[profileId].qr_image = file;
     const reader = new FileReader();
-    reader.onload = (ev) => { editQrPreviews.value[profileId] = ev.target.result; };
+    reader.onload = (ev) => {
+        editQrPreviews.value[profileId] = ev.target.result;
+    };
     reader.readAsDataURL(file);
 }
 
@@ -135,7 +139,6 @@ function removeQr(profile) {
         </template>
 
         <div class="mx-auto max-w-5xl space-y-6 px-4 pb-12 sm:px-6 lg:px-8">
-
             <!-- Existing Profiles -->
             <div v-if="profiles.length" class="space-y-4">
                 <div
@@ -145,15 +148,21 @@ function removeQr(profile) {
                     :class="profile.is_active ? 'ring-brand-300' : 'ring-slate-200'"
                 >
                     <!-- Profile header bar -->
-                    <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b"
-                        :class="profile.is_active ? 'border-brand-100 bg-brand-50/40' : 'border-slate-100'">
+                    <div
+                        class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b"
+                        :class="profile.is_active ? 'border-brand-100 bg-brand-50/40' : 'border-slate-100'"
+                    >
                         <div class="flex items-center gap-3">
-                            <div :class="profile.is_active ? 'bg-brand-600' : 'bg-slate-400'"
-                                class="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm">
+                            <div
+                                :class="profile.is_active ? 'bg-brand-600' : 'bg-slate-400'"
+                                class="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm"
+                            >
                                 <BanknotesIcon class="h-5 w-5" />
                             </div>
                             <div>
-                                <p class="font-semibold text-slate-900 text-sm">{{ profile.bank_name || 'Unnamed Profile' }}</p>
+                                <p class="font-semibold text-slate-900 text-sm">
+                                    {{ profile.bank_name || 'Unnamed Profile' }}
+                                </p>
                                 <p class="text-xs text-slate-500">{{ profile.account_name }}</p>
                             </div>
                         </div>
@@ -162,9 +171,11 @@ function removeQr(profile) {
                             <button
                                 type="button"
                                 :title="profile.is_active ? 'Deactivate' : 'Activate'"
-                                :class="profile.is_active
-                                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                                :class="
+                                    profile.is_active
+                                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                "
                                 class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors"
                                 @click="toggleActive(profile)"
                             >
@@ -175,10 +186,14 @@ function removeQr(profile) {
                             <!-- Edit button -->
                             <button
                                 type="button"
-                                :class="editingId === profile.id ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:bg-slate-100'"
+                                :class="
+                                    editingId === profile.id
+                                        ? 'bg-indigo-100 text-indigo-700'
+                                        : 'text-slate-500 hover:bg-slate-100'
+                                "
                                 class="rounded-lg p-2 transition-colors"
                                 :title="editingId === profile.id ? 'Cancel edit' : 'Edit'"
-                                @click="editingId === profile.id ? editingId = null : openEdit(profile)"
+                                @click="editingId === profile.id ? (editingId = null) : openEdit(profile)"
                             >
                                 <PencilSquareIcon v-if="editingId !== profile.id" class="h-4 w-4" />
                                 <XMarkIcon v-else class="h-4 w-4" />
@@ -200,21 +215,31 @@ function removeQr(profile) {
                         <dl class="space-y-2 text-sm sm:col-span-2">
                             <div class="flex gap-3">
                                 <dt class="w-32 shrink-0 text-xs text-slate-500">Account Number</dt>
-                                <dd class="font-mono font-bold text-brand-700 select-all">{{ profile.account_number || '—' }}</dd>
+                                <dd class="font-mono font-bold text-brand-700 select-all">
+                                    {{ profile.account_number || '—' }}
+                                </dd>
                             </div>
                             <div v-if="profile.instructions" class="flex gap-3">
                                 <dt class="w-32 shrink-0 text-xs text-slate-500">Instructions</dt>
-                                <dd class="text-slate-700 text-xs whitespace-pre-line leading-relaxed line-clamp-3">{{ profile.instructions }}</dd>
+                                <dd class="text-slate-700 text-xs whitespace-pre-line leading-relaxed line-clamp-3">
+                                    {{ profile.instructions }}
+                                </dd>
                             </div>
                         </dl>
                         <!-- QR thumbnail -->
                         <div class="flex flex-col items-center gap-2">
-                            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                            <div
+                                class="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5"
+                            >
                                 <QrCodeIcon class="h-4 w-4" />
                                 QR Code
                             </div>
                             <div v-if="profile.qr_url" class="relative group">
-                                <img :src="profile.qr_url" alt="QR" class="h-24 w-24 rounded-lg object-contain ring-1 ring-brand-200" />
+                                <img
+                                    :src="profile.qr_url"
+                                    alt="QR"
+                                    class="h-24 w-24 rounded-lg object-contain ring-1 ring-brand-200"
+                                />
                                 <button
                                     type="button"
                                     class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-white shadow opacity-0 group-hover:opacity-100 transition-opacity"
@@ -224,7 +249,10 @@ function removeQr(profile) {
                                     <XMarkIcon class="h-3 w-3" />
                                 </button>
                             </div>
-                            <div v-else class="flex h-24 w-24 flex-col items-center justify-center rounded-lg bg-slate-100 text-slate-400 gap-1">
+                            <div
+                                v-else
+                                class="flex h-24 w-24 flex-col items-center justify-center rounded-lg bg-slate-100 text-slate-400 gap-1"
+                            >
                                 <QrCodeIcon class="h-7 w-7" />
                                 <span class="text-xs">Not set</span>
                             </div>
@@ -236,56 +264,115 @@ function removeQr(profile) {
                         <form class="space-y-5" @submit.prevent="submitEdit(profile.id)">
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700">Bank Name <span class="text-rose-500">*</span></label>
-                                    <input v-model="getEditForm(profile).bank_name" type="text" required maxlength="120"
-                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm" />
-                                    <p v-if="getEditForm(profile).errors.bank_name" class="mt-1 text-xs text-rose-600">{{ getEditForm(profile).errors.bank_name }}</p>
+                                    <label class="block text-sm font-medium text-slate-700"
+                                        >Bank Name <span class="text-rose-500">*</span></label
+                                    >
+                                    <input
+                                        v-model="getEditForm(profile).bank_name"
+                                        type="text"
+                                        required
+                                        maxlength="120"
+                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
+                                    />
+                                    <p v-if="getEditForm(profile).errors.bank_name" class="mt-1 text-xs text-rose-600">
+                                        {{ getEditForm(profile).errors.bank_name }}
+                                    </p>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700">Account Name <span class="text-rose-500">*</span></label>
-                                    <input v-model="getEditForm(profile).account_name" type="text" required maxlength="180"
-                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm" />
+                                    <label class="block text-sm font-medium text-slate-700"
+                                        >Account Name <span class="text-rose-500">*</span></label
+                                    >
+                                    <input
+                                        v-model="getEditForm(profile).account_name"
+                                        type="text"
+                                        required
+                                        maxlength="180"
+                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700">Account Number <span class="text-rose-500">*</span></label>
-                                    <input v-model="getEditForm(profile).account_number" type="text" required maxlength="60"
-                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm font-mono tracking-wide sm:text-sm" />
+                                    <label class="block text-sm font-medium text-slate-700"
+                                        >Account Number <span class="text-rose-500">*</span></label
+                                    >
+                                    <input
+                                        v-model="getEditForm(profile).account_number"
+                                        type="text"
+                                        required
+                                        maxlength="60"
+                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm font-mono tracking-wide sm:text-sm"
+                                    />
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700">
-                                        QR Code <span class="text-slate-400 font-normal text-xs">(JPG/PNG/WebP – max 4 MB)</span>
+                                        QR Code
+                                        <span class="text-slate-400 font-normal text-xs"
+                                            >(JPG/PNG/WebP – max 4 MB)</span
+                                        >
                                     </label>
-                                    <label class="mt-1 flex cursor-pointer items-center justify-center w-full h-20 border-2 border-dashed border-brand-300 rounded-xl bg-brand-50 hover:bg-brand-100 transition-colors">
+                                    <label
+                                        class="mt-1 flex cursor-pointer items-center justify-center w-full h-20 border-2 border-dashed border-brand-300 rounded-xl bg-brand-50 hover:bg-brand-100 transition-colors"
+                                    >
                                         <div class="flex items-center gap-2 text-brand-700 text-sm">
                                             <QrCodeIcon class="h-5 w-5 text-brand-500" />
-                                            <span>{{ getEditForm(profile).qr_image ? getEditForm(profile).qr_image.name : 'Upload new QR' }}</span>
+                                            <span>{{
+                                                getEditForm(profile).qr_image
+                                                    ? getEditForm(profile).qr_image.name
+                                                    : 'Upload new QR'
+                                            }}</span>
                                         </div>
-                                        <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden"
-                                            @change="onEditQrChange(profile.id, $event)" />
+                                        <input
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/gif,image/webp"
+                                            class="hidden"
+                                            @change="onEditQrChange(profile.id, $event)"
+                                        />
                                     </label>
                                     <div v-if="editQrPreviews[profile.id]" class="mt-2 flex items-center gap-2">
-                                        <img :src="editQrPreviews[profile.id]" class="h-14 w-14 rounded object-contain ring-1 ring-slate-200" />
+                                        <img
+                                            :src="editQrPreviews[profile.id]"
+                                            class="h-14 w-14 rounded object-contain ring-1 ring-slate-200"
+                                        />
                                         <span class="text-xs text-slate-500">New QR preview</span>
                                     </div>
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700">Payment Instructions <span class="text-slate-400 font-normal text-xs">(shown to students)</span></label>
-                                <textarea v-model="getEditForm(profile).instructions" rows="4" maxlength="2000"
-                                    class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"></textarea>
-                                <p class="mt-1 text-xs text-slate-400">{{ (getEditForm(profile).instructions || '').length }} / 2000</p>
+                                <label class="block text-sm font-medium text-slate-700"
+                                    >Payment Instructions
+                                    <span class="text-slate-400 font-normal text-xs">(shown to students)</span></label
+                                >
+                                <textarea
+                                    v-model="getEditForm(profile).instructions"
+                                    rows="4"
+                                    maxlength="2000"
+                                    class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
+                                ></textarea>
+                                <p class="mt-1 text-xs text-slate-400">
+                                    {{ (getEditForm(profile).instructions || '').length }} / 2000
+                                </p>
                             </div>
                             <div class="flex items-center justify-between">
                                 <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-                                    <input v-model="getEditForm(profile).is_active" type="checkbox"
-                                        class="rounded border-slate-300 text-brand-600 shadow-sm" />
+                                    <input
+                                        v-model="getEditForm(profile).is_active"
+                                        type="checkbox"
+                                        class="rounded border-slate-300 text-brand-600 shadow-sm"
+                                    />
                                     Show to students (active)
                                 </label>
                                 <div class="flex items-center gap-2">
-                                    <button type="button" class="text-sm text-slate-500 hover:text-slate-700"
-                                        @click="editingId = null">Cancel</button>
-                                    <button type="submit" :disabled="getEditForm(profile).processing"
-                                        class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-brand-500 disabled:opacity-60">
+                                    <button
+                                        type="button"
+                                        class="text-sm text-slate-500 hover:text-slate-700"
+                                        @click="editingId = null"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        :disabled="getEditForm(profile).processing"
+                                        class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-brand-500 disabled:opacity-60"
+                                    >
                                         <CheckCircleIcon class="h-4 w-4" />
                                         {{ getEditForm(profile).processing ? 'Saving…' : 'Save Changes' }}
                                     </button>
@@ -303,77 +390,141 @@ function removeQr(profile) {
 
             <!-- ── Add New Profile ─────────────────────────── -->
             <section class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-                <button type="button"
+                <button
+                    type="button"
                     class="flex w-full items-center justify-between px-5 py-4 text-left"
-                    @click="showCreate = !showCreate">
+                    @click="showCreate = !showCreate"
+                >
                     <span class="flex items-center gap-2 text-sm font-semibold text-slate-700">
                         <PlusIcon class="h-4 w-4 text-brand-600" />
                         Add New Payment Profile
                     </span>
-                    <span :class="showCreate ? 'rotate-180' : ''" class="transition-transform text-slate-400 text-xs">▼</span>
+                    <span :class="showCreate ? 'rotate-180' : ''" class="transition-transform text-slate-400 text-xs"
+                        >▼</span
+                    >
                 </button>
 
                 <div v-if="showCreate" class="border-t border-slate-100 px-5 py-5">
                     <form class="space-y-5" @submit.prevent="submitCreate">
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
-                                <label class="block text-sm font-medium text-slate-700">Bank Name <span class="text-rose-500">*</span></label>
-                                <input v-model="createForm.bank_name" type="text" required maxlength="120"
+                                <label class="block text-sm font-medium text-slate-700"
+                                    >Bank Name <span class="text-rose-500">*</span></label
+                                >
+                                <input
+                                    v-model="createForm.bank_name"
+                                    type="text"
+                                    required
+                                    maxlength="120"
                                     placeholder="e.g. BDO Unibank"
                                     class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
-                                    :class="{ 'border-rose-400': createForm.errors.bank_name }" />
-                                <p v-if="createForm.errors.bank_name" class="mt-1 text-xs text-rose-600">{{ createForm.errors.bank_name }}</p>
+                                    :class="{ 'border-rose-400': createForm.errors.bank_name }"
+                                />
+                                <p v-if="createForm.errors.bank_name" class="mt-1 text-xs text-rose-600">
+                                    {{ createForm.errors.bank_name }}
+                                </p>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700">Account Name <span class="text-rose-500">*</span></label>
-                                <input v-model="createForm.account_name" type="text" required maxlength="180"
+                                <label class="block text-sm font-medium text-slate-700"
+                                    >Account Name <span class="text-rose-500">*</span></label
+                                >
+                                <input
+                                    v-model="createForm.account_name"
+                                    type="text"
+                                    required
+                                    maxlength="180"
                                     placeholder="e.g. St. Vincent College"
                                     class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
-                                    :class="{ 'border-rose-400': createForm.errors.account_name }" />
+                                    :class="{ 'border-rose-400': createForm.errors.account_name }"
+                                />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700">Account Number <span class="text-rose-500">*</span></label>
-                                <input v-model="createForm.account_number" type="text" required maxlength="60"
+                                <label class="block text-sm font-medium text-slate-700"
+                                    >Account Number <span class="text-rose-500">*</span></label
+                                >
+                                <input
+                                    v-model="createForm.account_number"
+                                    type="text"
+                                    required
+                                    maxlength="60"
                                     placeholder="001-234-567-890"
                                     class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm font-mono tracking-wide sm:text-sm"
-                                    :class="{ 'border-rose-400': createForm.errors.account_number }" />
+                                    :class="{ 'border-rose-400': createForm.errors.account_number }"
+                                />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700">
-                                    QR Code <span class="text-slate-400 font-normal text-xs">(optional – JPG/PNG/WebP, max 4 MB)</span>
+                                    QR Code
+                                    <span class="text-slate-400 font-normal text-xs"
+                                        >(optional – JPG/PNG/WebP, max 4 MB)</span
+                                    >
                                 </label>
-                                <label class="mt-1 flex cursor-pointer items-center justify-center w-full h-20 border-2 border-dashed border-brand-300 rounded-xl bg-brand-50 hover:bg-brand-100 transition-colors">
+                                <label
+                                    class="mt-1 flex cursor-pointer items-center justify-center w-full h-20 border-2 border-dashed border-brand-300 rounded-xl bg-brand-50 hover:bg-brand-100 transition-colors"
+                                >
                                     <div class="flex items-center gap-2 text-brand-700 text-sm">
                                         <QrCodeIcon class="h-5 w-5 text-brand-500" />
-                                        <span>{{ createForm.qr_image ? createForm.qr_image.name : 'Upload QR image' }}</span>
+                                        <span>{{
+                                            createForm.qr_image ? createForm.qr_image.name : 'Upload QR image'
+                                        }}</span>
                                     </div>
-                                    <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden"
-                                        @change="onCreateQrChange" />
+                                    <input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/gif,image/webp"
+                                        class="hidden"
+                                        @change="onCreateQrChange"
+                                    />
                                 </label>
                                 <div v-if="createQrPreview" class="mt-2 flex items-center gap-2">
-                                    <img :src="createQrPreview" class="h-14 w-14 rounded object-contain ring-1 ring-slate-200" />
+                                    <img
+                                        :src="createQrPreview"
+                                        class="h-14 w-14 rounded object-contain ring-1 ring-slate-200"
+                                    />
                                     <span class="text-xs text-slate-500">QR preview</span>
                                 </div>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700">Payment Instructions <span class="text-slate-400 font-normal text-xs">(shown to students)</span></label>
-                            <textarea v-model="createForm.instructions" rows="4" maxlength="2000"
+                            <label class="block text-sm font-medium text-slate-700"
+                                >Payment Instructions
+                                <span class="text-slate-400 font-normal text-xs">(shown to students)</span></label
+                            >
+                            <textarea
+                                v-model="createForm.instructions"
+                                rows="4"
+                                maxlength="2000"
                                 placeholder="Step-by-step instructions on how students should pay and upload their receipt…"
-                                class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"></textarea>
-                            <p class="mt-1 text-xs text-slate-400">{{ (createForm.instructions || '').length }} / 2000</p>
+                                class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
+                            ></textarea>
+                            <p class="mt-1 text-xs text-slate-400">
+                                {{ (createForm.instructions || '').length }} / 2000
+                            </p>
                         </div>
                         <div class="flex items-center justify-between">
                             <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-                                <input v-model="createForm.is_active" type="checkbox"
-                                    class="rounded border-slate-300 text-brand-600 shadow-sm" />
+                                <input
+                                    v-model="createForm.is_active"
+                                    type="checkbox"
+                                    class="rounded border-slate-300 text-brand-600 shadow-sm"
+                                />
                                 Active (visible to students immediately)
                             </label>
                             <div class="flex items-center gap-2">
-                                <button type="button" class="text-sm text-slate-500 hover:text-slate-700"
-                                    @click="showCreate = false; createForm.reset()">Cancel</button>
-                                <button type="submit" :disabled="createForm.processing"
-                                    class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-brand-500 disabled:opacity-60">
+                                <button
+                                    type="button"
+                                    class="text-sm text-slate-500 hover:text-slate-700"
+                                    @click="
+                                        showCreate = false;
+                                        createForm.reset();
+                                    "
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    :disabled="createForm.processing"
+                                    class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-brand-500 disabled:opacity-60"
+                                >
                                     <PlusIcon class="h-4 w-4" />
                                     {{ createForm.processing ? 'Creating…' : 'Create Profile' }}
                                 </button>
@@ -382,7 +533,6 @@ function removeQr(profile) {
                     </form>
                 </div>
             </section>
-
         </div>
     </StaffLayout>
 </template>

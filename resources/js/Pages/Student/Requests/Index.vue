@@ -91,7 +91,10 @@ const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '
                             <td class="px-4 py-3 text-slate-700">{{ row.payments?.[0]?.status || 'n/a' }}</td>
                             <td class="px-4 py-3 text-slate-700">{{ row.created_at }}</td>
                             <td class="px-4 py-3">
-                                <Link :href="route('student.requests.show', row.id)" class="text-indigo-600 hover:text-indigo-500">
+                                <Link
+                                    :href="route('student.requests.show', row.id)"
+                                    class="text-indigo-600 hover:text-indigo-500"
+                                >
                                     View
                                 </Link>
                             </td>
@@ -109,7 +112,11 @@ const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '
                     :key="link.label"
                     :href="link.url || '#'"
                     class="rounded border px-3 py-1 text-sm"
-                    :class="link.active ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-300 text-slate-600'"
+                    :class="
+                        link.active
+                            ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                            : 'border-slate-300 text-slate-600'
+                    "
                 >
                     {{ decodeLabel(link.label) }}
                 </Link>

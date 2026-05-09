@@ -1,15 +1,15 @@
 <?php
 
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\PaymentProfileController;
-use App\Http\Controllers\Admin\RequestController;
-use App\Http\Controllers\Admin\PaymentController;
-use App\Http\Controllers\Admin\ReleaseController;
-use App\Http\Controllers\Admin\DocumentTypeController;
 use App\Http\Controllers\Admin\AnnouncementController;
-use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\ClearanceMonitorController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DocumentTypeController;
+use App\Http\Controllers\Admin\FaqController;
+use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Admin\PaymentProfileController;
+use App\Http\Controllers\Admin\ReleaseController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\RequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;

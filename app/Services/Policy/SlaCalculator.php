@@ -23,11 +23,14 @@ class SlaCalculator
             ->all();
 
         $added = 0;
+
         while ($added < $days) {
             $date = $date->addDay();
+
             if ($date->isWeekend()) {
                 continue;
             }
+
             if (in_array($date->toDateString(), $holidays, true)) {
                 continue;
             }

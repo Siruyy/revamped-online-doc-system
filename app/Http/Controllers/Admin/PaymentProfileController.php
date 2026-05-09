@@ -33,20 +33,20 @@ class PaymentProfileController extends Controller
         $this->authorize('manage', PaymentProfile::class);
 
         $validated = $request->validate([
-            'bank_name'      => ['required', 'string', 'max:120'],
-            'account_name'   => ['required', 'string', 'max:180'],
+            'bank_name' => ['required', 'string', 'max:120'],
+            'account_name' => ['required', 'string', 'max:180'],
             'account_number' => ['required', 'string', 'max:60'],
-            'instructions'   => ['nullable', 'string', 'max:2000'],
-            'is_active'      => ['boolean'],
-            'qr_image'       => ['nullable', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:4096'],
+            'instructions' => ['nullable', 'string', 'max:2000'],
+            'is_active' => ['boolean'],
+            'qr_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:4096'],
         ]);
 
         $profile = new PaymentProfile([
-            'bank_name'      => $validated['bank_name'],
-            'account_name'   => $validated['account_name'],
+            'bank_name' => $validated['bank_name'],
+            'account_name' => $validated['account_name'],
             'account_number' => $validated['account_number'],
-            'instructions'   => $validated['instructions'] ?? null,
-            'is_active'      => $validated['is_active'] ?? true,
+            'instructions' => $validated['instructions'] ?? null,
+            'is_active' => $validated['is_active'] ?? true,
         ]);
 
         if ($request->hasFile('qr_image')) {
@@ -63,20 +63,20 @@ class PaymentProfileController extends Controller
         $this->authorize('manage', PaymentProfile::class);
 
         $validated = $request->validate([
-            'bank_name'      => ['required', 'string', 'max:120'],
-            'account_name'   => ['required', 'string', 'max:180'],
+            'bank_name' => ['required', 'string', 'max:120'],
+            'account_name' => ['required', 'string', 'max:180'],
             'account_number' => ['required', 'string', 'max:60'],
-            'instructions'   => ['nullable', 'string', 'max:2000'],
-            'is_active'      => ['boolean'],
-            'qr_image'       => ['nullable', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:4096'],
+            'instructions' => ['nullable', 'string', 'max:2000'],
+            'is_active' => ['boolean'],
+            'qr_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:4096'],
         ]);
 
         $paymentProfile->fill([
-            'bank_name'      => $validated['bank_name'],
-            'account_name'   => $validated['account_name'],
+            'bank_name' => $validated['bank_name'],
+            'account_name' => $validated['account_name'],
             'account_number' => $validated['account_number'],
-            'instructions'   => $validated['instructions'] ?? null,
-            'is_active'      => $validated['is_active'] ?? $paymentProfile->is_active,
+            'instructions' => $validated['instructions'] ?? null,
+            'is_active' => $validated['is_active'] ?? $paymentProfile->is_active,
         ]);
 
         if ($request->hasFile('qr_image')) {
@@ -123,20 +123,20 @@ class PaymentProfileController extends Controller
     private function serializeProfile(PaymentProfile $p): array
     {
         return [
-            'id'             => $p->id,
-            'bank_name'      => $p->bank_name,
-            'account_name'   => $p->account_name,
+            'id' => $p->id,
+            'bank_name' => $p->bank_name,
+            'account_name' => $p->account_name,
             'account_number' => $p->account_number,
-            'instructions'   => $p->instructions,
-            'is_active'      => $p->is_active,
-            'qr_url'         => $p->qr_path ? route('files.payment-qr', $p->id) : null,
+            'instructions' => $p->instructions,
+            'is_active' => $p->is_active,
+            'qr_url' => $p->qr_path ? route('files.payment-qr', $p->id) : null,
         ];
     }
 
     private function storeQrFile(Request $request): string
     {
         $file = $request->file('qr_image');
-        $ext  = strtolower($file->getClientOriginalExtension());
+        $ext = strtolower($file->getClientOriginalExtension());
         $path = 'payment-qr/'.Str::uuid().'.'.$ext;
         Storage::disk('local')->put($path, $file->getContent());
 

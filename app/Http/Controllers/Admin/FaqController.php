@@ -68,7 +68,7 @@ class FaqController extends Controller
         return back()->with('status', 'FAQ entry updated successfully.');
     }
 
-    public function destroy(Faq $faq): RedirectResponse
+    public function destroy(Request $request, Faq $faq): RedirectResponse
     {
         $faq->delete();
 

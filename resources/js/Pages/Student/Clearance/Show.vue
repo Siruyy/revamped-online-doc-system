@@ -20,10 +20,38 @@ const statuses = computed(() => {
     if (!props.clearance) return [];
 
     return [
-        { key: 'teacher', label: 'Teacher', status: props.clearance.teacher_status, signer: props.clearance.teacher_signer?.fullname, signedAt: props.clearance.teacher_signed_at, remarks: props.clearance.teacher_remarks },
-        { key: 'dean', label: 'Dean', status: props.clearance.dean_status, signer: props.clearance.dean_signer?.fullname, signedAt: props.clearance.dean_signed_at, remarks: props.clearance.dean_remarks },
-        { key: 'accounting', label: 'Accounting', status: props.clearance.accounting_status, signer: props.clearance.accounting_signer?.fullname, signedAt: props.clearance.accounting_signed_at, remarks: props.clearance.accounting_remarks },
-        { key: 'sao', label: 'SAO', status: props.clearance.sao_status, signer: props.clearance.sao_signer?.fullname, signedAt: props.clearance.sao_signed_at, remarks: props.clearance.sao_remarks },
+        {
+            key: 'teacher',
+            label: 'Teacher',
+            status: props.clearance.teacher_status,
+            signer: props.clearance.teacher_signer?.fullname,
+            signedAt: props.clearance.teacher_signed_at,
+            remarks: props.clearance.teacher_remarks,
+        },
+        {
+            key: 'dean',
+            label: 'Dean',
+            status: props.clearance.dean_status,
+            signer: props.clearance.dean_signer?.fullname,
+            signedAt: props.clearance.dean_signed_at,
+            remarks: props.clearance.dean_remarks,
+        },
+        {
+            key: 'accounting',
+            label: 'Accounting',
+            status: props.clearance.accounting_status,
+            signer: props.clearance.accounting_signer?.fullname,
+            signedAt: props.clearance.accounting_signed_at,
+            remarks: props.clearance.accounting_remarks,
+        },
+        {
+            key: 'sao',
+            label: 'SAO',
+            status: props.clearance.sao_status,
+            signer: props.clearance.sao_signer?.fullname,
+            signedAt: props.clearance.sao_signed_at,
+            remarks: props.clearance.sao_remarks,
+        },
     ];
 });
 
@@ -41,13 +69,20 @@ const submit = () => {
         </template>
 
         <div class="mx-auto max-w-6xl space-y-6 px-4 sm:px-6 lg:px-8">
-            <div v-if="!clearance" class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+            <div
+                v-if="!clearance"
+                class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm"
+            >
                 No clearance record is available yet.
             </div>
 
             <template v-else>
                 <section class="grid gap-4 md:grid-cols-2">
-                    <article v-for="item in statuses" :key="item.key" class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                    <article
+                        v-for="item in statuses"
+                        :key="item.key"
+                        class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                    >
                         <p class="text-sm font-semibold text-slate-700">{{ item.label }}</p>
                         <p class="mt-2 text-sm">
                             Status:

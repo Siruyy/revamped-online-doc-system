@@ -78,7 +78,7 @@ class DocumentTypeController extends Controller
 
             ActivityLogger::log(
                 'document_type_disabled',
-                "Admin ".request()->user()->email." disabled document type {$documentType->name}.",
+                'Admin '.request()->user()->email." disabled document type {$documentType->name}.",
                 request()->user()
             );
 
@@ -89,7 +89,7 @@ class DocumentTypeController extends Controller
 
         ActivityLogger::log(
             'document_type_deleted',
-            "Admin ".request()->user()->email." deleted document type {$documentType->name}.",
+            'Admin '.request()->user()->email." deleted document type {$documentType->name}.",
             request()->user()
         );
 

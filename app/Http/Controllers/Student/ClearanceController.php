@@ -40,6 +40,7 @@ class ClearanceController extends Controller
             ->firstOrFail();
 
         $this->authorize('view', $clearance);
+
         try {
             $clearanceService->submitFile($clearance, $request->validated('clearance_file'));
         } catch (\Throwable $exception) {

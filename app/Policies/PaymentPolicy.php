@@ -43,6 +43,7 @@ class PaymentPolicy
 
         // Policy-initial: receipt upload only unlocks after the request is admin-approved.
         $docRequest = $payment->documentRequest;
+
         if ($docRequest && ! in_array($docRequest->status, ['approved', 'completed'], true)) {
             return false;
         }

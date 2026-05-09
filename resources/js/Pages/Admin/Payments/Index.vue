@@ -54,27 +54,48 @@ const deny = (id) => {
                     <option value="approved">Approved</option>
                     <option value="denied">Denied</option>
                 </select>
-                <button type="button" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" @click="applyFilters">
+                <button
+                    type="button"
+                    class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                    @click="applyFilters"
+                >
                     Apply
                 </button>
             </div>
 
             <div class="space-y-4">
-                <article v-for="item in payments.data" :key="item.id" class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <article
+                    v-for="item in payments.data"
+                    :key="item.id"
+                    class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+                >
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                            <p class="font-semibold text-slate-900">Payment #{{ item.id }} — {{ item.document_request?.reference_no }}</p>
-                            <p class="text-sm text-slate-600">
-                                {{ item.user?.fullname }} | {{ item.document_request?.document_type?.name }} | PHP {{ Number(item.total_amount).toFixed(2) }}
+                            <p class="font-semibold text-slate-900">
+                                Payment #{{ item.id }} — {{ item.document_request?.reference_no }}
                             </p>
-                            <p class="text-sm text-slate-600">Status: <span class="font-semibold capitalize">{{ item.status }}</span></p>
+                            <p class="text-sm text-slate-600">
+                                {{ item.user?.fullname }} | {{ item.document_request?.document_type?.name }} | PHP
+                                {{ Number(item.total_amount).toFixed(2) }}
+                            </p>
+                            <p class="text-sm text-slate-600">
+                                Status: <span class="font-semibold capitalize">{{ item.status }}</span>
+                            </p>
                             <p v-if="item.receipt_path" class="mt-1 text-sm">
-                                <a :href="route('files.payment-receipt', item.id)" class="text-indigo-600 hover:text-indigo-500">Preview Receipt</a>
+                                <a
+                                    :href="route('files.payment-receipt', item.id)"
+                                    class="text-indigo-600 hover:text-indigo-500"
+                                    >Preview Receipt</a
+                                >
                             </p>
                         </div>
 
                         <div v-if="item.status === 'pending_approval'" class="flex flex-wrap items-center gap-2">
-                            <button type="button" class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500" @click="approve(item.id)">
+                            <button
+                                type="button"
+                                class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                                @click="approve(item.id)"
+                            >
                                 Approve
                             </button>
                             <form class="flex items-center gap-2" @submit.prevent="deny(item.id)">
@@ -84,13 +105,21 @@ const deny = (id) => {
                                     placeholder="Denial reason"
                                     class="rounded-md border-slate-300 text-sm shadow-sm"
                                 />
-                                <button type="submit" class="rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-500">Deny</button>
+                                <button
+                                    type="submit"
+                                    class="rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-500"
+                                >
+                                    Deny
+                                </button>
                             </form>
                         </div>
                     </div>
                 </article>
 
-                <div v-if="payments.data.length === 0" class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+                <div
+                    v-if="payments.data.length === 0"
+                    class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm"
+                >
                     No payments found.
                 </div>
             </div>

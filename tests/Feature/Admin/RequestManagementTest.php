@@ -9,6 +9,7 @@ use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
@@ -94,7 +95,7 @@ class RequestManagementTest extends TestCase
 
         // Policy-initial: the policy gate returns 403 when the request is still pending.
         $this->actingAs($student)->post(route('student.payments.upload', $payment), [
-            'receipt' => \Illuminate\Http\UploadedFile::fake()->image('receipt.jpg'),
+            'receipt' => UploadedFile::fake()->image('receipt.jpg'),
             'payment_method' => 'gcash',
         ])->assertForbidden();
 

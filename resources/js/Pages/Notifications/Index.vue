@@ -53,7 +53,11 @@ const markAllAsRead = () => {
                 <button
                     type="button"
                     class="rounded border px-3 py-1 text-sm"
-                    :class="!filters.read ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-300 text-slate-600'"
+                    :class="
+                        !filters.read
+                            ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                            : 'border-slate-300 text-slate-600'
+                    "
                     @click="filterByReadState('')"
                 >
                     All
@@ -61,7 +65,11 @@ const markAllAsRead = () => {
                 <button
                     type="button"
                     class="rounded border px-3 py-1 text-sm"
-                    :class="filters.read === 'unread' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-300 text-slate-600'"
+                    :class="
+                        filters.read === 'unread'
+                            ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                            : 'border-slate-300 text-slate-600'
+                    "
                     @click="filterByReadState('unread')"
                 >
                     Unread
@@ -69,7 +77,11 @@ const markAllAsRead = () => {
                 <button
                     type="button"
                     class="rounded border px-3 py-1 text-sm"
-                    :class="filters.read === 'read' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-300 text-slate-600'"
+                    :class="
+                        filters.read === 'read'
+                            ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                            : 'border-slate-300 text-slate-600'
+                    "
                     @click="filterByReadState('read')"
                 >
                     Read
@@ -90,7 +102,9 @@ const markAllAsRead = () => {
                         </div>
                         <span
                             class="rounded-full px-2 py-1 text-xs font-semibold"
-                            :class="notification.read_at ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'"
+                            :class="
+                                notification.read_at ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                            "
                         >
                             {{ notification.read_at ? 'Read' : 'Unread' }}
                         </span>
@@ -105,7 +119,10 @@ const markAllAsRead = () => {
                     </button>
                 </article>
 
-                <div v-if="notifications.data.length === 0" class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+                <div
+                    v-if="notifications.data.length === 0"
+                    class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm"
+                >
                     No notifications found.
                 </div>
             </div>
@@ -116,7 +133,11 @@ const markAllAsRead = () => {
                     :key="link.label"
                     :href="link.url || '#'"
                     class="rounded border px-3 py-1 text-sm"
-                    :class="link.active ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-300 text-slate-600'"
+                    :class="
+                        link.active
+                            ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                            : 'border-slate-300 text-slate-600'
+                    "
                 >
                     {{ decodeLabel(link.label) }}
                 </Link>

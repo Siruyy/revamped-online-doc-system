@@ -8,13 +8,13 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Payment>
+ * @extends Factory<\App\Payment>
  */
 class PaymentFactory extends Factory
 {
     /**
-     * @var class-string<\App\Models\Payment>
-     */ 
+     * @var class-string<Payment>
+     */
     protected $model = Payment::class;
 
     /**

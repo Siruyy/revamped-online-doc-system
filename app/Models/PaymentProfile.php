@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 class PaymentProfile extends Model
@@ -25,9 +26,9 @@ class PaymentProfile extends Model
     /**
      * Return all active payment profiles for display to students.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return Collection<int, static>
      */
-    public static function activeProfiles(): \Illuminate\Database\Eloquent\Collection
+    public static function activeProfiles(): Collection
     {
         return self::query()->where('is_active', true)->latest()->get();
     }

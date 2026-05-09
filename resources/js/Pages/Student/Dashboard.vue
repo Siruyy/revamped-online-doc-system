@@ -12,7 +12,6 @@ import {
     ExclamationTriangleIcon,
     InformationCircleIcon,
     MegaphoneIcon,
-    PlusCircleIcon,
     QuestionMarkCircleIcon,
     SparklesIcon,
 } from '@heroicons/vue/24/outline';
@@ -43,13 +42,15 @@ const toneIcon = {
 };
 
 function statusBadge(status) {
-    return ({
-        pending: 'bg-amber-100 text-amber-800',
-        approved: 'bg-sky-100 text-sky-800',
-        completed: 'bg-emerald-100 text-emerald-800',
-        denied: 'bg-rose-100 text-rose-800',
-        cancelled: 'bg-slate-100 text-slate-600',
-    })[status] ?? 'bg-slate-100 text-slate-600';
+    return (
+        {
+            pending: 'bg-amber-100 text-amber-800',
+            approved: 'bg-sky-100 text-sky-800',
+            completed: 'bg-emerald-100 text-emerald-800',
+            denied: 'bg-rose-100 text-rose-800',
+            cancelled: 'bg-slate-100 text-slate-600',
+        }[status] ?? 'bg-slate-100 text-slate-600'
+    );
 }
 
 function formatDate(value) {
@@ -83,10 +84,17 @@ function formatDate(value) {
                 <div :class="['bg-gradient-to-br p-8', toneClasses[nextAction.tone] ?? toneClasses.primary]">
                     <div class="flex flex-col justify-between gap-6 md:flex-row md:items-center">
                         <div class="flex items-start gap-4 max-w-2xl">
-                            <component :is="toneIcon[nextAction.tone] ?? SparklesIcon" class="h-10 w-10 flex-none opacity-90" />
+                            <component
+                                :is="toneIcon[nextAction.tone] ?? SparklesIcon"
+                                class="h-10 w-10 flex-none opacity-90"
+                            />
                             <div>
-                                <p class="text-xs font-semibold uppercase tracking-widest opacity-80">Next best action</p>
-                                <h3 class="mt-1 text-xl font-display font-semibold sm:text-2xl">{{ nextAction.title }}</h3>
+                                <p class="text-xs font-semibold uppercase tracking-widest opacity-80">
+                                    Next best action
+                                </p>
+                                <h3 class="mt-1 text-xl font-display font-semibold sm:text-2xl">
+                                    {{ nextAction.title }}
+                                </h3>
                                 <p class="mt-2 text-sm opacity-90">{{ nextAction.description }}</p>
                             </div>
                         </div>
@@ -135,20 +143,31 @@ function formatDate(value) {
                         </div>
                         <p class="text-sm text-slate-500">Clearance</p>
                     </div>
-                    <p class="mt-3 text-xl font-display font-bold capitalize text-slate-900">{{ stats.clearance_status?.replaceAll('_', ' ') }}</p>
+                    <p class="mt-3 text-xl font-display font-bold capitalize text-slate-900">
+                        {{ stats.clearance_status?.replaceAll('_', ' ') }}
+                    </p>
                 </div>
             </section>
 
             <!-- Latest request card -->
             <section v-if="latestRequest" class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-                <div class="flex flex-col items-start justify-between gap-3 border-b border-slate-100 px-6 py-4 sm:flex-row sm:items-center">
+                <div
+                    class="flex flex-col items-start justify-between gap-3 border-b border-slate-100 px-6 py-4 sm:flex-row sm:items-center"
+                >
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Latest Request</p>
-                        <p class="mt-1 font-display font-semibold text-slate-900">{{ latestRequest.document_type?.name }}</p>
+                        <p class="mt-1 font-display font-semibold text-slate-900">
+                            {{ latestRequest.document_type?.name }}
+                        </p>
                         <p class="text-xs text-slate-500">Ref. {{ latestRequest.reference_no }}</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span :class="['inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold capitalize', statusBadge(latestRequest.status)]">
+                        <span
+                            :class="[
+                                'inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold capitalize',
+                                statusBadge(latestRequest.status),
+                            ]"
+                        >
                             {{ latestRequest.status }}
                         </span>
                         <Link
@@ -164,21 +183,31 @@ function formatDate(value) {
                         <CalendarDaysIcon class="h-5 w-5 flex-none text-brand-600" />
                         <div>
                             <p class="text-xs uppercase tracking-wider text-slate-500">Expected release</p>
-                            <p class="font-medium text-slate-900">{{ formatDate(latestRequest.expected_release_on) }}</p>
+                            <p class="font-medium text-slate-900">
+                                {{ formatDate(latestRequest.expected_release_on) }}
+                            </p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
                         <ClockIcon class="h-5 w-5 flex-none text-brand-600" />
                         <div>
                             <p class="text-xs uppercase tracking-wider text-slate-500">Processing stage</p>
-                            <p class="font-medium capitalize text-slate-900">{{ (latestRequest.processing_stage || 'not_started').replaceAll('_', ' ') }}</p>
+                            <p class="font-medium capitalize text-slate-900">
+                                {{ (latestRequest.processing_stage || 'not_started').replaceAll('_', ' ') }}
+                            </p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
                         <DocumentTextIcon class="h-5 w-5 flex-none text-brand-600" />
                         <div>
                             <p class="text-xs uppercase tracking-wider text-slate-500">Estimated total</p>
-                            <p class="font-medium text-slate-900">₱{{ Number(latestRequest.fee_snapshot || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
+                            <p class="font-medium text-slate-900">
+                                ₱{{
+                                    Number(latestRequest.fee_snapshot || 0).toLocaleString('en-PH', {
+                                        minimumFractionDigits: 2,
+                                    })
+                                }}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -191,7 +220,10 @@ function formatDate(value) {
                         <MegaphoneIcon class="h-5 w-5 text-brand-600" />
                         <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Announcements</h3>
                     </div>
-                    <div v-if="announcements.length === 0" class="mt-4 rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-500">
+                    <div
+                        v-if="announcements.length === 0"
+                        class="mt-4 rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-500"
+                    >
                         No announcements yet.
                     </div>
                     <div v-else class="mt-4 space-y-3">
@@ -202,7 +234,10 @@ function formatDate(value) {
                         >
                             <div class="flex items-center gap-2">
                                 <p class="font-semibold text-slate-900">{{ item.title }}</p>
-                                <span v-if="item.pinned" class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-800">
+                                <span
+                                    v-if="item.pinned"
+                                    class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-800"
+                                >
                                     Pinned
                                 </span>
                             </div>
@@ -216,7 +251,10 @@ function formatDate(value) {
                         <QuestionMarkCircleIcon class="h-5 w-5 text-brand-600" />
                         <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Top FAQs</h3>
                     </div>
-                    <div v-if="faqs.length === 0" class="mt-4 rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-500">
+                    <div
+                        v-if="faqs.length === 0"
+                        class="mt-4 rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-500"
+                    >
                         No FAQ entries yet.
                     </div>
                     <details
@@ -224,7 +262,9 @@ function formatDate(value) {
                         :key="faq.id"
                         class="mt-3 rounded-xl border border-slate-100 p-4 open:border-brand-200 open:bg-brand-50/30"
                     >
-                        <summary class="cursor-pointer font-medium text-slate-800 outline-none">{{ faq.question }}</summary>
+                        <summary class="cursor-pointer font-medium text-slate-800 outline-none">
+                            {{ faq.question }}
+                        </summary>
                         <p class="mt-2 text-sm text-slate-600">{{ faq.answer }}</p>
                     </details>
                 </div>
@@ -236,14 +276,19 @@ function formatDate(value) {
                     <BellAlertIcon class="h-5 w-5 text-brand-600" />
                     <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Recent Activity</h3>
                 </div>
-                <div v-if="notifications.length === 0" class="mt-4 rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-500">
+                <div
+                    v-if="notifications.length === 0"
+                    class="mt-4 rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-500"
+                >
                     No recent notifications yet.
                 </div>
                 <ul v-else class="mt-3 divide-y divide-slate-100">
                     <li v-for="item in notifications" :key="item.id" class="py-3 first:pt-0 last:pb-0">
                         <div class="flex items-start justify-between gap-3">
                             <p class="text-sm text-slate-800">{{ item.message }}</p>
-                            <span class="whitespace-nowrap text-xs text-slate-400">{{ formatDate(item.created_at) }}</span>
+                            <span class="whitespace-nowrap text-xs text-slate-400">{{
+                                formatDate(item.created_at)
+                            }}</span>
                         </div>
                     </li>
                 </ul>

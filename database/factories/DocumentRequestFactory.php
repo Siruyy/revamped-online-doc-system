@@ -8,12 +8,12 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\DocumentRequest>
+ * @extends Factory<\App\DocumentRequest>
  */
 class DocumentRequestFactory extends Factory
 {
     /**
-     * @var class-string<\App\Models\DocumentRequest>
+     * @var class-string<DocumentRequest>
      */
     protected $model = DocumentRequest::class;
 

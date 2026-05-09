@@ -17,12 +17,9 @@ const reloadPending = () => {
     router.reload({ only: ['users'], preserveScroll: true });
 };
 
-useEchoPrivateChannel(
-    () => (isSuperAdmin.value ? 'role.superadmin' : null),
-    {
-        RegistrationSubmitted: reloadPending,
-    },
-);
+useEchoPrivateChannel(() => (isSuperAdmin.value ? 'role.superadmin' : null), {
+    RegistrationSubmitted: reloadPending,
+});
 
 useRealtimeOrPoll(reloadPending, { intervalMs: 120000 });
 

@@ -7,6 +7,7 @@ use App\Events\PaymentApproved;
 use App\Events\PaymentDenied;
 use App\Events\PaymentSubmitted;
 use App\Models\Clearance;
+use App\Models\DocumentRequest;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -27,6 +28,7 @@ class PaymentService
 
         // Policy-initial: student may only upload receipt after admin approves the request.
         $documentRequest = $payment->documentRequest;
+
         if ($documentRequest && ! in_array($documentRequest->status, ['approved', 'completed'], true)) {
             throw new \RuntimeException('Payment receipt can only be uploaded after your request has been approved by the admin.');
         }
@@ -128,7 +130,7 @@ class PaymentService
      * requests, checks the parent's documentType directly.
      */
     protected function initiateClearanceIfNeeded(
-        \App\Models\DocumentRequest $docRequest,
+        DocumentRequest $docRequest,
         Payment $payment
     ): void {
         // Check if any item requires clearance.

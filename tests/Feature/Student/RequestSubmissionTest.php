@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Student;
 
+use App\Events\RequestSubmitted;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\User;
-use App\Events\RequestSubmitted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;

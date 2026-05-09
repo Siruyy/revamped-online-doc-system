@@ -7,12 +7,12 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\ActivityLog>
+ * @extends Factory<\App\ActivityLog>
  */
 class ActivityLogFactory extends Factory
 {
     /**
-     * @var class-string<\App\Models\ActivityLog>
+     * @var class-string<ActivityLog>
      */
     protected $model = ActivityLog::class;
 

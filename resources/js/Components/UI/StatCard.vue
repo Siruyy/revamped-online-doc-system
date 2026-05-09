@@ -27,7 +27,9 @@ const tone = computed(() => tones[props.tone] ?? tones.brand);
         :is="href ? 'a' : 'div'"
         :href="href || undefined"
         class="block rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition"
-        :class="href ? 'hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand-500' : ''"
+        :class="
+            href ? 'hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand-500' : ''
+        "
     >
         <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">

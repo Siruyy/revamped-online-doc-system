@@ -8,12 +8,12 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Clearance>
+ * @extends Factory<\App\Clearance>
  */
 class ClearanceFactory extends Factory
 {
     /**
-     * @var class-string<\App\Models\Clearance>
+     * @var class-string<Clearance>
      */
     protected $model = Clearance::class;
 

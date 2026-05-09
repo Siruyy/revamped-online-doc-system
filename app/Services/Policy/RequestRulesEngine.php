@@ -79,12 +79,14 @@ class RequestRulesEngine
             $checklist = $context['special_class_eligibility'] ?? [];
             $required = ['graduating_this_term', 'subject_deficiency_certified', 'subject_conflict'];
             $anyChecked = false;
+
             foreach ($required as $key) {
                 if (! empty($checklist[$key])) {
                     $anyChecked = true;
                     break;
                 }
             }
+
             if (! $anyChecked) {
                 $errors[] = 'You must confirm at least one Special Class eligibility criterion (§12.1).';
             }
@@ -129,6 +131,7 @@ class RequestRulesEngine
 
         foreach ($offices as $office) {
             $role = config('policy.offices.'.$office.'.signer_role');
+
             if ($role && ! in_array($role, $signers, true)) {
                 $signers[] = $role;
             }

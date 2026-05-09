@@ -77,7 +77,7 @@ class AnnouncementController extends Controller
         return back()->with('status', 'Announcement updated successfully.');
     }
 
-    public function destroy(Announcement $announcement): RedirectResponse
+    public function destroy(Request $request, Announcement $announcement): RedirectResponse
     {
         $announcement->delete();
 

@@ -30,19 +30,19 @@ class PaymentController extends Controller
 
         $paymentProfiles = PaymentProfile::activeProfiles()
             ->map(fn ($p) => [
-                'id'             => $p->id,
-                'bank_name'      => $p->bank_name,
-                'account_name'   => $p->account_name,
+                'id' => $p->id,
+                'bank_name' => $p->bank_name,
+                'account_name' => $p->account_name,
                 'account_number' => $p->account_number,
-                'qr_url'         => $p->qr_path ? route('files.payment-qr', $p->id) : null,
-                'instructions'   => $p->instructions,
+                'qr_url' => $p->qr_path ? route('files.payment-qr', $p->id) : null,
+                'instructions' => $p->instructions,
             ]);
 
         return Inertia::render('Student/Payments/Index', [
-            'payments'        => $payments,
+            'payments' => $payments,
             'paymentProfiles' => $paymentProfiles,
             // Legacy single-profile key kept for any components still reading it
-            'paymentProfile'  => $paymentProfiles->first(),
+            'paymentProfile' => $paymentProfiles->first(),
         ]);
     }
 

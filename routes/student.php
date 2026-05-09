@@ -1,12 +1,12 @@
 <?php
 
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Student\ClearanceController;
 use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Student\FaqController;
 use App\Http\Controllers\Student\PaymentController;
 use App\Http\Controllers\Student\RequestController;
-use App\Http\Controllers\Student\ClearanceController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

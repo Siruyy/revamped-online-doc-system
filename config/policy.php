@@ -40,15 +40,15 @@ return [
     |
     */
     'offices' => [
-        'president'  => ['label' => 'Office of the School President', 'signer_role' => 'admin'],
-        'dean'       => ['label' => 'Office of the College Dean',      'signer_role' => 'dean'],
-        'alumni'     => ['label' => 'Alumni Office',                    'signer_role' => 'admin'],
-        'guidance'   => ['label' => 'Guidance Office',                  'signer_role' => 'sao'],
-        'sao'        => ['label' => 'Student Affairs Office',           'signer_role' => 'sao'],
-        'library'    => ['label' => 'Library',                          'signer_role' => 'admin'],
-        'registrar'  => ['label' => "Office of the Registrar",         'signer_role' => 'admin'],
+        'president' => ['label' => 'Office of the School President', 'signer_role' => 'admin'],
+        'dean' => ['label' => 'Office of the College Dean',      'signer_role' => 'dean'],
+        'alumni' => ['label' => 'Alumni Office',                    'signer_role' => 'admin'],
+        'guidance' => ['label' => 'Guidance Office',                  'signer_role' => 'sao'],
+        'sao' => ['label' => 'Student Affairs Office',           'signer_role' => 'sao'],
+        'library' => ['label' => 'Library',                          'signer_role' => 'admin'],
+        'registrar' => ['label' => 'Office of the Registrar',         'signer_role' => 'admin'],
         'accounting' => ['label' => 'Accounting / Cashier',             'signer_role' => 'accounting'],
-        'teacher'    => ['label' => 'Subject Teacher / Adviser',        'signer_role' => 'teacher'],
+        'teacher' => ['label' => 'Subject Teacher / Adviser',        'signer_role' => 'teacher'],
     ],
 
     /*
@@ -62,8 +62,8 @@ return [
         'registrar_window_5' => 'Window 5 – Records Intake (College)',
         'registrar_window_6' => 'Window 6 – Form 137-A Desk',
         'registrar_window_9' => 'Window 9 – Official Releasing',
-        'annex_principal'    => 'SVCI Annex – Office of the Principal',
-        'email'              => 'Email (registrarsoffice@gmail.com)',
+        'annex_principal' => 'SVCI Annex – Office of the Principal',
+        'email' => 'Email (registrarsoffice@gmail.com)',
     ],
 
     /*
@@ -495,82 +495,82 @@ return [
     'requirements' => [
         'affidavit_of_loss' => [
             'label' => 'Notarized Affidavit of Loss',
-            'hint'  => 'From a lawyer. PDF or clear image.',
+            'hint' => 'From a lawyer. PDF or clear image.',
             'accept' => 'application/pdf,image/*',
         ],
         'official_request_letter' => [
             'label' => 'Official Request Letter',
-            'hint'  => 'Bearing the original signature of the School Principal or Registrar.',
+            'hint' => 'Bearing the original signature of the School Principal or Registrar.',
             'accept' => 'application/pdf,image/*',
         ],
         'authenticated_tor' => [
             'label' => 'Authenticated Transcript of Records',
-            'hint'  => 'Previously authenticated copy (Window 4).',
+            'hint' => 'Previously authenticated copy (Window 4).',
             'accept' => 'application/pdf,image/*',
         ],
         'authenticated_diploma' => [
             'label' => 'Authenticated Diploma',
-            'hint'  => 'Required for graduates applying for CAV.',
+            'hint' => 'Required for graduates applying for CAV.',
             'accept' => 'application/pdf,image/*',
         ],
         'authenticated_special_order' => [
             'label' => 'Authenticated Special Order',
-            'hint'  => 'Required for graduates applying for CAV.',
+            'hint' => 'Required for graduates applying for CAV.',
             'accept' => 'application/pdf,image/*',
         ],
         'authenticated_cert_units_earned' => [
             'label' => 'Authenticated Certificate of Units Earned',
-            'hint'  => 'Required for non-graduates applying for CAV.',
+            'hint' => 'Required for non-graduates applying for CAV.',
             'accept' => 'application/pdf,image/*',
         ],
         'photocopy_records' => [
             'label' => 'Photocopy of Records to Authenticate',
-            'hint'  => 'Clear photocopy for the dry-seal stamp.',
+            'hint' => 'Clear photocopy for the dry-seal stamp.',
             'accept' => 'application/pdf,image/*',
         ],
         'request_letter' => [
             'label' => 'Verification Request Letter',
-            'hint'  => 'Must include student name, course, year, purpose, and authorizing party (per §11.1).',
+            'hint' => 'Must include student name, course, year, purpose, and authorizing party (per §11.1).',
             'accept' => 'application/pdf,image/*',
         ],
         'authorization_letter' => [
             'label' => 'Authorization Letter',
-            'hint'  => 'From the student/alumnus permitting verification or release.',
+            'hint' => 'From the student/alumnus permitting verification or release.',
             'accept' => 'application/pdf,image/*',
         ],
         'spa' => [
             'label' => 'Special Power of Attorney',
-            'hint'  => 'Required if claimant is not the owner and owner resides in PH.',
+            'hint' => 'Required if claimant is not the owner and owner resides in PH.',
             'accept' => 'application/pdf,image/*',
         ],
         'valid_id_photocopy_owner' => [
-            'label' => "Valid ID Photocopy (Record Owner)",
-            'hint'  => 'Required for proxy release.',
+            'label' => 'Valid ID Photocopy (Record Owner)',
+            'hint' => 'Required for proxy release.',
             'accept' => 'application/pdf,image/*',
         ],
         'valid_id_photocopy_claimant' => [
             'label' => 'Valid ID Photocopy (Claimant)',
-            'hint'  => 'Required at the releasing window.',
+            'hint' => 'Required at the releasing window.',
             'accept' => 'application/pdf,image/*',
         ],
         'death_certificate' => [
             'label' => 'Death Certificate',
-            'hint'  => 'For deceased student record requisition.',
+            'hint' => 'For deceased student record requisition.',
             'accept' => 'application/pdf,image/*',
         ],
         'notarized_affidavit_deceased' => [
             'label' => 'Notarized Affidavit (Relationship + Purpose)',
-            'hint'  => 'Required for deceased record requisition.',
+            'hint' => 'Required for deceased record requisition.',
             'accept' => 'application/pdf,image/*',
         ],
         'certificate_of_no_objection' => [
             'label' => 'Certificate of No Objection (CNO)',
-            'hint'  => 'From the receiving institution per §16.7–16.8.',
+            'hint' => 'From the receiving institution per §16.7–16.8.',
             'accept' => 'application/pdf,image/*',
         ],
         'official_external_notice' => [
             'label' => 'Official Notice / Written Request',
-            'hint'  => 'From the government agency, employer, or authority (§16.6.2).',
+            'hint' => 'From the government agency, employer, or authority (§16.6.2).',
             'accept' => 'application/pdf,image/*',
         ],
     ],
@@ -582,16 +582,16 @@ return [
     */
     'sla' => [
         'working_days_only' => true,
-        'exclude_weekends'  => true,
+        'exclude_weekends' => true,
         'holidays' => [
             // Add Philippine holidays here; left empty by default.
         ],
         'pause_reasons' => [
-            'enrollment_period'    => 'Ongoing enrollment period',
-            'graduation_week'      => 'Week leading to graduation',
-            'board_exams'          => 'Board examination schedule',
-            'records_backlog'      => 'Records backlog / high volume',
-            'external_dependency'  => 'Awaiting external document',
+            'enrollment_period' => 'Ongoing enrollment period',
+            'graduation_week' => 'Week leading to graduation',
+            'board_exams' => 'Board examination schedule',
+            'records_backlog' => 'Records backlog / high volume',
+            'external_dependency' => 'Awaiting external document',
         ],
     ],
 

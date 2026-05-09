@@ -36,6 +36,7 @@ jobs:
         with:
           php-version: '8.3'
           extensions: pdo_mysql, gd, zip, bcmath, intl, mbstring, xml
+          # CI coverage intentionally uses Xdebug; local coverage also needs Xdebug or PCOV.
           coverage: xdebug
 
       - name: Set up Node 20
@@ -75,8 +76,8 @@ jobs:
       - name: Run static analysis (PHPStan)
         run: ./vendor/bin/phpstan analyse --no-progress
 
-      - name: Run Pest tests with coverage
-        run: ./vendor/bin/pest --coverage --min=80
+      - name: Run Pest tests with Xdebug coverage
+        run: php artisan test --coverage --min=80
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1

@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\DocumentType;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class DocumentTypeSeeder extends Seeder
 {

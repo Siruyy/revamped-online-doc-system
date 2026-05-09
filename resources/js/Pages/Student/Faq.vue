@@ -16,8 +16,8 @@ const filteredFaqs = computed(() => {
 
     if (!query) return props.faqs;
 
-    return props.faqs.filter((faq) =>
-        faq.question.toLowerCase().includes(query) || faq.answer.toLowerCase().includes(query),
+    return props.faqs.filter(
+        (faq) => faq.question.toLowerCase().includes(query) || faq.answer.toLowerCase().includes(query),
     );
 });
 </script>
@@ -38,11 +38,18 @@ const filteredFaqs = computed(() => {
                 class="block w-full rounded-md border-slate-300 text-sm shadow-sm"
             />
 
-            <div v-if="filteredFaqs.length === 0" class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+            <div
+                v-if="filteredFaqs.length === 0"
+                class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm"
+            >
                 No FAQ entries match your search.
             </div>
 
-            <details v-for="faq in filteredFaqs" :key="faq.id" class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <details
+                v-for="faq in filteredFaqs"
+                :key="faq.id"
+                class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+            >
                 <summary class="cursor-pointer text-sm font-semibold text-slate-800">{{ faq.question }}</summary>
                 <p class="mt-3 text-sm text-slate-600">{{ faq.answer }}</p>
             </details>
