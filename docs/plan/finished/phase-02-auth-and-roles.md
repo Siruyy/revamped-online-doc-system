@@ -40,7 +40,7 @@
 ## 2.4 Route Files
 
 - [x] Create `routes/student.php`, `admin.php`, `department.php`, `superadmin.php`.
-- [x] Wire from `web.php` with appropriate middleware groups (per [`docs/07-routes-and-controllers.md`](../docs/07-routes-and-controllers.md)).
+- [x] Wire from `web.php` with appropriate middleware groups (per [`docs/07-routes-and-controllers.md`](../../07-routes-and-controllers.md)).
 - [x] Add stub controllers for each role's dashboard.
 - [x] Test: each role redirected appropriately, others receive 403.
 

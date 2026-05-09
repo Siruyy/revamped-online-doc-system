@@ -15,13 +15,15 @@ class PaymentUploadTest extends TestCase
 {
     use RefreshDatabase;
 
+    /** Policy-initial: student can upload receipt after request is approved */
     public function test_student_can_upload_payment_receipt(): void
     {
         Event::fake();
         Storage::fake('local');
 
         $student = $this->createActiveStudent();
-        $request = DocumentRequest::factory()->for($student)->pending()->create();
+        // Request must be approved before receipt can be uploaded
+        $request = DocumentRequest::factory()->for($student)->approved()->create();
         $payment = Payment::factory()->for($student)->for($request)->pending()->create();
 
         $response = $this->actingAs($student)->post(route('student.payments.upload', $payment), [
@@ -36,6 +38,19 @@ class PaymentUploadTest extends TestCase
         $this->assertEquals('pending_approval', $payment->status);
         $this->assertNotNull($payment->receipt_path);
         Storage::disk('local')->assertExists($payment->receipt_path);
+    }
+
+    /** Policy-initial: receipt upload is blocked when request is still pending */
+    public function test_student_cannot_upload_receipt_while_request_is_pending(): void
+    {
+        $student = $this->createActiveStudent();
+        $request = DocumentRequest::factory()->for($student)->pending()->create();
+        $payment = Payment::factory()->for($student)->for($request)->pending()->create();
+
+        $this->actingAs($student)->post(route('student.payments.upload', $payment), [
+            'receipt' => UploadedFile::fake()->image('receipt.jpg'),
+            'payment_method' => 'GCash',
+        ])->assertForbidden();
     }
 
     public function test_upload_rejects_invalid_file_type(): void

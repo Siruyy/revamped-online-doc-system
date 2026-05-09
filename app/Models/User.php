@@ -35,6 +35,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'signature_path',
         'approved_by',
         'approved_at',
+        'academic_status',
+        'transferred_at',
+        'transferred_to',
+        'is_nstp',
+        'is_graduate',
     ];
 
     /**
@@ -54,6 +59,9 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'approved_at' => 'datetime',
             'password' => 'hashed',
+            'transferred_at' => 'datetime',
+            'is_nstp' => 'boolean',
+            'is_graduate' => 'boolean',
         ];
     }
 
@@ -136,6 +144,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isSuperAdmin(): bool
     {
         return $this->role === 'superadmin';
+    }
+
+    public function isTransferred(): bool
+    {
+        return in_array($this->academic_status, ['transferred', 'dismissed'], true);
     }
 
     public function roleHomeRoute(): string

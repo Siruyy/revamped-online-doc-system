@@ -4,30 +4,30 @@ namespace Database\Seeders;
 
 use App\Models\DocumentType;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class DocumentTypeSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $types = [
-            ['name' => 'Transcript of Records', 'category' => 'Academic', 'fee' => 250, 'processing_days' => 5],
-            ['name' => 'Good Moral Certificate', 'category' => 'Records', 'fee' => 100, 'processing_days' => 3],
-            ['name' => 'Certificate of Enrollment', 'category' => 'Academic', 'fee' => 120, 'processing_days' => 2],
-            ['name' => 'Diploma', 'category' => 'Academic', 'fee' => 500, 'processing_days' => 10],
-            ['name' => 'Honorable Dismissal', 'category' => 'Records', 'fee' => 150, 'processing_days' => 4],
-        ];
+        $types = config('policy.document_types', []);
 
-        foreach ($types as $type) {
+        foreach ($types as $code => $spec) {
             DocumentType::updateOrCreate(
-                ['name' => $type['name']],
+                ['code' => $code],
                 [
-                    'description' => "{$type['name']} request document type",
-                    'category' => $type['category'],
-                    'fee' => $type['fee'],
-                    'processing_days' => $type['processing_days'],
+                    'name' => $spec['name'],
+                    'description' => $spec['name'].' — per registrar policy.',
+                    'category' => $spec['category'],
+                    'fee' => $spec['fee'],
+                    'fee_formula' => 'per_page',
+                    'default_page_count' => $spec['default_page_count'] ?? 1,
+                    'processing_days' => $spec['sla_days'] ?? 3,
+                    'submission_window' => $spec['submission_window'] ?? null,
+                    'release_channel' => $spec['release_channel'] ?? null,
+                    'offices' => $spec['offices'] ?? [],
+                    'requirements' => $spec['requirements'] ?? [],
+                    'flags' => $spec['flags'] ?? [],
                     'is_active' => true,
                 ]
             );

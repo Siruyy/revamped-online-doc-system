@@ -33,9 +33,21 @@ class PaymentPolicy
 
     public function upload(User $user, Payment $payment): bool
     {
-        return $user->role === 'student'
-            && $payment->user_id === $user->id
-            && in_array($payment->status, ['pending', 'denied'], true);
+        if ($user->role !== 'student' || $payment->user_id !== $user->id) {
+            return false;
+        }
+
+        if (! in_array($payment->status, ['pending', 'denied'], true)) {
+            return false;
+        }
+
+        // Policy-initial: receipt upload only unlocks after the request is admin-approved.
+        $docRequest = $payment->documentRequest;
+        if ($docRequest && ! in_array($docRequest->status, ['approved', 'completed'], true)) {
+            return false;
+        }
+
+        return true;
     }
 
     public function approve(User $user, Payment $payment): bool

@@ -1,149 +1,158 @@
-# Phase 12 — Deployment to DigitalOcean + Dokploy
+# Phase 12 — Deployment To DigitalOcean And Dokploy
 
-> **Goal:** Live, accessible production deployment on DigitalOcean droplet via Dokploy. No domain initially; access via IP.
+> **Goal:** Ship a production-ready deployment on a DigitalOcean VPS managed by Dokploy, with app, MySQL, queue worker, Reverb, backups, and smoke tests.
 
-**Subagents:** `verify-app` (pre-deploy), `code-reviewer` (Dockerfile review), `security-reviewer` (production env check).
-**Skills:** `deployment-patterns`, `docker-patterns`.
-**Depends on:** Phase 11 passed.
+**Status:** Not started. Audit found only `Dockerfile.dev`; production deployment artifacts are missing.
 
----
+**Depends on:** Phase 11 verification passing.
 
-## 12.1 Provision DigitalOcean Droplet
-
-- [ ] Create droplet:
-    - Image: Ubuntu 22.04 LTS
-    - Plan: 2 vCPU / 4 GB RAM / 80 GB SSD
-    - Region: closest to school (Singapore for PH-based)
-    - Add SSH key
-    - Enable monitoring
-    - Enable backups (paid, recommended)
-- [ ] SSH in, update: `apt update && apt upgrade -y`.
-- [ ] Set hostname.
-- [ ] Configure UFW firewall: allow 22, 80, 443, 3000 (Dokploy panel).
-- [ ] Create non-root user with sudo.
-
-## 12.2 Install Dokploy
-
-- [ ] Run install script: `curl -sSL https://dokploy.com/install.sh | sh`.
-- [ ] Access panel at `http://<droplet-ip>:3000`.
-- [ ] Create Dokploy admin account.
-- [ ] Configure SMTP for Dokploy notifications (optional).
-
-## 12.3 Production Dockerfiles
-
-- [ ] Create `Dockerfile` per [`docs/14-deployment.md`](../docs/14-deployment.md).
-- [ ] Create `docker/nginx.conf`, `docker/supervisord.conf`, `docker/supervisord-queue.conf`, `docker/supervisord-reverb.conf`.
-- [ ] Create `docker/entrypoint.sh`.
-- [ ] Test build locally: `docker build -t svci .`.
-- [ ] Test run locally with docker-compose.
-
-## 12.4 Repository Configuration
-
-- [ ] Push code to GitHub (private repo).
-- [ ] Add Dokploy webhook for auto-deploy on push to `main`.
-- [ ] Create `.dockerignore` (vendor, node_modules, tests, .env, .git).
-
-## 12.5 Dokploy Project Setup
-
-- [ ] Create project `svci-document-system`.
-- [ ] Add **Application** → connect GitHub repo, select `Dockerfile`.
-- [ ] Add **MySQL** service:
-    - Strong root password
-    - Create app database `svci`
-    - Create app user `svci_app` with restricted privileges
-- [ ] Add **Reverb** service (same image, override CMD).
-- [ ] Add **Queue Worker** service (same image, override CMD).
-- [ ] Configure persistent volumes:
-    - `app-storage` → `/var/www/html/storage/app`
-    - `mysql-data` → `/var/lib/mysql`
-
-## 12.6 Environment Variables
-
-- [ ] In Dokploy UI, set all `.env` variables per [`docs/14-deployment.md`](../docs/14-deployment.md).
-- [ ] Generate `APP_KEY` via `php artisan key:generate --show`.
-- [ ] Generate strong Reverb keys.
-- [ ] Configure SMTP credentials.
-- [ ] `APP_DEBUG=false`, `APP_ENV=production`.
-
-## 12.7 Reverse Proxy Configuration
-
-- [ ] Configure Dokploy to proxy:
-    - `:80` / → app container
-    - `:80` /app/* → reverb container with WebSocket upgrade
-- [ ] Verify with browser: app loads, Reverb connects.
-
-## 12.8 Initial Deployment
-
-- [ ] Trigger first deploy via Dokploy.
-- [ ] Watch logs for errors.
-- [ ] Migrations run automatically via entrypoint.
-- [ ] Application accessible via `http://<droplet-ip>`.
-
-## 12.9 Post-Deploy Setup
-
-- [ ] Run seeder: `dokploy exec app php artisan db:seed --class=ProductionSeeder`.
-- [ ] Create initial SuperAdmin: `dokploy exec app php artisan svci:make-superadmin`.
-- [ ] Log in as SuperAdmin, verify dashboard loads.
-- [ ] Test all critical flows in production.
-
-## 12.10 Monitoring
-
-- [ ] Configure Dokploy healthcheck on `/health` endpoint.
-- [ ] Set up Dokploy alerts (email on container restart).
-- [ ] Tail application logs: `dokploy logs app`.
-- [ ] Verify queue worker processing: `dokploy logs queue`.
-- [ ] Verify Reverb running: `dokploy logs reverb`.
-
-## 12.11 Backups
-
-- [ ] Configure daily MySQL backup in Dokploy.
-- [ ] Backup destination: DigitalOcean Spaces or external SFTP.
-- [ ] Test restore procedure on a separate VPS.
-- [ ] Document restore steps in `docs/14-deployment.md`.
-
-## 12.12 Security Hardening
-
-- [ ] Verify `.env` not web-accessible (test `curl http://<ip>/.env` returns 404).
-- [ ] Verify `APP_DEBUG=false`.
-- [ ] Verify default SuperAdmin password changed.
-- [ ] SSH key-only login (disable password auth).
-- [ ] Fail2ban installed for SSH.
-- [ ] Run `lynis audit system` on droplet — address findings.
-
-## 12.13 SSL (Once Domain Available)
-
-- [ ] Point domain A record to droplet IP.
-- [ ] In Dokploy → Application → Domains → add domain.
-- [ ] Enable HTTPS (Let's Encrypt auto-issues).
-- [ ] Update env: `APP_URL=https://...`, `SESSION_SECURE_COOKIE=true`, `REVERB_SCHEME=https`.
-- [ ] Re-deploy.
-- [ ] Verify HTTPS works, HTTP redirects.
-
-## 12.14 Smoke Test Checklist
-
-- [ ] Landing page loads
-- [ ] Register new student → pending page
-- [ ] SuperAdmin approves → email arrives → student can log in
-- [ ] Submit document request
-- [ ] Upload payment receipt
-- [ ] Admin approves payment + request (real-time visible)
-- [ ] Department signs clearance
-- [ ] Student downloads clearance PDF
-- [ ] Send chat message both directions
-
-## 12.15 Documentation
-
-- [ ] Document final deployment URL and credentials (securely shared with client).
-- [ ] Document backup/restore procedure.
-- [ ] Document common operations (restart container, clear cache, run migrations).
+**Primary docs:** [`14-deployment.md`](../14-deployment.md), [`10-security.md`](../10-security.md), [`11-file-storage.md`](../11-file-storage.md).
 
 ---
 
-## Exit Criteria
+## Agent Task 12.1 — Production Deployment Design Review
 
-- ✅ Application accessible via VPS IP.
-- ✅ All services running (app, mysql, reverb, queue).
-- ✅ Smoke tests pass on production.
-- ✅ Backups configured and tested.
-- ✅ Monitoring in place.
-- ✅ Security hardening complete.
+**Delegate to:** architect + deployment-patterns
+
+**Steps:**
+- [ ] Confirm target droplet: Ubuntu 22.04, 2 vCPU, 4 GB RAM, 80 GB SSD.
+- [ ] Confirm no domain initially; app served by IP first.
+- [ ] Confirm services: app, MySQL 8, queue worker, Reverb.
+- [ ] Confirm persistent volumes: app storage and MySQL data.
+- [ ] Confirm backup destination and retention with client.
+
+**Acceptance:**
+- [ ] Deployment topology is confirmed before Docker work starts.
+
+## Agent Task 12.2 — Production Docker Artifacts
+
+**Delegate to:** docker-patterns + code-reviewer
+
+**Files likely touched:**
+- `Dockerfile`
+- `.dockerignore`
+- `docker/nginx.conf`
+- `docker/supervisord.conf`
+- `docker/supervisord-queue.conf`
+- `docker/supervisord-reverb.conf`
+- `docker/entrypoint.sh`
+
+**Steps:**
+- [ ] Build production image with PHP extensions, Composer deps, Node build assets, and optimized Laravel cache path.
+- [ ] Exclude `.env`, `.git`, `node_modules`, tests if not needed, local storage, and dev artifacts from image context.
+- [ ] Add Nginx config serving `public/` only.
+- [ ] Add entrypoint that runs safe cache/migration steps.
+- [ ] Add separate supervisor configs for app, queue, and Reverb if using same image with command override.
+
+**Commands:**
+
+```bash
+docker build -t svci-doc-system .
+```
+
+**Acceptance:**
+- [ ] Production image builds locally.
+- [ ] Image does not include secrets.
+
+## Agent Task 12.3 — Local Container Smoke Test
+
+**Delegate to:** verify-app + docker-patterns
+
+**Files likely touched:**
+- `docker-compose.prod-test.yml` or equivalent local smoke config
+
+**Steps:**
+- [ ] Run app and MySQL locally from production image/config.
+- [ ] Run migrations.
+- [ ] Run production seeder or create SuperAdmin.
+- [ ] Verify app loads through container web server.
+- [ ] Verify queue worker and Reverb containers start.
+
+**Acceptance:**
+- [ ] Production container setup works before Dokploy deployment.
+
+## Agent Task 12.4 — Dokploy Project Setup Runbook
+
+**Delegate to:** deployment-patterns
+
+**Files likely touched:**
+- `docs/14-deployment.md`
+- `docs/operations/runbook.md`
+
+**Steps:**
+- [ ] Document droplet provisioning steps.
+- [ ] Document Dokploy install and admin setup.
+- [ ] Document GitHub repo connection and deploy webhook.
+- [ ] Document MySQL service setup with restricted app user.
+- [ ] Document app, queue, and Reverb service setup.
+- [ ] Document persistent volume mounts.
+
+**Acceptance:**
+- [ ] A future deploy agent can follow the runbook without guessing.
+
+## Agent Task 12.5 — Production Environment And Security
+
+**Delegate to:** security-review + deployment-patterns
+
+**Files likely touched:**
+- `.env.example`
+- `docs/14-deployment.md`
+
+**Steps:**
+- [ ] List required env vars for app, DB, mail, queue, Reverb, session, and filesystem.
+- [ ] Ensure `APP_DEBUG=false`, `APP_ENV=production`, strong `APP_KEY`, strong DB passwords.
+- [ ] Configure secure cookies only after HTTPS/domain exists.
+- [ ] Verify `.env` and private files are not web-accessible.
+- [ ] Configure UFW, SSH key-only login, and Fail2ban.
+
+**Acceptance:**
+- [ ] Production env checklist is explicit and security-reviewed.
+
+## Agent Task 12.6 — Backup And Restore Procedure
+
+**Delegate to:** deployment-patterns + database-migrations
+
+**Files likely touched:**
+- `docs/14-deployment.md`
+- `docs/operations/backup-restore.md`
+
+**Steps:**
+- [ ] Configure daily MySQL backup.
+- [ ] Configure storage backup for private uploaded files.
+- [ ] Test restore to a separate sandbox.
+- [ ] Document restore commands and validation checklist.
+
+**Acceptance:**
+- [ ] Restore has been tested, not only configured.
+
+## Agent Task 12.7 — Production Smoke Test
+
+**Delegate to:** verify-app
+
+**Checklist:**
+- [ ] Landing page loads.
+- [ ] Register student and see pending page.
+- [ ] SuperAdmin approves student.
+- [ ] Student logs in and submits request.
+- [ ] Student uploads payment receipt.
+- [ ] Admin approves request/payment.
+- [ ] Department signs clearance.
+- [ ] Student downloads clearance PDF.
+- [ ] Reverb updates visible in two browser windows.
+- [ ] Queue worker processes notification/email jobs.
+
+**Acceptance:**
+- [ ] Smoke test passes on production IP or staging equivalent.
+
+## Agent Task 12.8 — Deployment Closeout
+
+**Delegate to:** doc-updater + code-reviewer
+
+**Steps:**
+- [ ] Record deployment URL securely outside repo if credentials are involved.
+- [ ] Update docs with learned commands and operational caveats.
+- [ ] Confirm health endpoint exists and Dokploy monitors it.
+- [ ] Confirm rollback plan is documented.
+
+**Acceptance:**
+- [ ] App, queue, Reverb, MySQL, backups, monitoring, and rollback are documented and verified.

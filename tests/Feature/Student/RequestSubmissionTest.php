@@ -19,8 +19,8 @@ class RequestSubmissionTest extends TestCase
     {
         Event::fake([RequestSubmitted::class]);
         $student = $this->createActiveStudent();
-        $docA = DocumentType::factory()->create(['fee' => 100, 'is_active' => true]);
-        $docB = DocumentType::factory()->create(['fee' => 250, 'is_active' => true]);
+        $docA = DocumentType::factory()->create(['fee' => 100, 'default_page_count' => 1, 'is_active' => true]);
+        $docB = DocumentType::factory()->create(['fee' => 250, 'default_page_count' => 1, 'is_active' => true]);
 
         $response = $this->actingAs($student)->post(route('student.requests.store'), [
             'document_ids' => [$docA->id, $docB->id],
@@ -45,6 +45,7 @@ class RequestSubmissionTest extends TestCase
             ->from(route('student.requests.create'))
             ->post(route('student.requests.store'), [
                 'document_ids' => [$inactiveDoc->id],
+                'purpose' => 'For employment application',
             ]);
 
         $response->assertSessionHasErrors('document_ids');
@@ -62,6 +63,7 @@ class RequestSubmissionTest extends TestCase
             ->from(route('student.requests.create'))
             ->post(route('student.requests.store'), [
                 'document_ids' => [$newDoc->id],
+                'purpose' => 'For employment application',
             ]);
 
         $response->assertSessionHasErrors('document_ids');

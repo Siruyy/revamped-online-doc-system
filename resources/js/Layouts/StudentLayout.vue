@@ -1,125 +1,166 @@
 <script setup>
 import MessageBell from '@/Components/MessageBell.vue';
-import NavLink from '@/Components/NavLink.vue';
 import NotificationBell from '@/Components/NotificationBell.vue';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import UserAvatar from '@/Components/UserAvatar.vue';
-import { ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
-import { DocumentTextIcon, Bars3Icon, XMarkIcon } from '@heroicons/vue/24/outline';
+import { computed, ref } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import {
+    ArrowLeftOnRectangleIcon,
+    Bars3Icon,
+    ClipboardDocumentListIcon,
+    CreditCardIcon,
+    DocumentTextIcon,
+    HomeIcon,
+    QuestionMarkCircleIcon,
+    ShieldCheckIcon,
+    XMarkIcon,
+} from '@heroicons/vue/24/outline';
 
-const showingNavigationDropdown = ref(false);
+const showMobileMenu = ref(false);
+const page = usePage();
+
+const authUser = computed(() => page.props.auth?.user ?? {});
+const userDisplayName = computed(() => {
+    const first = authUser.value?.first_name;
+    const last = authUser.value?.last_name;
+    return [first, last].filter(Boolean).join(' ') || 'Student';
+});
 
 const studentLinks = [
-    { route: 'student.dashboard', label: 'Dashboard' },
-    { route: 'student.requests.index', label: 'My Requests' },
-    { route: 'student.payments.index', label: 'Payments' },
-    { route: 'student.clearance.show', label: 'Clearance' },
-    { route: 'student.notifications.index', label: 'Notifications' },
-    { route: 'student.faq.index', label: 'FAQ' },
+    { route: 'student.dashboard', label: 'Dashboard', icon: HomeIcon },
+    { route: 'student.requests.index', label: 'My Requests', icon: ClipboardDocumentListIcon },
+    { route: 'student.payments.index', label: 'Payments', icon: CreditCardIcon },
+    { route: 'student.clearance.show', label: 'Clearance', icon: ShieldCheckIcon },
+    { route: 'student.faq.index', label: 'FAQ', icon: QuestionMarkCircleIcon },
 ];
+
+const isActive = (routeName) => route().current(routeName) || route().current(routeName + '*');
 </script>
 
 <template>
     <div class="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-brand-600 selection:text-white">
+
+        <!-- ── Top Navigation ───────────────────────────────────────────── -->
         <nav class="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="flex h-16 justify-between">
-                    <div class="flex">
-                        <!-- Logo -->
-                        <div class="flex shrink-0 items-center">
-                            <Link :href="route('student.dashboard')" class="flex items-center gap-2 group">
-                                <div class="bg-brand-600 p-1.5 rounded-md shadow-sm transition-transform group-hover:scale-105">
-                                    <DocumentTextIcon class="w-6 h-6 text-white" />
-                                </div>
-                                <span class="font-display font-bold text-xl text-slate-900 tracking-tight hidden sm:block">SVCI Docs</span>
-                            </Link>
-                        </div>
+                <div class="flex h-14 items-center justify-between gap-4">
 
-                        <!-- Navigation Links -->
-                        <div class="hidden space-x-8 sm:-my-px sm:ms-10 md:flex">
-                            <NavLink
+                    <!-- Logo + nav links -->
+                    <div class="flex items-center gap-6">
+                        <Link :href="route('student.dashboard')" class="flex items-center gap-2.5 group shrink-0">
+                            <div class="bg-brand-600 p-1.5 rounded-lg shadow-sm group-hover:bg-brand-500 transition-colors">
+                                <DocumentTextIcon class="w-5 h-5 text-white" />
+                            </div>
+                            <span class="font-display font-bold text-base text-slate-900 hidden sm:block tracking-tight">SVCI Docs</span>
+                        </Link>
+
+                        <!-- Desktop nav links -->
+                        <div class="hidden md:flex items-center gap-1">
+                            <Link
                                 v-for="link in studentLinks"
                                 :key="link.route"
                                 :href="route(link.route)"
-                                :active="route().current(`${link.route}*`)"
+                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                                :class="isActive(link.route)
+                                    ? 'bg-brand-50 text-brand-700'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
                             >
+                                <component :is="link.icon" class="w-4 h-4 shrink-0"
+                                    :class="isActive(link.route) ? 'text-brand-600' : 'text-slate-400'" />
                                 {{ link.label }}
-                            </NavLink>
+                            </Link>
                         </div>
                     </div>
 
-                    <div class="hidden md:ms-6 md:flex md:items-center md:gap-4">
-                        <div class="flex items-center gap-2">
-                            <MessageBell />
-                            <NotificationBell />
+                    <!-- Right side: icons + avatar -->
+                    <div class="flex items-center gap-1">
+                        <MessageBell class="hidden md:inline-flex" />
+                        <NotificationBell />
+                        <div class="h-5 w-px bg-slate-200 mx-1 hidden md:block"></div>
+                        <div class="hidden md:block">
+                            <UserAvatar />
                         </div>
-                        <div class="h-6 w-px bg-slate-200 mx-2"></div>
-                        <UserAvatar />
-                    </div>
-
-                    <!-- Hamburger -->
-                    <div class="-me-2 flex items-center md:hidden">
-                        <button
-                            @click="showingNavigationDropdown = !showingNavigationDropdown"
-                            class="inline-flex items-center justify-center rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:bg-slate-100 focus:text-slate-700 transition duration-150 ease-in-out"
+                        <!-- Logout (desktop) -->
+                        <Link
+                            :href="route('logout')"
+                            method="post"
+                            as="button"
+                            class="hidden md:inline-flex items-center gap-1.5 ml-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                         >
-                            <Bars3Icon v-if="!showingNavigationDropdown" class="w-6 h-6" />
-                            <XMarkIcon v-else class="w-6 h-6" />
+                            <ArrowLeftOnRectangleIcon class="w-4 h-4" />
+                            <span class="hidden lg:inline">Log Out</span>
+                        </Link>
+                        <!-- Mobile hamburger -->
+                        <button
+                            type="button"
+                            class="md:hidden p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                            @click="showMobileMenu = !showMobileMenu"
+                        >
+                            <Bars3Icon v-if="!showMobileMenu" class="w-5 h-5" />
+                            <XMarkIcon v-else class="w-5 h-5" />
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Responsive Navigation Menu -->
-            <div
-                :class="{ block: showingNavigationDropdown, hidden: !showingNavigationDropdown }"
-                class="md:hidden bg-white border-t border-slate-200 shadow-lg absolute w-full"
-            >
-                <div class="space-y-1 pb-3 pt-2">
-                    <ResponsiveNavLink
-                        v-for="link in studentLinks"
-                        :key="`mobile-${link.route}`"
-                        :href="route(link.route)"
-                        :active="route().current(`${link.route}*`)"
-                    >
-                        {{ link.label }}
-                    </ResponsiveNavLink>
-                </div>
-
-                <!-- Responsive Settings Options -->
-                <div class="border-t border-slate-200 pb-1 pt-4 bg-slate-50">
-                    <div class="px-4 flex items-center justify-between mb-3">
-                        <div class="font-medium text-base text-slate-800">
-                            {{ $page.props.auth.user.first_name }} {{ $page.props.auth.user.last_name }}
-                        </div>
-                        <div class="flex gap-2">
-                            <MessageBell />
-                            <NotificationBell />
-                        </div>
+            <!-- Mobile menu dropdown -->
+            <Transition name="slide-down">
+                <div v-if="showMobileMenu" class="md:hidden bg-white border-t border-slate-200 shadow-lg absolute w-full">
+                    <div class="px-4 py-3 space-y-1">
+                        <Link
+                            v-for="link in studentLinks"
+                            :key="`m-${link.route}`"
+                            :href="route(link.route)"
+                            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                            :class="isActive(link.route)
+                                ? 'bg-brand-50 text-brand-700'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+                            @click="showMobileMenu = false"
+                        >
+                            <component :is="link.icon" class="w-5 h-5 shrink-0"
+                                :class="isActive(link.route) ? 'text-brand-600' : 'text-slate-400'" />
+                            {{ link.label }}
+                        </Link>
                     </div>
-
-                    <div class="space-y-1 mt-3">
-                        <ResponsiveNavLink :href="route('logout')" method="post" as="button">
+                    <div class="border-t border-slate-200 px-4 py-3">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-medium text-slate-800">{{ userDisplayName }}</span>
+                            <div class="flex items-center gap-2">
+                                <MessageBell />
+                                <NotificationBell />
+                            </div>
+                        </div>
+                        <Link
+                            :href="route('logout')"
+                            method="post"
+                            as="button"
+                            class="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                        >
+                            <ArrowLeftOnRectangleIcon class="w-4 h-4" />
                             Log Out
-                        </ResponsiveNavLink>
+                        </Link>
                     </div>
                 </div>
-            </div>
+            </Transition>
         </nav>
 
         <!-- Page Heading -->
-        <header class="bg-white shadow-sm ring-1 ring-slate-900/5" v-if="$slots.header">
-            <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <header v-if="$slots.header" class="bg-white border-b border-slate-200 shadow-sm">
+            <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
                 <slot name="header" />
             </div>
         </header>
 
-        <!-- Page Content -->
-        <main class="py-8 sm:py-12">
+        <!-- Main Content -->
+        <main class="py-8 sm:py-10">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <slot />
             </div>
         </main>
     </div>
 </template>
+
+<style>
+.slide-down-enter-active, .slide-down-leave-active { transition: all 0.18s ease; }
+.slide-down-enter-from, .slide-down-leave-to { opacity: 0; transform: translateY(-6px); }
+</style>

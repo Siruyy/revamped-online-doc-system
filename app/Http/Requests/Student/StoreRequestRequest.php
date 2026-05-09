@@ -24,7 +24,7 @@ class StoreRequestRequest extends FormRequest
         return [
             'document_ids' => ['required', 'array', 'min:1', 'max:5'],
             'document_ids.*' => ['integer', 'distinct', 'exists:document_types,id'],
-            'purpose' => ['nullable', 'string', 'max:500'],
+            'purpose' => ['required', 'string', 'min:5', 'max:500'],
         ];
     }
 }

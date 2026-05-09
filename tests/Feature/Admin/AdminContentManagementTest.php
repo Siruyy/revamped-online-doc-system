@@ -26,6 +26,7 @@ class AdminContentManagementTest extends TestCase
             'description' => 'Freshly generated enrollment cert.',
             'category' => 'Academic',
             'fee' => 120,
+            'default_page_count' => 1,
             'processing_days' => 2,
             'is_active' => true,
         ])->assertRedirect();
@@ -37,6 +38,7 @@ class AdminContentManagementTest extends TestCase
             'description' => 'Updated description',
             'category' => 'Academic',
             'fee' => 150,
+            'default_page_count' => 1,
             'processing_days' => 3,
             'is_active' => true,
         ])->assertRedirect();

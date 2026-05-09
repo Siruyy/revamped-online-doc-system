@@ -4,6 +4,15 @@ import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
+import {
+    ArrowRightIcon,
+    ArrowsRightLeftIcon,
+    BoltIcon,
+    DocumentMagnifyingGlassIcon,
+    ExclamationTriangleIcon,
+    FunnelIcon,
+    XMarkIcon,
+} from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     requests: { type: Object, required: true },
@@ -27,6 +36,11 @@ const applyFilters = () => {
     router.get(route('admin.requests.index'), form, { preserveState: true, replace: true });
 };
 
+const clearFilters = () => {
+    Object.keys(form).forEach((key) => (form[key] = ''));
+    applyFilters();
+};
+
 const reloadRequests = () => {
     router.reload({ only: ['requests', 'filters'], preserveScroll: true });
 };
@@ -41,6 +55,39 @@ useEchoPrivateChannel(
 );
 
 useRealtimeOrPoll(reloadRequests, { intervalMs: 90000 });
+
+function statusBadge(status) {
+    return ({
+        pending: 'bg-amber-100 text-amber-800',
+        approved: 'bg-sky-100 text-sky-800',
+        completed: 'bg-emerald-100 text-emerald-800',
+        denied: 'bg-rose-100 text-rose-800',
+        cancelled: 'bg-slate-100 text-slate-600',
+    })[status] ?? 'bg-slate-100 text-slate-600';
+}
+
+function paymentBadge(status) {
+    return ({
+        pending: 'bg-slate-100 text-slate-600',
+        pending_approval: 'bg-amber-100 text-amber-800',
+        approved: 'bg-emerald-100 text-emerald-800',
+        denied: 'bg-rose-100 text-rose-800',
+    })[status] ?? 'bg-slate-100 text-slate-600';
+}
+
+function isOverdue(expected) {
+    if (!expected) return false;
+    return new Date(expected) < new Date(new Date().toDateString());
+}
+
+function relativeAge(value) {
+    if (!value) return '—';
+    const diff = Math.floor((Date.now() - new Date(value).getTime()) / 86400000);
+    if (diff <= 0) return 'today';
+    if (diff === 1) return '1d';
+    if (diff < 7) return `${diff}d`;
+    return `${Math.round(diff / 7)}w`;
+}
 </script>
 
 <template>
@@ -48,59 +95,138 @@ useRealtimeOrPoll(reloadRequests, { intervalMs: 90000 });
 
     <StaffLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-slate-900">Requests Management</h2>
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-display font-bold text-slate-900">Document Requests</h2>
+                    <p class="text-sm text-slate-500">Triage, approve, and manage document requests across all students.</p>
+                </div>
+                <Link :href="route('admin.dashboard')" class="hidden text-xs font-semibold text-brand-700 hover:underline sm:block">
+                    Back to dashboard →
+                </Link>
+            </div>
         </template>
 
-        <div class="mx-auto max-w-7xl space-y-4 px-4 sm:px-6 lg:px-8">
-            <div class="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4">
-                <input v-model="form.search" type="text" placeholder="Search reference, student, document" class="rounded-md border-slate-300 text-sm shadow-sm md:col-span-2" />
-                <select v-model="form.status" class="rounded-md border-slate-300 text-sm shadow-sm">
-                    <option value="">All statuses</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="denied">Denied</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                </select>
-                <input v-model="form.course" type="text" placeholder="Course" class="rounded-md border-slate-300 text-sm shadow-sm" />
-                <input v-model="form.year" type="number" min="1" max="8" placeholder="Year" class="rounded-md border-slate-300 text-sm shadow-sm" />
-                <input v-model="form.document_type" type="number" min="1" placeholder="Document Type ID" class="rounded-md border-slate-300 text-sm shadow-sm" />
-                <input v-model="form.from" type="date" class="rounded-md border-slate-300 text-sm shadow-sm" />
-                <input v-model="form.to" type="date" class="rounded-md border-slate-300 text-sm shadow-sm" />
-                <button type="button" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 md:col-span-4" @click="applyFilters">
-                    Apply filters
+        <div class="mx-auto max-w-7xl space-y-5 px-4 pb-12 sm:px-6 lg:px-8">
+            <!-- Filters -->
+            <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+                <div class="mb-4 flex items-center gap-2">
+                    <FunnelIcon class="h-4 w-4 text-slate-500" />
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Filters</p>
+                </div>
+                <div class="grid gap-3 md:grid-cols-12">
+                    <div class="relative md:col-span-4">
+                        <DocumentMagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input v-model="form.search" type="text" placeholder="Search ref, student, document…" class="block w-full rounded-lg border-slate-300 pl-9 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500" @keyup.enter="applyFilters" />
+                    </div>
+                    <select v-model="form.status" class="md:col-span-2 rounded-lg border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <option value="">All statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="denied">Denied</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <input v-model="form.course" type="text" placeholder="Course" class="md:col-span-2 rounded-lg border-slate-300 text-sm shadow-sm" />
+                    <input v-model="form.year" type="number" min="1" max="8" placeholder="Year" class="md:col-span-1 rounded-lg border-slate-300 text-sm shadow-sm" />
+                    <input v-model="form.from" type="date" class="md:col-span-1 rounded-lg border-slate-300 text-sm shadow-sm" />
+                    <input v-model="form.to" type="date" class="md:col-span-1 rounded-lg border-slate-300 text-sm shadow-sm" />
+                    <div class="flex gap-2 md:col-span-1">
+                        <button type="button" class="flex-1 rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-500" @click="applyFilters">
+                            Apply
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="mt-3 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700" @click="clearFilters">
+                    <XMarkIcon class="h-3.5 w-3.5" /> Clear all
                 </button>
             </div>
 
-            <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-                <table class="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead class="bg-slate-50">
+            <!-- Results -->
+            <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+                <table class="min-w-full divide-y divide-slate-100 text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
                         <tr>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Reference</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Student</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Document</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Status</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Payment</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Action</th>
+                            <th class="px-5 py-3 text-left">Reference</th>
+                            <th class="px-5 py-3 text-left">Student</th>
+                            <th class="px-5 py-3 text-left">Document</th>
+                            <th class="px-5 py-3 text-left">Status</th>
+                            <th class="px-5 py-3 text-left">Payment</th>
+                            <th class="px-5 py-3 text-left">Age</th>
+                            <th class="px-5 py-3 text-left">SLA</th>
+                            <th class="px-5 py-3"></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200">
-                        <tr v-for="item in requests.data" :key="item.id">
-                            <td class="px-4 py-3 font-medium text-slate-900">{{ item.reference_no }}</td>
-                            <td class="px-4 py-3 text-slate-700">{{ item.user?.fullname }}</td>
-                            <td class="px-4 py-3 text-slate-700">{{ item.document_type?.name }}</td>
-                            <td class="px-4 py-3 capitalize text-slate-700">{{ item.status }}</td>
-                            <td class="px-4 py-3 capitalize text-slate-700">{{ item.payments?.[0]?.status || 'n/a' }}</td>
-                            <td class="px-4 py-3">
-                                <Link :href="route('admin.requests.show', item.id)" class="font-semibold text-indigo-600 hover:text-indigo-500">Open</Link>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr v-for="item in requests.data" :key="item.id" class="transition hover:bg-brand-50/30">
+                            <td class="px-5 py-3 font-mono text-xs text-slate-700">{{ item.reference_no }}</td>
+                            <td class="px-5 py-3">
+                                <p class="font-semibold text-slate-900">{{ item.user?.fullname }}</p>
+                                <p class="text-xs text-slate-500">{{ item.user?.course || '—' }} Y{{ item.user?.year_level || '?' }}</p>
+                            </td>
+                            <td class="px-5 py-3">
+                                <p class="font-medium text-slate-900">{{ item.document_type?.name }}</p>
+                                <p class="text-xs text-slate-500">{{ item.document_type?.category }}</p>
+                            </td>
+                            <td class="px-5 py-3">
+                                <span :class="['inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize', statusBadge(item.status)]">
+                                    {{ item.status }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-3">
+                                <span v-if="item.payments?.[0]" :class="['inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize', paymentBadge(item.payments[0].status)]">
+                                    {{ item.payments[0].status?.replaceAll('_', ' ') }}
+                                </span>
+                                <span v-else class="text-xs text-slate-400">n/a</span>
+                            </td>
+                            <td class="px-5 py-3 text-xs text-slate-600">{{ relativeAge(item.created_at) }}</td>
+                            <td class="px-5 py-3">
+                                <span v-if="isOverdue(item.expected_release_on)" class="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                                    <ExclamationTriangleIcon class="h-3 w-3" /> Overdue
+                                </span>
+                                <span v-else-if="item.expected_release_on" class="text-xs text-slate-600">
+                                    {{ new Date(item.expected_release_on).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}
+                                </span>
+                                <span v-else class="text-xs text-slate-400">—</span>
+                            </td>
+                            <td class="px-5 py-3 text-right">
+                                <Link :href="route('admin.requests.show', item.id)" class="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700">
+                                    Open <ArrowRightIcon class="h-3.5 w-3.5" />
+                                </Link>
                             </td>
                         </tr>
                         <tr v-if="requests.data.length === 0">
-                            <td colspan="6" class="px-4 py-8 text-center text-slate-500">No requests found.</td>
+                            <td colspan="8" class="px-4 py-12 text-center">
+                                <div class="mx-auto max-w-sm">
+                                    <BoltIcon class="mx-auto h-10 w-10 text-slate-300" />
+                                    <p class="mt-3 font-display font-semibold text-slate-700">No requests match your filters</p>
+                                    <p class="mt-1 text-xs text-slate-500">Try clearing filters or widening your date range.</p>
+                                    <button type="button" class="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-700" @click="clearFilters">
+                                        <ArrowsRightLeftIcon class="h-3.5 w-3.5" /> Reset filters
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            <nav v-if="requests.last_page > 1" class="flex items-center justify-between rounded-xl bg-white px-5 py-3 text-xs text-slate-600 shadow-sm ring-1 ring-slate-200">
+                <span>Showing {{ requests.from || 0 }}–{{ requests.to || 0 }} of {{ requests.total }}</span>
+                <div class="flex flex-wrap gap-1">
+                    <Link
+                        v-for="link in requests.links"
+                        :key="link.label"
+                        :href="link.url || ''"
+                        v-html="link.label"
+                        :class="[
+                            'rounded-lg px-3 py-1.5 transition',
+                            link.active ? 'bg-brand-600 text-white' : 'border border-slate-200 hover:bg-slate-50',
+                            !link.url ? 'opacity-40 pointer-events-none' : '',
+                        ]"
+                    />
+                </div>
+            </nav>
         </div>
     </StaffLayout>
 </template>

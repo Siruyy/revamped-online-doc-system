@@ -22,7 +22,7 @@ Create in dependency order. One migration per table.
 - [x] `messages` migration with FKs (sender, receiver).
 - [x] `activity_logs` migration.
 - [x] Default Laravel migrations: `notifications` (`php artisan notifications:table`), `jobs`, `failed_jobs`, `cache`, `sessions` if using DB sessions.
-- [x] Add all indexes per [`docs/04-database-schema.md`](../docs/04-database-schema.md).
+- [x] Add all indexes per [`docs/04-database-schema.md`](../../04-database-schema.md).
 - [x] Run `php artisan migrate:fresh` — succeeds.
 - [x] Invoke `database-reviewer` subagent on migration files.
 

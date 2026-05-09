@@ -19,8 +19,9 @@ class PaymentController extends Controller
         $payments = Payment::query()
             ->with([
                 'user:id,fullname,course,year_level,student_id',
-                'documentRequest:id,reference_no,status,document_type_id',
+                'documentRequest:id,reference_no,status,document_type_id,fee_snapshot',
                 'documentRequest.documentType:id,name',
+                'documentRequest.items.documentType:id,name',
             ])
             ->when($request->string('status')->toString(), fn ($query, $status) => $query->where('status', $status))
             ->latest()

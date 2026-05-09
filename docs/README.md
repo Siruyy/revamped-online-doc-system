@@ -26,6 +26,9 @@ This documentation set is split into focused, single-topic files. Read them in o
 | 13 | [PDF Generation](./13-pdf-generation.md) | Clearance certificate generation |
 | 14 | [Deployment](./14-deployment.md) | Dokploy + DigitalOcean VPS setup |
 | 15 | [Testing Strategy](./15-testing-strategy.md) | Pest + browser testing |
+| 16 | [Policy Matrix](./16-policy-matrix.md) | Registrar policy → system rules mapping |
+| 17 | [Design System](./17-design-system.md) | UI tokens, components, accessibility |
+| 18 | [UAT Script](./18-uat-script.md) | Policy-mapped acceptance tests & release readiness |
 
 ## Related
 

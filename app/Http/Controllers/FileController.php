@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Clearance;
 use App\Models\Payment;
+use App\Models\PaymentProfile;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -35,6 +36,17 @@ class FileController extends Controller
         );
 
         return Storage::disk('local')->download($clearance->pdf_path);
+    }
+
+    public function paymentQr(PaymentProfile $paymentProfile): StreamedResponse
+    {
+        abort_if(
+            empty($paymentProfile->qr_path)
+                || ! Storage::disk('local')->exists($paymentProfile->qr_path),
+            404
+        );
+
+        return Storage::disk('local')->download($paymentProfile->qr_path);
     }
 
     public function clearanceSupportingFile(Clearance $clearance): StreamedResponse

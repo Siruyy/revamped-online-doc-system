@@ -1,116 +1,123 @@
-# Phase 10 — UI/UX Polish & Design System
+# Phase 10 — UI/UX Polish And Design System
 
-> **Goal:** Bring the visual design to production-quality — consistent components, animations, empty states, accessibility, mobile polish.
+> **Goal:** Make the existing UI consistent, accessible, mobile-safe, and production-presentable without changing core workflows.
 
-**Subagents:** `code-reviewer`, `refactor-cleaner`.
-**Skills:** `ui-ux-pro-max`, `frontend-patterns`.
-**Depends on:** Phases 03–08 (UI exists).
+**Status:** Not started.
 
----
+**Depends on:** Stable feature pages from Phases 03-09.
 
-## 10.1 Design Token Audit
-
-- [ ] Verify all pages use Tailwind tokens from config (no hardcoded hex codes).
-- [ ] Replace inline colors with brand palette references.
-- [ ] Standardize spacing scale (multiples of 4).
-
-## 10.2 Component Library Review
-
-For each shared component, confirm:
-- [ ] `<PageHeader>` consistent across all pages.
-- [ ] `<Card>` used for all surface containers.
-- [ ] `<DataTable>` covers all list views (no one-off tables).
-- [ ] `<StatusBadge>` used everywhere statuses are shown.
-- [ ] `<StatCard>` consistent across dashboards.
-- [ ] `<EmptyState>` with friendly copy on every list.
-- [ ] `<ConfirmDialog>` on every destructive action.
-- [ ] `<FormField>` wrapping all inputs (label + error consistency).
-- [ ] `<Toast>` for all flash messages.
-- [ ] `<Skeleton>` loaders (no spinners).
-- [ ] `<Pagination>` consistent.
-
-## 10.3 Mobile Responsiveness Sweep
-
-Test every page on:
-- [ ] iPhone SE (375px)
-- [ ] iPhone 14 Pro Max (430px)
-- [ ] iPad (768px)
-- [ ] iPad Pro (1024px)
-- [ ] Desktop (1440px)
-
-Fix any:
-- [ ] Tables overflowing — convert to card layout on small screens
-- [ ] Sidebars not collapsing
-- [ ] Modals not fitting
-- [ ] Touch targets <44px
-
-## 10.4 Accessibility (WCAG AA)
-
-- [ ] All interactive elements keyboard-accessible (Tab navigation works everywhere).
-- [ ] Focus rings visible on all focusable elements.
-- [ ] Color contrast ≥4.5:1 for text.
-- [ ] Form inputs have associated labels.
-- [ ] Error messages announced via `aria-live`.
-- [ ] Modals trap focus.
-- [ ] Images have alt text.
-- [ ] Run automated audit with **axe DevTools** or **Lighthouse** — fix all critical issues.
-
-## 10.5 Animations & Transitions
-
-- [ ] Modal fade + scale (Headless UI defaults).
-- [ ] Sidebar slide animation.
-- [ ] Toast slide-in / fade-out.
-- [ ] Tab transitions.
-- [ ] Skeleton shimmer.
-- [ ] No animation longer than 300ms.
-
-## 10.6 Loading & Error States
-
-- [ ] Inertia progress bar configured (NProgress style, brand color).
-- [ ] Skeleton placeholders for initial loads.
-- [ ] Error pages: 403, 404, 419 (CSRF expired), 500 — all themed Inertia pages.
-- [ ] Network error toast on Inertia request failure.
-
-## 10.7 Empty States with Illustrations
-
-- [ ] Source SVG illustrations from undraw.co (free, themeable).
-- [ ] Themed to brand color.
-- [ ] Placed on: empty requests list, empty notifications, empty messages, empty announcements.
-
-## 10.8 Print Styles
-
-- [ ] Request detail page printable.
-- [ ] Clearance status page printable.
-- [ ] Invoice / receipt printable (if added).
-
-## 10.9 Favicon & Branding
-
-- [ ] Custom favicon.
-- [ ] App icons for PWA (`apple-touch-icon`, etc.).
-- [ ] OpenGraph meta tags for shareable links.
-- [ ] PWA manifest (basic).
-
-## 10.10 Performance
-
-- [ ] Run Lighthouse on key pages, target 90+ scores.
-- [ ] Lazy-load Vue routes (`defineAsyncComponent`).
-- [ ] Image optimization (WebP, lazy loading).
-- [ ] Tailwind build is JIT (no unused CSS).
-- [ ] Verify `npm run build` output is reasonable (~500 KB JS for entry).
-
-## 10.11 Cleanup
-
-- [ ] Invoke `refactor-cleaner` subagent to find dead code, unused components.
-- [ ] Run `npx knip` (or equivalent) to find unused exports.
-- [ ] Remove all `console.log` and `dd()` calls.
-- [ ] Update `package.json` and `composer.json` — remove unused deps.
+**Primary docs:** [`09-frontend-design.md`](../09-frontend-design.md), [`17-design-system.md`](../17-design-system.md), [`18-uat-script.md`](../18-uat-script.md).
 
 ---
 
-## Exit Criteria
+## Agent Task 10.1 — UI Inventory And Design Drift Audit
 
-- ✅ Every page looks polished and consistent.
-- ✅ Mobile experience is excellent.
-- ✅ Accessibility audit passes.
-- ✅ Lighthouse scores 90+ across the board.
-- ✅ No dead code, no console noise.
+**Delegate to:** code-explorer + frontend-patterns
+
+**Read first:**
+- `resources/js/Layouts/*`
+- `resources/js/Components/UI/*`
+- `resources/js/Pages/**/*`
+- `tailwind.config.js`
+- `docs/17-design-system.md`
+
+**Steps:**
+- [ ] Inventory shared UI primitives currently available.
+- [ ] List pages not using shared `Card`, `StatusBadge`, `EmptyState`, `StatCard`, `Pagination`, or `ConfirmDialog` where applicable.
+- [ ] List hardcoded colors that should become Tailwind tokens.
+- [ ] List pages with table overflow risk on mobile.
+
+**Acceptance:**
+- [ ] Audit output identifies exact files for follow-up tasks.
+
+## Agent Task 10.2 — Shared Component Consistency
+
+**Delegate to:** frontend-patterns
+
+**Files likely touched:**
+- `resources/js/Components/UI/*`
+- `resources/js/Pages/Admin/**/*`
+- `resources/js/Pages/Student/**/*`
+- `resources/js/Pages/Department/**/*`
+- `resources/js/Pages/SuperAdmin/**/*`
+
+**Steps:**
+- [ ] Use `StatusBadge` for every request, payment, clearance, user, and account status.
+- [ ] Use `EmptyState` for empty lists.
+- [ ] Use `ConfirmDialog` for destructive actions.
+- [ ] Use consistent card containers for dashboards and detail pages.
+- [ ] Ensure flash/toast patterns are consistent.
+
+**Acceptance:**
+- [ ] Similar pages use same primitives and visual language.
+
+## Agent Task 10.3 — Mobile Responsiveness Sweep
+
+**Delegate to:** frontend-patterns + ui-ux-pro-max
+
+**Viewports:** 375px, 430px, 768px, 1024px, 1440px.
+
+**Steps:**
+- [ ] Test student dashboard, request create, request show, payments, clearance.
+- [ ] Test admin dashboard, requests, payments, document types, reports.
+- [ ] Test department dashboard, clearance list/detail.
+- [ ] Test SuperAdmin users, pending users, logs, reports.
+- [ ] Convert overflowing tables to stacked cards or horizontally safe containers on small screens.
+- [ ] Ensure touch targets are at least 44px.
+
+**Acceptance:**
+- [ ] No core page requires horizontal scrolling on mobile except intentionally scrollable data tables.
+
+## Agent Task 10.4 — Accessibility Pass
+
+**Delegate to:** frontend-patterns + code-reviewer
+
+**Steps:**
+- [ ] Ensure all inputs have labels and visible validation errors.
+- [ ] Ensure modals trap focus and close with Escape.
+- [ ] Ensure destructive buttons have clear accessible names.
+- [ ] Ensure focus rings are visible.
+- [ ] Ensure status color is paired with text, not color-only meaning.
+- [ ] Run Lighthouse or axe on representative pages.
+
+**Acceptance:**
+- [ ] No critical accessibility issue remains on core flows.
+
+## Agent Task 10.5 — Loading, Empty, Error, And Print States
+
+**Delegate to:** frontend-patterns
+
+**Files likely touched:**
+- `resources/js/Pages/Error.vue` or Laravel error views
+- `resources/js/Components/UI/Skeleton.vue`
+- `resources/js/Pages/**/*`
+
+**Steps:**
+- [ ] Add or verify themed 403, 404, 419, and 500 pages.
+- [ ] Use skeletons or stable placeholders for slow-loading sections.
+- [ ] Add useful empty-state copy for requests, payments, notifications, messages, logs, and reports.
+- [ ] Add print styles for request detail and clearance status pages.
+
+**Acceptance:**
+- [ ] Empty and error states look intentional, not broken.
+
+## Agent Task 10.6 — Frontend Performance And Cleanup
+
+**Delegate to:** frontend-patterns + code-reviewer
+
+**Commands:**
+
+```bash
+npm run lint
+npm run build
+```
+
+**Steps:**
+- [ ] Remove stray `console.log` calls from production code.
+- [ ] Remove dead components identified by audit.
+- [ ] Verify images are optimized and use proper dimensions.
+- [ ] Verify production build size is reasonable and no accidental heavy dependency was added.
+
+**Acceptance:**
+- [ ] `npm run build` passes.
+- [ ] No production console noise remains.

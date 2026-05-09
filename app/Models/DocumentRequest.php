@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class DocumentRequest extends Model
 {
@@ -19,13 +21,33 @@ class DocumentRequest extends Model
         'reference_no',
         'user_id',
         'document_type_id',
+        'quantity',
+        'page_count',
+        'fee_snapshot',
         'status',
         'processing_stage',
+        'intake_mode',
         'denial_reason',
         'approved_by',
         'approved_at',
         'released_at',
         'purpose',
+        'extra_data',
+
+        'sla_start_at',
+        'sla_paused_at',
+        'sla_resumed_at',
+        'sla_pause_reason',
+        'expected_release_on',
+
+        'requires_hd_return',
+        'hd_received_at',
+
+        'transfer_exception_requested',
+        'transfer_exception_approved',
+        'transfer_exception_decided_at',
+
+        'payment_verified_at',
     ];
 
     /**
@@ -36,6 +58,18 @@ class DocumentRequest extends Model
         return [
             'approved_at' => 'datetime',
             'released_at' => 'datetime',
+            'sla_start_at' => 'datetime',
+            'sla_paused_at' => 'datetime',
+            'sla_resumed_at' => 'datetime',
+            'expected_release_on' => 'date',
+            'hd_received_at' => 'datetime',
+            'transfer_exception_decided_at' => 'datetime',
+            'payment_verified_at' => 'datetime',
+            'requires_hd_return' => 'boolean',
+            'transfer_exception_requested' => 'boolean',
+            'transfer_exception_approved' => 'boolean',
+            'fee_snapshot' => 'decimal:2',
+            'extra_data' => 'array',
         ];
     }
 
@@ -77,6 +111,47 @@ class DocumentRequest extends Model
         return $this->hasMany(Clearance::class);
     }
 
+    public function requirements(): HasMany
+    {
+        return $this->hasMany(RequestRequirement::class);
+    }
+
+    public function claimSlip(): HasOne
+    {
+        return $this->hasOne(ClaimSlip::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(DocumentRequestItem::class);
+    }
+
+    /**
+     * Total fee across all items (falls back to fee_snapshot for legacy requests).
+     */
+    public function totalFee(): Attribute
+    {
+        return Attribute::make(
+            get: function (): float {
+                if ($this->relationLoaded('items') && $this->items->isNotEmpty()) {
+                    return (float) $this->items->sum('line_total');
+                }
+
+                return (float) ($this->fee_snapshot ?? 0);
+            },
+        );
+    }
+
+    /**
+     * Whether the student can upload a payment receipt (request must be approved first).
+     */
+    public function paymentUploadUnlocked(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): bool => in_array($this->status, ['approved', 'completed'], true),
+        );
+    }
+
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', 'pending');
@@ -92,5 +167,13 @@ class DocumentRequest extends Model
         $userId = $user instanceof User ? $user->id : $user;
 
         return $query->where('user_id', $userId);
+    }
+
+    /**
+     * True when every required requirement has been validated.
+     */
+    public function allRequirementsValidated(): bool
+    {
+        return $this->requirements()->where('status', '!=', 'validated')->doesntExist();
     }
 }

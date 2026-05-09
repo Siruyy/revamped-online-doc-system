@@ -34,7 +34,7 @@
 ## 0.4 Tailwind CSS
 
 - [x] Confirm Tailwind installed by Breeze.
-- [x] Update `tailwind.config.js` with brand colors and typography from [`docs/09-frontend-design.md`](../docs/09-frontend-design.md).
+- [x] Update `tailwind.config.js` with brand colors and typography from [`docs/09-frontend-design.md`](../../09-frontend-design.md).
 - [x] Add Inter and Plus Jakarta Sans font links to `app.blade.php`.
 - [x] Install Headless UI: `npm i @headlessui/vue @heroicons/vue`.
 
@@ -82,7 +82,7 @@
 
 ## 0.11 GitHub Actions CI
 
-- [x] Add `.github/workflows/ci.yml` per [`docs/15-testing-strategy.md`](../docs/15-testing-strategy.md).
+- [x] Add `.github/workflows/ci.yml` per [`docs/15-testing-strategy.md`](../../15-testing-strategy.md).
 - [x] Steps: checkout, PHP setup, composer install, npm install, build, migrate, pint --test, phpstan, pest.
 - [x] CI passes on initial commit.
 

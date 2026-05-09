@@ -6,6 +6,7 @@ use App\Events\RequestDenied;
 use App\Events\RequestStageUpdated;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -25,6 +26,7 @@ class RequestManagementTest extends TestCase
         $this->actingAs($admin)->get(route('admin.requests.show', $request))->assertOk();
     }
 
+    /** Policy-initial: admin approves request directly (no payment required yet) */
     public function test_admin_can_approve_request(): void
     {
         $admin = $this->createAdmin();
@@ -41,6 +43,7 @@ class RequestManagementTest extends TestCase
         ]);
     }
 
+    /** Policy-initial: admin can deny request without a payment receipt existing */
     public function test_admin_can_deny_request_with_reason(): void
     {
         Event::fake([RequestDenied::class]);
@@ -80,6 +83,22 @@ class RequestManagementTest extends TestCase
             'id' => $request->id,
             'processing_stage' => 'ready_for_pickup',
         ]);
+    }
+
+    /** Policy-initial: payment receipt upload is locked when request is still pending */
+    public function test_student_cannot_upload_receipt_before_request_is_approved(): void
+    {
+        $student = $this->createStudent();
+        $request = DocumentRequest::factory()->for($student)->pending()->create();
+        $payment = Payment::factory()->for($student)->for($request)->create(['status' => 'pending', 'total_amount' => 100]);
+
+        // Policy-initial: the policy gate returns 403 when the request is still pending.
+        $this->actingAs($student)->post(route('student.payments.upload', $payment), [
+            'receipt' => \Illuminate\Http\UploadedFile::fake()->image('receipt.jpg'),
+            'payment_method' => 'gcash',
+        ])->assertForbidden();
+
+        $this->assertDatabaseHas('payments', ['id' => $payment->id, 'status' => 'pending']);
     }
 
     public function test_non_admin_cannot_access_admin_request_routes(): void

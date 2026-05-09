@@ -1,4 +1,5 @@
 <script setup>
+import { BellIcon } from '@heroicons/vue/24/outline';
 import { computed, onMounted, onUnmounted } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 
@@ -49,13 +50,13 @@ onUnmounted(() => {
 <template>
     <Link
         :href="notificationsUrl"
-        class="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+        class="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
         aria-label="Notifications"
     >
-        <span class="text-lg">🔔</span>
+        <BellIcon class="h-5 w-5" />
         <span
             v-if="unreadCount > 0"
-            class="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-xs font-semibold text-white"
+            class="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-xs font-bold text-white leading-none"
         >
             {{ unreadCount > 99 ? '99+' : unreadCount }}
         </span>

@@ -1,74 +1,76 @@
-# Implementation Plan — SVCI Online Document System (Revamped)
+# Implementation Plan — SVCI Online Document System
 
-> Phased plan for the full Laravel 13 + Inertia + Vue rewrite. Each phase has its own file with checkboxed tasks. Tick them as you complete.
+This folder tracks remaining work for the Laravel 13 + Inertia + Vue rewrite.
 
-## Phases
+## Current State
 
-| # | Phase | File | Status |
-|---|-------|------|:------:|
-| 00 | Project Setup & Tooling | [`phase-00-setup.md`](./phase-00-setup.md) | ✅ |
-| 01 | Database, Models & Seeders | [`phase-01-database-and-models.md`](./phase-01-database-and-models.md) | ✅ |
-| 02 | Auth, Roles & Approval Workflow | [`phase-02-auth-and-roles.md`](./phase-02-auth-and-roles.md) | ✅ |
-| 03 | Student Features | [`phase-03-student-features.md`](./phase-03-student-features.md) | ✅ |
-| 04 | Admin Features | [`phase-04-admin-features.md`](./phase-04-admin-features.md) | ✅ |
-| 05 | Department Clearance | [`phase-05-department-clearance.md`](./phase-05-department-clearance.md) | ✅ |
-| 06 | SuperAdmin Features | [`phase-06-superadmin-features.md`](./phase-06-superadmin-features.md) | ✅ |
-| 07 | Real-Time (Reverb) & Notifications | [`phase-07-realtime-and-notifications.md`](./phase-07-realtime-and-notifications.md) | ⬜ |
-| 08 | Messaging | [`phase-08-messaging.md`](./phase-08-messaging.md) | ⬜ |
-| 09 | PDF Generation & Excel Exports | [`phase-09-pdf-and-exports.md`](./phase-09-pdf-and-exports.md) | ⬜ |
-| 10 | UI/UX Polish & Design System | [`phase-10-ui-polish.md`](./phase-10-ui-polish.md) | ⬜ |
-| 11 | Testing & Hardening | [`phase-11-testing-and-hardening.md`](./phase-11-testing-and-hardening.md) | ⬜ |
-| 12 | Deployment to DigitalOcean + Dokploy | [`phase-12-deployment.md`](./phase-12-deployment.md) | ⬜ |
-| 13 | Data Migration from Legacy | [`phase-13-legacy-data-migration.md`](./phase-13-legacy-data-migration.md) | ⬜ |
-| 14 | Post-Launch | [`phase-14-post-launch.md`](./phase-14-post-launch.md) | ⬜ |
+Core MVP exists for setup, schema, auth, student, and admin flows. Remaining work is mostly closeout, realtime/notifications, messaging, PDF/export, hardening, deployment, and legacy migration.
 
-## How to Use This Plan
+## Active Phases
 
-- **Sequential by default** — earlier phases unblock later ones, but some can run in parallel (e.g., 04 admin and 05 department).
-- **TDD first** — write tests before implementation per the [testing strategy](../docs/15-testing-strategy.md).
-- **Use subagents** — for parallel research, code review, and security audits (see "Subagent Usage" below).
-- **Tick checkboxes** as you complete each task — partial completion is OK.
-- **Update phase status** in this index when a phase is done.
+| # | Phase | File | Status | Suggested Delegate |
+|---|-------|------|:------:|--------------------|
+| 05 | Department Clearance Closeout | [`phase-05-department-clearance.md`](./phase-05-department-clearance.md) | Active closeout | backend + tests |
+| 06 | SuperAdmin Closeout | [`phase-06-superadmin-features.md`](./phase-06-superadmin-features.md) | Active closeout | backend + security |
+| 07 | Real-Time & Notifications | [`phase-07-realtime-and-notifications.md`](./phase-07-realtime-and-notifications.md) | Partial | backend + realtime |
+| 08 | Messaging | [`phase-08-messaging.md`](./phase-08-messaging.md) | Not started | backend + frontend |
+| 09 | PDF Generation & Exports | [`phase-09-pdf-and-exports.md`](./phase-09-pdf-and-exports.md) | Not started | backend + reporting |
+| 10 | UI/UX Polish | [`phase-10-ui-polish.md`](./phase-10-ui-polish.md) | Not started | frontend + accessibility |
+| 11 | Testing & Hardening | [`phase-11-testing-and-hardening.md`](./phase-11-testing-and-hardening.md) | Not started | verification + security |
+| 12 | Deployment | [`phase-12-deployment.md`](./phase-12-deployment.md) | Not started | deployment |
+| 13 | Legacy Data Migration | [`phase-13-legacy-data-migration.md`](./phase-13-legacy-data-migration.md) | Not started | database + migration |
+| 14 | Post-Launch | [`phase-14-post-launch.md`](./phase-14-post-launch.md) | Not started | support + docs |
 
-## Subagent Usage Per Phase
+## Finished Phases
 
-| Subagent | When to invoke |
-|----------|----------------|
-| `planner` | Before starting any phase, to expand the high-level plan into concrete steps |
-| `architect` | At Phase 02–03 boundary, to validate service-layer design |
-| `tdd-guide` | Every feature implementation — write tests first |
-| `code-reviewer` | After every PR / batch of related changes |
-| `security-reviewer` | After Phase 02 (auth), Phase 03 (uploads), Phase 11 (final audit) |
-| `database-reviewer` | After Phase 01 migrations are written |
-| `build-error-resolver` | When CI fails or local build breaks |
-| `e2e-runner` | Phase 11, after critical flows are stable |
-| `refactor-cleaner` | End of Phase 10 |
-| `verify-app` | Before each deployment in Phase 12 |
-| `doc-updater` | After each phase, to keep docs aligned with reality |
+Completed phases are archived in [`finished/`](./finished/). Do not edit archived phases for new work; create an active closeout task instead.
 
-## Skills To Activate Per Phase
+| # | Phase | File |
+|---|-------|------|
+| 00 | Project Setup & Tooling | [`finished/phase-00-setup.md`](./finished/phase-00-setup.md) |
+| 01 | Database, Models & Seeders | [`finished/phase-01-database-and-models.md`](./finished/phase-01-database-and-models.md) |
+| 02 | Auth, Roles & Approval Workflow | [`finished/phase-02-auth-and-roles.md`](./finished/phase-02-auth-and-roles.md) |
+| 03 | Student Features | [`finished/phase-03-student-features.md`](./finished/phase-03-student-features.md) |
+| 04 | Admin Features | [`finished/phase-04-admin-features.md`](./finished/phase-04-admin-features.md) |
 
-| Phase | Skills |
-|-------|--------|
-| 00 | `coding-standards`, `agent-customization` |
-| 01 | `database-migrations`, `postgres-patterns` (analogues apply to MySQL) |
-| 02 | `security-review`, `tdd-workflow` |
-| 03–06 | `tdd-workflow`, `frontend-patterns`, `backend-patterns` |
-| 07–08 | `backend-patterns` |
-| 09 | `backend-patterns` |
-| 10 | `ui-ux-pro-max`, `frontend-patterns` |
-| 11 | `tdd-workflow`, `e2e-testing`, `security-review` |
-| 12 | `deployment-patterns`, `docker-patterns` |
-| 13 | `database-migrations` |
+## Recommended Execution Order
 
-## Hooks Recommendations
+1. Phase 11 Task 11.1: fix CI blockers first (`phpstan.neon`, Pint, ESLint, coverage driver/CI DB parity).
+2. Phase 07: finish queued/broadcast notifications and verify Reverb manually.
+3. Phase 09: replace stub clearance PDF and add exports.
+4. Phase 08: implement messaging or explicitly defer it from v1.
+5. Phase 05 and 06: close out department and SuperAdmin gaps.
+6. Phase 10: UI/accessibility polish.
+7. Phase 12: production deployment artifacts and Dokploy setup.
+8. Phase 13: legacy migration only after client confirms import is required.
+9. Phase 14: post-launch handoff and operations.
 
-- **PreToolUse** — block writes to `vendor/`, `node_modules/`.
-- **PostToolUse** — auto-run `pint` after PHP file edits, `prettier`/`eslint` after Vue edits.
-- **Stop** — run `composer audit` and `npm audit` summary.
+## How To Use These Plans
 
-## Rules To Enforce (Per Project Rules in `~/.claude/rules/`)
+- Each `Agent Task` is sized for one subagent or one focused implementation session.
+- Before delegating, give the subagent the phase file, listed read-first docs, and current repo path.
+- Do not mark a task complete until its acceptance checks and verification commands pass.
+- If work is explicitly deferred, mark it as deferred in the phase notes and update this index.
+- Keep docs aligned with code. If implementation differs from a phase plan, update the plan in the same change.
 
-- TypeScript/JS rules apply to Vue files.
-- Common rules: agents, coding-style, development-workflow, git-workflow, hooks, patterns, performance, security, testing.
-- PHP-specific rules: not currently in `~/.claude/rules/php/` — recommend creating one (Laravel-flavored).
+## Standard Verification Commands
+
+Run the smallest relevant set first, then broaden before completion.
+
+```bash
+php artisan test
+./vendor/bin/pint --test
+./vendor/bin/phpstan analyse --no-progress
+npm run lint
+npm run build
+```
+
+Coverage requires Xdebug or PCOV:
+
+```bash
+php artisan test --coverage --min=80
+```
+
+## Plan Maintenance Rules
+
+See [`AGENTS.md`](./AGENTS.md) for planning-agent instructions scoped to this folder.

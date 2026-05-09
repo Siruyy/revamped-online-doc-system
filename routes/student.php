@@ -17,8 +17,12 @@ Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name
 Route::get('/requests', [RequestController::class, 'index'])->name('requests.index');
 Route::get('/requests/new', [RequestController::class, 'create'])->name('requests.create');
 Route::post('/requests', [RequestController::class, 'store'])->name('requests.store');
+Route::post('/requests/wizard', [RequestController::class, 'wizardStore'])->name('requests.wizard.store');
 Route::get('/requests/{documentRequest}', [RequestController::class, 'show'])->name('requests.show');
 Route::post('/requests/{documentRequest}/cancel', [RequestController::class, 'cancel'])->name('requests.cancel');
+Route::post('/requests/{documentRequest}/requirements/{requirement}', [RequestController::class, 'uploadRequirement'])
+    ->middleware('throttle:uploads')
+    ->name('requests.requirements.upload');
 
 Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
 Route::post('/payments/{payment}/upload', [PaymentController::class, 'upload'])

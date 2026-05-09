@@ -15,10 +15,20 @@ use Illuminate\Support\Str;
 
 class PaymentService
 {
+    /**
+     * Upload a payment receipt for an existing payment.
+     * The associated request must already be admin-approved (policy-initial gate).
+     */
     public function uploadReceipt(Payment $payment, UploadedFile $receipt, string $paymentMethod, ?string $referenceNumber): Payment
     {
         if (in_array($payment->status, ['approved', 'pending_approval'], true)) {
             throw new \RuntimeException('This payment cannot be updated in its current review state.');
+        }
+
+        // Policy-initial: student may only upload receipt after admin approves the request.
+        $documentRequest = $payment->documentRequest;
+        if ($documentRequest && ! in_array($documentRequest->status, ['approved', 'completed'], true)) {
+            throw new \RuntimeException('Payment receipt can only be uploaded after your request has been approved by the admin.');
         }
 
         $extension = strtolower($receipt->getClientOriginalExtension());
@@ -47,6 +57,10 @@ class PaymentService
         return $payment->refresh();
     }
 
+    /**
+     * Admin approves a payment receipt. After approval, clearance routing begins
+     * for any item types that require departmental clearance.
+     */
     public function approve(Payment $payment, User $admin): Payment
     {
         if ($payment->status !== 'pending_approval') {
@@ -60,23 +74,12 @@ class PaymentService
             'denial_reason' => null,
         ]);
 
+        // After payment approval, start clearance routing for document types that require it.
         if ($payment->document_request_id) {
-            $clearance = Clearance::query()->firstOrCreate(
-                [
-                    'user_id' => $payment->user_id,
-                    'document_request_id' => $payment->document_request_id,
-                ],
-                [
-                    'overall_status' => 'in_progress',
-                ]
-            );
+            $docRequest = $payment->documentRequest;
 
-            if ($clearance->wasRecentlyCreated) {
-                ClearanceCreated::dispatch(
-                    $clearance->id,
-                    $clearance->user_id,
-                    $clearance->document_request_id
-                );
+            if ($docRequest) {
+                $this->initiateClearanceIfNeeded($docRequest, $payment);
             }
         }
 
@@ -117,5 +120,50 @@ class PaymentService
         PaymentDenied::dispatch($payment->id, $payment->user_id, $admin->id, $reason);
 
         return $payment->refresh();
+    }
+
+    /**
+     * Create clearance records for all request items that require departmental sign-off.
+     * For multi-item requests, checks each item's document type; for legacy single-type
+     * requests, checks the parent's documentType directly.
+     */
+    protected function initiateClearanceIfNeeded(
+        \App\Models\DocumentRequest $docRequest,
+        Payment $payment
+    ): void {
+        // Check if any item requires clearance.
+        $needsClearance = false;
+
+        $items = $docRequest->items()->with('documentType')->get();
+
+        if ($items->isNotEmpty()) {
+            $needsClearance = $items->contains(
+                fn ($item) => $item->documentType?->requiresClearance() ?? false
+            );
+        } else {
+            $needsClearance = $docRequest->documentType?->requiresClearance() ?? true;
+        }
+
+        if (! $needsClearance) {
+            return;
+        }
+
+        $clearance = Clearance::query()->firstOrCreate(
+            [
+                'user_id' => $payment->user_id,
+                'document_request_id' => $payment->document_request_id,
+            ],
+            [
+                'overall_status' => 'in_progress',
+            ]
+        );
+
+        if ($clearance->wasRecentlyCreated) {
+            ClearanceCreated::dispatch(
+                $clearance->id,
+                $clearance->user_id,
+                $clearance->document_request_id
+            );
+        }
     }
 }

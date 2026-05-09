@@ -1,86 +1,126 @@
-# Phase 06 — SuperAdmin Features
+# Phase 06 — SuperAdmin Closeout
 
-> **Status:** Core MVP shipped (dashboard, user CRUD, bulk approve/delete with `DELETE` confirmation, suspend/reactivate, staff onboarding + reset email, activity log viewer, date-range reports). Stretch items (broadcast, session revoke, Excel exports, reusing admin CRUD under superadmin) remain below.
+> **Goal:** Verify and close gaps in SuperAdmin user management, reports, logs, route coverage, and sensitive-action security.
 
-> **Goal:** SuperAdmin power-user features: full user management, approval workflow, logs, reports, system overrides.
+**Status:** Active closeout. Core MVP appears implemented, but original checklist still had unchecked items and known route/export gaps.
 
-**Subagents:** `tdd-guide`, `code-reviewer`, `security-reviewer` (mass operations).
-**Skills:** `tdd-workflow`, `security-review`.
-**Depends on:** Phases 02, 04.
+**Depends on:** Phase 02, Phase 04.
 
----
-
-## 6.1 SuperAdmin Dashboard
-
-- [ ] `SuperAdmin\DashboardController@index` aggregates:
-    - User counts by role and status
-    - System-wide request and payment stats
-    - Pending registrations count
-    - Recent activity (last 20 log entries)
-- [ ] `Pages/SuperAdmin/Dashboard.vue`.
-
-## 6.2 User Management
-
-- [ ] `SuperAdmin\UserController@index` — paginated, filters: role, status, course, year, search.
-- [ ] `Pages/SuperAdmin/Users/Index.vue` with checkbox selection for bulk ops.
-- [ ] `@pending` — dedicated page for `status=pending` users.
-- [ ] `@approve` (already in Phase 02) — verify works.
-- [ ] `@reject` — with reason.
-- [ ] `@suspend` / `@reactivate`.
-- [ ] `@destroy` (soft delete).
-- [ ] `@bulkDelete` — with confirmation modal and "type DELETE to confirm" pattern.
-- [ ] `@store` — manually create staff accounts (admin/department) with auto-generated password sent via email.
-- [ ] `@edit` / `@update` — edit any user (with care).
-- [ ] All actions logged with affected_user_id.
-
-## 6.3 Pending Registrations
-
-- [ ] `Pages/SuperAdmin/Users/Pending.vue` (verify from Phase 02).
-- [ ] Bulk approve option.
-- [ ] Real-time bell notification (Phase 07).
-
-## 6.4 Logs Viewer
-
-- [ ] `SuperAdmin\LogController@index` — paginated, filters: action, user, date range, search.
-- [ ] `Pages/SuperAdmin/Logs.vue` — table with expandable detail row showing metadata.
-- [ ] Server-side filtering (don't paginate millions of rows in Vue).
-
-## 6.5 Reports
-
-- [ ] `SuperAdmin\ReportController@index` — request reports, payment reports, clearance reports.
-- [ ] Date range + filters.
-- [ ] Excel export wired Phase 09.
-
-## 6.6 System-Wide Overrides
-
-- [ ] SuperAdmin can edit/delete document types, announcements, FAQs (reuse Admin controllers, just add to superadmin routes).
-- [ ] SuperAdmin can override admin actions (re-approve a denied request, etc.) — implement as needed.
-
-## 6.7 Broadcast Announcements (Stretch)
-
-- [ ] Special "broadcast to all users" mode that sends an in-app notification + email to all active users.
-- [ ] Throttled (max 1 per hour) to prevent spam.
-- [ ] Activity logged.
-
-## 6.8 Account Security Settings
-
-- [ ] Force password reset on a user (sends email link).
-- [ ] View user's recent login activity.
-- [ ] Revoke all sessions for a user.
-
-## 6.9 Tests
-
-- [ ] All controller actions tested.
-- [ ] Bulk delete edge cases (empty selection, mixed roles, self-deletion blocked).
-- [ ] Authorization: only SuperAdmin can access.
-- [ ] Coverage 80%+.
+**Primary docs:** [`03-roles-and-permissions.md`](../03-roles-and-permissions.md), [`07-routes-and-controllers.md`](../07-routes-and-controllers.md), [`10-security.md`](../10-security.md).
 
 ---
 
-## Exit Criteria
+## Agent Task 6.1 — Reconcile SuperAdmin Implementation
 
-- ✅ SuperAdmin can fully manage all users, roles, and statuses.
-- ✅ Activity logs are searchable and exportable (export in Phase 09).
-- ✅ Cannot self-delete or self-suspend.
-- ✅ Bulk operations require explicit confirmation.
-- ✅ All sensitive actions audit-logged.
+**Delegate to:** code-explorer + security-review
+
+**Read first:**
+- `routes/superadmin.php`
+- `app/Http/Controllers/SuperAdmin/*`
+- `resources/js/Pages/SuperAdmin/*`
+- `app/Policies/UserPolicy.php`
+- `tests/Feature/SuperAdmin/*`
+
+**Steps:**
+- [ ] Confirm dashboard, users, pending users, approve/reject/suspend/reactivate/delete/bulk delete, staff creation, logs, reports, profile, and notifications exist.
+- [ ] Confirm all sensitive actions use policies and audit logging.
+- [ ] Confirm self-delete and self-suspend are blocked.
+- [ ] List missing docs-required routes from `docs/07-routes-and-controllers.md`.
+- [ ] Update Phase Notes with explicit deferrals.
+
+**Acceptance:**
+- [ ] SuperAdmin plan reflects actual code state.
+- [ ] Each missing item maps to a task below.
+
+## Agent Task 6.2 — User Management Closeout
+
+**Delegate to:** tdd-workflow + backend-patterns
+
+**Files likely touched:**
+- `app/Http/Controllers/SuperAdmin/UserController.php`
+- `app/Http/Requests/SuperAdmin/*UserRequest.php`
+- `resources/js/Pages/SuperAdmin/Users/Index.vue`
+- `resources/js/Pages/SuperAdmin/Users/Pending.vue`
+- `tests/Feature/SuperAdmin/UserManagementTest.php`
+
+**Steps:**
+- [ ] Add tests for approve, reject, suspend, reactivate, soft delete, bulk approve, and bulk delete.
+- [ ] Add tests for empty bulk selection, mixed-status selections, self-delete blocked, and self-suspend blocked.
+- [ ] Verify filters: role, status, course, year, and search.
+- [ ] Verify staff creation sends reset/setup email and never exposes generated password in logs.
+- [ ] Verify every action writes `activity_logs` with actor and affected user.
+
+**Acceptance:**
+- [ ] User management actions are covered by feature tests.
+- [ ] Sensitive operations require explicit confirmation where destructive.
+
+## Agent Task 6.3 — SuperAdmin Route Coverage
+
+**Delegate to:** backend-patterns + frontend-patterns
+
+**Files likely touched:**
+- `routes/superadmin.php`
+- `app/Http/Controllers/SuperAdmin/ReportController.php`
+- `app/Http/Controllers/Admin/DocumentTypeController.php`
+- `app/Http/Controllers/Admin/AnnouncementController.php`
+- `app/Http/Controllers/Admin/FaqController.php`
+
+**Steps:**
+- [ ] Add or verify SuperAdmin request overview route if docs require it.
+- [ ] Add or verify SuperAdmin can access document type, announcement, and FAQ CRUD using shared admin controllers or explicit SuperAdmin controllers.
+- [ ] Ensure route names do not collide with admin route names.
+- [ ] Ensure menus expose only implemented routes.
+- [ ] Add route authorization tests for each added route.
+
+**Acceptance:**
+- [ ] SuperAdmin has documented system-wide visibility and management access.
+- [ ] Admin-only middleware does not accidentally block SuperAdmin where docs require access.
+
+## Agent Task 6.4 — Logs And Reports Closeout
+
+**Delegate to:** backend-patterns + code-reviewer
+
+**Files likely touched:**
+- `app/Http/Controllers/SuperAdmin/LogController.php`
+- `app/Http/Controllers/SuperAdmin/ReportController.php`
+- `resources/js/Pages/SuperAdmin/Logs.vue`
+- `resources/js/Pages/SuperAdmin/Reports.vue`
+- `tests/Feature/SuperAdmin/LogsAndReportsTest.php`
+
+**Steps:**
+- [ ] Verify logs are server-side paginated.
+- [ ] Verify filters: action, actor, affected user, date range, and search.
+- [ ] Verify report page supports request, payment, and clearance summaries.
+- [ ] Ensure export buttons route to Phase 09 endpoints or are hidden until Phase 09 is complete.
+
+**Acceptance:**
+- [ ] Large log tables do not load fully into Vue.
+- [ ] Export functionality is not presented as working until Phase 09 lands.
+
+## Agent Task 6.5 — SuperAdmin Security Review
+
+**Delegate to:** security-review
+
+**Commands:**
+
+```bash
+php artisan test --filter=SuperAdmin
+php artisan route:list --path=superadmin
+```
+
+**Checklist:**
+- [ ] Only SuperAdmin can access `/superadmin/*`.
+- [ ] SuperAdmin `Gate::before` exists and is tested, or policy behavior is explicitly tested.
+- [ ] Mass actions are CSRF-protected and use non-GET verbs.
+- [ ] No hardcoded passwords or reset links are logged.
+- [ ] Activity logs avoid storing sensitive tokens.
+
+**Acceptance:**
+- [ ] No CRITICAL/HIGH SuperAdmin security finding remains.
+
+## Phase Notes
+
+- Excel exports belong to Phase 09.
+- Broadcast announcements are stretch unless client explicitly asks.
+- Session revoke is stretch unless security requirements change.
+- Do not move this phase to `finished/` until route and test reconciliation pass.

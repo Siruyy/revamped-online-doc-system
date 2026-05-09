@@ -32,11 +32,12 @@ class DocumentTypeController extends Controller
             'description' => ['nullable', 'string'],
             'category' => ['required', 'string', 'max:120'],
             'fee' => ['required', 'numeric', 'min:0'],
+            'default_page_count' => ['required', 'integer', 'min:1', 'max:500'],
             'processing_days' => ['required', 'integer', 'min:1', 'max:365'],
             'is_active' => ['required', 'boolean'],
         ]);
 
-        DocumentType::query()->create($validated);
+        DocumentType::query()->create(array_merge($validated, ['fee_formula' => 'per_page']));
 
         ActivityLogger::log(
             'document_type_created',
@@ -54,11 +55,12 @@ class DocumentTypeController extends Controller
             'description' => ['nullable', 'string'],
             'category' => ['required', 'string', 'max:120'],
             'fee' => ['required', 'numeric', 'min:0'],
+            'default_page_count' => ['required', 'integer', 'min:1', 'max:500'],
             'processing_days' => ['required', 'integer', 'min:1', 'max:365'],
             'is_active' => ['required', 'boolean'],
         ]);
 
-        $documentType->update($validated);
+        $documentType->update(array_merge($validated, ['fee_formula' => 'per_page']));
 
         ActivityLogger::log(
             'document_type_updated',

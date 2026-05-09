@@ -1,112 +1,187 @@
-# Phase 07 — Real-Time (Reverb) & Notifications
+# Phase 07 — Real-Time And Notifications
 
-> **Goal:** Live updates across the system — notification bell, request lists, status changes — without page refresh. Email notifications via queue.
+> **Goal:** Finish reliable live updates, queued notifications, broadcast notification payloads, email delivery, and manual Reverb verification.
 
-**Subagents:** `tdd-guide`, `code-reviewer`, `architect` (event design review).
-**Skills:** `backend-patterns`.
-**Depends on:** Phases 03–06.
+**Status:** Partial. Echo, channels, several events, and fallback polling exist. Notifications, queue/broadcast completion, and manual verification remain.
 
----
+**Depends on:** Phases 03-06.
 
-## 7.1 Reverb Configuration
-
-- [ ] Verify `php artisan reverb:start` runs locally.
-- [ ] `.env` configured with Reverb keys.
-- [ ] `BROADCAST_CONNECTION=reverb`.
-
-## 7.2 Echo Client Setup
-
-- [x] `resources/js/echo.js` configured (per [`08-real-time.md`](../08-real-time.md)).
-- [x] Imported via `resources/js/bootstrap.js` (loaded from `app.js`).
-- [ ] Connection works in browser console: `Echo.private('user.1').listen(...)` (manual check with Reverb running).
-
-## 7.3 Channels
-
-- [x] `routes/channels.php` defines: `user.{userId}`, `role.admin`, `role.superadmin`, `role.department.{role}`, `chat.{messageId}` (message-participant auth; refine in Phase 08 if needed).
-- [x] Authorization callbacks tested (`tests/Feature/Broadcasting/BroadcastChannelAuthorizationTest.php`).
-
-## 7.4 Events
-
-Implement each event class with `ShouldBroadcast` (or `ShouldBroadcastNow` for chat):
-
-- [x] `RegistrationSubmitted` → `role.superadmin`
-- [x] `RegistrationApproved` → `user.{id}`
-- [x] `RequestSubmitted` → `role.admin`
-- [x] `RequestApproved` / `RequestDenied` → `user.{studentId}`
-- [x] `RequestStageUpdated` → `user.{studentId}`
-- [x] `PaymentSubmitted` → `role.admin`
-- [x] `PaymentApproved` / `PaymentDenied` → `user.{studentId}`
-- [x] `ClearanceCreated` → `role.department.teacher`, `dean`, `accounting`, `sao` (each)
-- [x] `ClearanceUpdated` → `user.{studentId}` + `role.admin`
-- [x] `ClearanceCompleted` → `user.{studentId}`
-- [ ] `NotificationCreated` / per-notification `toBroadcast()` where needed (Laravel + `User::receivesBroadcastNotificationsOn()`; bell uses Inertia reload on `.notification()` when notifications use `broadcast` channel)
-
-## 7.5 Notifications
-
-- [ ] Implement all Notification classes from [`12-notifications-and-email.md`](../12-notifications-and-email.md).
-- [ ] Each implements `ShouldQueue`.
-- [ ] Each defines `via()`, `toDatabase()`, `toMail()`, `toBroadcast()` as appropriate.
-- [ ] Mail templates customized with brand styling.
-
-## 7.6 Listeners / Service Hooks
-
-Wire events to side effects in services or dedicated listeners:
-
-- [ ] When `RequestSubmitted` fires → notify all admins.
-- [ ] When `PaymentApproved` fires → initialize clearance + notify student.
-- [ ] When `ClearanceCompleted` fires → generate PDF + notify student.
-- [ ] When `RegistrationSubmitted` fires → notify all SuperAdmins.
-
-## 7.7 Vue Real-Time Integration
-
-- [x] `useEchoPrivateChannel` composable (`resources/js/Composables/useEchoPrivateChannel.js`) for private channel subscribe / cleanup (non-`user.*` channels leave on unmount).
-- [ ] `useUserChannel` / `useRoleChannel` named helpers (optional refactor on top of composable above).
-- [x] `NotificationBell.vue` — Echo `user.{id}` `.notification()` + Inertia reload for shared `unreadNotificationsCount`; notifications link by role; shown on `StudentLayout` and `StaffLayout`.
-- [ ] `MessageBell.vue` (UI-only here; messaging features in Phase 08).
-- [x] Admin Requests list subscribes to `role.admin` — reloads table on `RequestSubmitted`, `PaymentSubmitted`, `ClearanceUpdated`.
-- [x] Student Request detail subscribes to `user.{id}` — partial reload `request` on status / payment / clearance / registration events.
-- [x] Department dashboard subscribes to `role.department.{role}` — reload stats/list on `ClearanceCreated` / `ClearanceUpdated`.
-- [x] SuperAdmin Pending registrations — `role.superadmin` + `RegistrationSubmitted`.
-- [x] Fallback polling (`useRealtimeOrPoll`) when Echo is unavailable.
-
-## 7.8 Queue Worker
-
-- [ ] Verify `php artisan queue:work` processes notification jobs.
-- [ ] Test failed-job handling (`failed_jobs` table).
-- [ ] Document Supervisor config for production (already in [`14-deployment.md`](../14-deployment.md)).
-
-## 7.9 Email Configuration (Local)
-
-- [ ] Mailhog (or similar) container running.
-- [ ] `.env` points to Mailhog.
-- [ ] Trigger each notification, verify email arrives.
-
-## 7.10 Email Configuration (Staging/Prod)
-
-- [ ] Choose SMTP provider (Brevo / Mailgun / Gmail SMTP / Resend).
-- [ ] Add credentials to environment.
-- [ ] Send test email.
-
-## 7.11 Tests
-
-- [ ] `Notification::fake()` based tests for every notifiable action.
-- [x] `Event::fake()` for broadcast assertions (registration, request deny/stage, payment deny, clearance created).
-- [x] Channel authorization tests (`BroadcastChannelAuthorizationTest`).
-
-## 7.12 Manual Verification
-
-- [ ] Open two browser windows (student + admin).
-- [ ] Student submits request → admin sees row appear live without refresh.
-- [ ] Admin approves → student sees status update live.
-- [ ] Department signs → student timeline updates live.
-- [ ] Notification bell badge updates without refresh.
+**Primary docs:** [`08-real-time.md`](../08-real-time.md), [`12-notifications-and-email.md`](../12-notifications-and-email.md), [`10-security.md`](../10-security.md).
 
 ---
 
-## Exit Criteria
+## Agent Task 7.1 — Reconcile Existing Realtime Code
 
-- ✅ Real-time updates work end-to-end across all critical flows.
-- ✅ Notifications stored in DB, broadcast via Reverb, and emailed (where configured).
-- ✅ Queue worker processes async jobs reliably.
-- ✅ WebSocket connection failure gracefully falls back to polling.
-- ✅ Coverage 80%+ on event/notification code.
+**Delegate to:** code-explorer
+
+**Read first:**
+- `resources/js/echo.js`
+- `resources/js/bootstrap.js`
+- `resources/js/Composables/useEchoPrivateChannel.js`
+- `resources/js/Composables/useRealtimeOrPoll.js`
+- `routes/channels.php`
+- `app/Events/*`
+- `tests/Feature/Broadcasting/*`
+
+**Steps:**
+- [ ] Confirm `user.{id}`, `role.admin`, `role.superadmin`, `role.department.{role}`, and `chat.{conversationKey}` channel behavior.
+- [ ] Confirm existing events implement `ShouldBroadcast` or `ShouldBroadcastNow` correctly.
+- [ ] List missing event tests by event class.
+- [ ] Confirm Vue pages reload only needed partial props on broadcast.
+
+**Acceptance:**
+- [ ] This phase has a current event/channel inventory.
+- [ ] Missing tests are listed before implementation starts.
+
+## Agent Task 7.2 — Queue All Notifications
+
+**Delegate to:** tdd-workflow + backend-patterns
+
+**Files likely touched:**
+- `app/Notifications/*`
+- `tests/Feature/Notifications/*`
+
+**Steps:**
+- [ ] Add failing tests proving notifications are queued.
+- [ ] Update each notification class to implement `Illuminate\Contracts\Queue\ShouldQueue`.
+- [ ] Keep `Queueable` trait on each queued notification.
+- [ ] Verify notification payloads use only safe IDs, labels, URLs, and status text.
+- [ ] Add tests for request, payment, clearance, registration, message, and announcement notifications that already exist.
+
+**Acceptance:**
+- [ ] Existing notification classes implement `ShouldQueue`.
+- [ ] Tests prove jobs are queued or notification fakes receive expected classes.
+
+## Agent Task 7.3 — Complete Notification Class Catalog
+
+**Delegate to:** backend-patterns + tdd-workflow
+
+**Read first:** [`12-notifications-and-email.md`](../12-notifications-and-email.md)
+
+**Files likely touched:**
+- `app/Notifications/RequestStatusChangedNotification.php`
+- `app/Notifications/PaymentStatusChangedNotification.php`
+- `app/Notifications/ClearanceDepartmentActionNotification.php`
+- `app/Notifications/ClearanceCompletedNotification.php`
+- `app/Notifications/MessageReceivedNotification.php`
+- `app/Notifications/AnnouncementPublishedNotification.php`
+- `tests/Feature/Notifications/NotificationCatalogTest.php`
+
+**Steps:**
+- [ ] Compare existing notification classes with `docs/12-notifications-and-email.md`.
+- [ ] Add missing classes with `via()`, `toDatabase()`, `toMail()` where email is required, and `toBroadcast()` where live bell is required.
+- [ ] Ensure database payloads include `type`, `title`, `message`, `url`, and related resource IDs.
+- [ ] Ensure mail subject/body is branded and does not expose sensitive files or private paths.
+- [ ] Add tests for payload shape and channels per notification.
+
+**Acceptance:**
+- [ ] Notification catalog matches docs or explicitly documents deferrals.
+- [ ] Bell can render all database payloads consistently.
+
+## Agent Task 7.4 — Wire Events To Notification Side Effects
+
+**Delegate to:** backend-patterns + code-reviewer
+
+**Files likely touched:**
+- `app/Providers/EventServiceProvider.php` or Laravel event discovery equivalent
+- `app/Listeners/*`
+- `app/Services/RequestService.php`
+- `app/Services/PaymentService.php`
+- `app/Services/ClearanceService.php`
+- `tests/Feature/Notifications/NotificationSideEffectTest.php`
+
+**Steps:**
+- [ ] Decide whether side effects live in listeners or existing services; prefer listeners for cross-cutting notification side effects.
+- [ ] When request is submitted, notify admins.
+- [ ] When payment is submitted, notify admins.
+- [ ] When request/payment is approved or denied, notify student.
+- [ ] When clearance is created, notify relevant department roles.
+- [ ] When clearance is completed, notify student.
+- [ ] When registration is submitted, notify SuperAdmins.
+- [ ] Add tests with `Notification::fake()` for every side effect.
+
+**Acceptance:**
+- [ ] Every critical workflow emits the expected notification.
+- [ ] Tests fail if a notification hook is removed.
+
+## Agent Task 7.5 — Broadcast Notification Delivery
+
+**Delegate to:** backend-patterns + frontend-patterns
+
+**Files likely touched:**
+- `app/Models/User.php`
+- `app/Notifications/*`
+- `resources/js/Components/NotificationBell.vue`
+- `tests/Feature/Notifications/BroadcastNotificationTest.php`
+
+**Steps:**
+- [ ] Verify `User::receivesBroadcastNotificationsOn()` returns `user.{id}`.
+- [ ] Add `toBroadcast()` to notifications that should update the bell instantly.
+- [ ] Ensure `NotificationBell.vue` listens with `.notification()` and reloads `unreadNotificationsCount` only.
+- [ ] Add broadcast payload tests.
+
+**Acceptance:**
+- [ ] Notification bell badge can update without full page refresh.
+- [ ] Broadcast payload contains no private file paths or sensitive metadata.
+
+## Agent Task 7.6 — Queue And Email Verification
+
+**Delegate to:** verify-app + deployment-patterns
+
+**Files likely touched:**
+- `.env.example`
+- `config/queue.php`
+- `config/mail.php`
+- `docs/14-deployment.md`
+
+**Steps:**
+- [ ] Verify `php artisan queue:work` processes notification jobs locally.
+- [ ] Verify failed jobs are stored and visible.
+- [ ] Configure local mail capture instructions using Mailpit/Mailhog.
+- [ ] Trigger each mail-producing notification and verify delivery locally.
+- [ ] Document required production SMTP environment variables.
+
+**Acceptance:**
+- [ ] Queue worker path is documented and tested locally.
+- [ ] Email setup is reproducible without guessing.
+
+## Agent Task 7.7 — Manual Reverb Verification
+
+**Delegate to:** verify-app
+
+**Commands:**
+
+```bash
+php artisan reverb:start
+php artisan queue:work
+npm run dev
+php artisan serve
+```
+
+**Checklist:**
+- [ ] Browser console can subscribe to a private channel with authenticated user.
+- [ ] Student submits request and admin list updates live.
+- [ ] Admin approves or denies and student detail updates live.
+- [ ] Department signs and student timeline updates live.
+- [ ] Notification bell badge updates live.
+- [ ] Stop Reverb and verify fallback polling keeps critical pages fresh.
+
+**Acceptance:**
+- [ ] Manual verification notes include browser, users, commands, and result.
+
+## Agent Task 7.8 — Phase Verification
+
+**Delegate to:** code-reviewer
+
+**Commands:**
+
+```bash
+php artisan test --filter=Broadcast
+php artisan test --filter=Notification
+php artisan test --filter=Realtime
+npm run build
+```
+
+**Acceptance:**
+- [ ] Event, channel, notification, and build checks pass.
+- [ ] Any unverified manual step is documented as a blocker.

@@ -32,7 +32,9 @@ class DocumentTypeFactory extends Factory
             ]),
             'description' => fake()->sentence(),
             'category' => fake()->randomElement(['Academic', 'Clearance', 'Records']),
-            'fee' => fake()->randomFloat(2, 0, 1000),
+            'fee' => fake()->randomFloat(2, 50, 500),
+            'fee_formula' => 'per_page',
+            'default_page_count' => fake()->numberBetween(1, 10),
             'processing_days' => fake()->numberBetween(1, 10),
             'is_active' => true,
         ];
