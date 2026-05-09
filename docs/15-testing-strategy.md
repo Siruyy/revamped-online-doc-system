@@ -273,7 +273,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
-        with: { php-version: '8.3', extensions: 'pdo_mysql, gd, zip, bcmath, intl', coverage: 'xdebug' }
+        with: { php-version: '8.3', extensions: 'pdo_mysql, gd, zip, bcmath, intl, mbstring, xml', coverage: 'xdebug' }
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: composer install --no-interaction --prefer-dist

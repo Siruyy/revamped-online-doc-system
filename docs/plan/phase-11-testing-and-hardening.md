@@ -177,7 +177,7 @@ php artisan route:list
 
 ```bash
 php artisan test
-php artisan test --coverage --min=80
+composer test:coverage
 ./vendor/bin/pint --test
 ./vendor/bin/phpstan analyse --no-progress
 npm run lint
