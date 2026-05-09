@@ -7,6 +7,10 @@ use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\User;
+use App\Services\Policy\ClaimSlipService;
+use App\Services\Policy\RequestRulesEngine;
+use App\Services\Policy\SlaCalculator;
+use App\Services\RequestService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -100,6 +104,28 @@ class RequestSubmissionTest extends TestCase
         $this->assertDatabaseHas('document_requests', [
             'id' => $request->id,
             'status' => 'pending',
+        ]);
+    }
+
+    public function test_cancel_controller_preserves_service_exception_message(): void
+    {
+        $student = $this->createActiveStudent();
+        $request = DocumentRequest::factory()->for($student)->pending()->create();
+        $service = new class(app(RequestRulesEngine::class), app(SlaCalculator::class), app(ClaimSlipService::class)) extends RequestService
+        {
+            public function cancelRequest(DocumentRequest $documentRequest, User $student): DocumentRequest
+            {
+                throw new \RuntimeException('Only the request owner can cancel this request.');
+            }
+        };
+        $this->app->instance(RequestService::class, $service);
+
+        $response = $this->actingAs($student)
+            ->from(route('student.requests.show', $request))
+            ->post(route('student.requests.cancel', $request));
+
+        $response->assertSessionHasErrors([
+            'request' => 'Only the request owner can cancel this request.',
         ]);
     }
 

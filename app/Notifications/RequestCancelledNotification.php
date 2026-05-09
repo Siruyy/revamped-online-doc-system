@@ -5,10 +5,11 @@ namespace App\Notifications;
 use App\Models\DocumentRequest;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class RequestCancelledNotification extends Notification
+class RequestCancelledNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

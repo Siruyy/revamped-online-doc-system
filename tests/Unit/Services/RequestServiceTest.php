@@ -11,7 +11,9 @@ use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\User;
+use App\Notifications\RequestCancelledNotification;
 use App\Services\RequestService;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -141,6 +143,23 @@ class RequestServiceTest extends TestCase
         $this->expectExceptionMessage('receipt was already uploaded');
 
         $this->service()->cancelRequest($request, $student);
+    }
+
+    public function test_it_rejects_cancellation_by_non_owner(): void
+    {
+        $owner = User::factory()->student()->create();
+        $otherStudent = User::factory()->student()->create();
+        $request = DocumentRequest::factory()->for($owner)->pending()->create();
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Only the request owner can cancel this request.');
+
+        $this->service()->cancelRequest($request, $otherStudent);
+    }
+
+    public function test_request_cancelled_notification_is_queued(): void
+    {
+        $this->assertContains(ShouldQueue::class, class_implements(RequestCancelledNotification::class));
     }
 
     public function test_it_updates_stage_and_issues_claim_slip_when_ready_for_pickup(): void

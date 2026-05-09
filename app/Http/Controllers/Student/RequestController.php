@@ -223,9 +223,9 @@ class RequestController extends Controller
 
         try {
             $requests->cancelRequest($documentRequest, $request->user());
-        } catch (\RuntimeException) {
+        } catch (\RuntimeException $exception) {
             return back()->withErrors([
-                'request' => 'This request cannot be cancelled because a receipt was already uploaded.',
+                'request' => $exception->getMessage(),
             ]);
         }
 
