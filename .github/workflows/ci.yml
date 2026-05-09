@@ -77,7 +77,7 @@ jobs:
         run: ./vendor/bin/phpstan analyse --no-progress
 
       - name: Run Pest tests with Xdebug coverage
-        run: php artisan test --coverage --min=80
+        run: composer test:coverage
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1

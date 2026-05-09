@@ -207,8 +207,10 @@ test('student can submit a request and upload payment', async ({ page }) => {
 Generate coverage report:
 
 ```bash
-./vendor/bin/pest --coverage --min=80
+composer test:coverage
 ```
+
+Coverage enforcement requires Xdebug or PCOV locally. CI installs Xdebug via `shivammathur/setup-php` and fails the build when coverage is below 80%.
 
 ## Notification & Broadcasting Tests
 
@@ -271,7 +273,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
-        with: { php-version: '8.3', extensions: 'pdo_mysql, gd, zip, bcmath, intl' }
+        with: { php-version: '8.3', extensions: 'pdo_mysql, gd, zip, bcmath, intl', coverage: 'xdebug' }
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: composer install --no-interaction --prefer-dist
@@ -281,7 +283,7 @@ jobs:
       - run: php artisan migrate --force
       - run: ./vendor/bin/pint --test
       - run: ./vendor/bin/phpstan analyse
-      - run: ./vendor/bin/pest --coverage --min=80
+      - run: composer test:coverage
       - run: npx playwright install --with-deps
       - run: npx playwright test
 ```

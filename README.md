@@ -57,7 +57,7 @@ See [`docker-compose.yml`](./docker-compose.yml) for services: `app`, `mysql`, `
 ./vendor/bin/pest
 
 # With coverage
-./vendor/bin/pest --coverage --min=80
+composer test:coverage
 
 # Static analysis
 ./vendor/bin/phpstan analyse
@@ -68,6 +68,8 @@ See [`docker-compose.yml`](./docker-compose.yml) for services: `app`, `mysql`, `
 # Frontend lint
 npm run lint
 ```
+
+Coverage needs Xdebug or PCOV locally. CI installs Xdebug and enforces the 80% minimum.
 
 ## Contributing
 

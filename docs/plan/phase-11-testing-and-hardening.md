@@ -159,13 +159,15 @@ php artisan route:list
 **Delegate to:** verify-app
 
 **Steps:**
-- [ ] Install/configure coverage driver in CI.
-- [ ] Run `php artisan test --coverage --min=80` locally or in CI.
-- [ ] Identify uncovered business-critical classes.
-- [ ] Add targeted tests instead of lowering threshold.
+- [x] Install/configure coverage driver in CI.
+- [ ] Run `php artisan test --coverage --min=80` locally or in CI. Local run blocked by missing Xdebug/PCOV; CI path is configured as the coverage authority.
+- [ ] Identify uncovered business-critical classes. Deferred until a coverage-enabled run produces a report.
+- [ ] Add targeted tests instead of lowering threshold. Not applicable without uncovered-class output; threshold remains 80%.
 
 **Acceptance:**
-- [ ] Coverage threshold is enforced and documented.
+- [x] Coverage threshold is enforced and documented.
+
+**Result:** CI installs Xdebug and runs `composer test:coverage`, which maps to `php artisan test --coverage --min=80`. Local coverage requires Xdebug or PCOV; if neither extension is installed, use CI as the coverage authority and do not lower the threshold.
 
 ## Agent Task 11.8 — Final Verification Sweep
 
