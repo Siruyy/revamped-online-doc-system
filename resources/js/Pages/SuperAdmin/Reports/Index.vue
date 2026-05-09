@@ -1,6 +1,8 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ChartBarIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     filters: { type: Object, required: true },
@@ -61,7 +63,15 @@ const apply = () => {
             <section class="grid gap-6 lg:grid-cols-2">
                 <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">Document requests</h3>
-                    <ul class="mt-3 space-y-2 text-sm">
+                    <EmptyState
+                        v-if="Object.keys(requestsByStatus).length === 0"
+                        title="No request data in range"
+                        description="Adjust the date range to include submitted document requests."
+                        :icon="ChartBarIcon"
+                        compact
+                        class="mt-3"
+                    />
+                    <ul v-else class="mt-3 space-y-2 text-sm">
                         <li
                             v-for="(count, status) in requestsByStatus"
                             :key="status"
@@ -70,14 +80,19 @@ const apply = () => {
                             <span>{{ status }}</span>
                             <strong>{{ count }}</strong>
                         </li>
-                        <li v-if="Object.keys(requestsByStatus).length === 0" class="text-slate-500">
-                            No data in range.
-                        </li>
                     </ul>
                 </div>
                 <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">Payments</h3>
-                    <ul class="mt-3 space-y-2 text-sm">
+                    <EmptyState
+                        v-if="Object.keys(paymentsByStatus).length === 0"
+                        title="No payment data in range"
+                        description="Payment totals will appear when receipts or approvals match this range."
+                        :icon="ChartBarIcon"
+                        compact
+                        class="mt-3"
+                    />
+                    <ul v-else class="mt-3 space-y-2 text-sm">
                         <li
                             v-for="(count, status) in paymentsByStatus"
                             :key="status"
@@ -86,14 +101,19 @@ const apply = () => {
                             <span>{{ status.replace(/_/g, ' ') }}</span>
                             <strong>{{ count }}</strong>
                         </li>
-                        <li v-if="Object.keys(paymentsByStatus).length === 0" class="text-slate-500">
-                            No data in range.
-                        </li>
                     </ul>
                 </div>
                 <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">Clearances</h3>
-                    <ul class="mt-3 space-y-2 text-sm">
+                    <EmptyState
+                        v-if="Object.keys(clearancesByOverall).length === 0"
+                        title="No clearance data in range"
+                        description="Clearance summaries will appear when records match this range."
+                        :icon="ChartBarIcon"
+                        compact
+                        class="mt-3"
+                    />
+                    <ul v-else class="mt-3 space-y-2 text-sm">
                         <li
                             v-for="(count, overallKey) in clearancesByOverall"
                             :key="overallKey"
@@ -102,16 +122,21 @@ const apply = () => {
                             <span>{{ overallKey.replace(/_/g, ' ') }}</span>
                             <strong>{{ count }}</strong>
                         </li>
-                        <li v-if="Object.keys(clearancesByOverall).length === 0" class="text-slate-500">
-                            No data in range.
-                        </li>
                     </ul>
                 </div>
                 <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">
                         New student registrations
                     </h3>
-                    <ul class="mt-3 space-y-2 text-sm">
+                    <EmptyState
+                        v-if="Object.keys(registrationsByStatus).length === 0"
+                        title="No registration data in range"
+                        description="Student registration counts will appear when applications match this range."
+                        :icon="ChartBarIcon"
+                        compact
+                        class="mt-3"
+                    />
+                    <ul v-else class="mt-3 space-y-2 text-sm">
                         <li
                             v-for="(count, status) in registrationsByStatus"
                             :key="status"
@@ -119,9 +144,6 @@ const apply = () => {
                         >
                             <span>{{ status }}</span>
                             <strong>{{ count }}</strong>
-                        </li>
-                        <li v-if="Object.keys(registrationsByStatus).length === 0" class="text-slate-500">
-                            No data in range.
                         </li>
                     </ul>
                 </div>

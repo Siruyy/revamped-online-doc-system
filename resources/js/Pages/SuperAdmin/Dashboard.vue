@@ -1,6 +1,8 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
+import { ChartBarIcon, ClipboardDocumentListIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline';
 import { computed } from 'vue';
 
 defineProps({
@@ -69,17 +71,32 @@ const roleLabels = {
             <section class="grid gap-6 lg:grid-cols-2">
                 <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">Users by role</h3>
-                    <ul class="mt-3 divide-y divide-slate-100 text-sm">
+                    <EmptyState
+                        v-if="Object.keys(userCountsByRole).length === 0"
+                        title="No role data yet"
+                        description="User role totals will appear after accounts are created."
+                        :icon="ChartBarIcon"
+                        compact
+                        class="mt-3"
+                    />
+                    <ul v-else class="mt-3 divide-y divide-slate-100 text-sm">
                         <li v-for="(count, role) in userCountsByRole" :key="role" class="flex justify-between py-2">
                             <span class="text-slate-700">{{ roleLabels[role] ?? role }}</span>
                             <span class="font-semibold text-slate-900">{{ count }}</span>
                         </li>
-                        <li v-if="Object.keys(userCountsByRole).length === 0" class="py-2 text-slate-500">No data.</li>
                     </ul>
                 </div>
                 <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">Users by status</h3>
-                    <ul class="mt-3 divide-y divide-slate-100 text-sm">
+                    <EmptyState
+                        v-if="Object.keys(userCountsByStatus).length === 0"
+                        title="No status data yet"
+                        description="User status totals will appear after accounts enter the approval workflow."
+                        :icon="ChartBarIcon"
+                        compact
+                        class="mt-3"
+                    />
+                    <ul v-else class="mt-3 divide-y divide-slate-100 text-sm">
                         <li
                             v-for="(count, status) in userCountsByStatus"
                             :key="status"
@@ -104,9 +121,14 @@ const roleLabels = {
                     >
                         {{ overallKey.replace(/_/g, ' ') }}: <strong>{{ count }}</strong>
                     </span>
-                    <span v-if="Object.keys(clearanceCounts).length === 0" class="text-slate-500"
-                        >No clearances yet.</span
-                    >
+                    <EmptyState
+                        v-if="Object.keys(clearanceCounts).length === 0"
+                        title="No clearances yet"
+                        description="Clearance totals will appear after requests enter department signing."
+                        :icon="ShieldCheckIcon"
+                        compact
+                        class="w-full"
+                    />
                 </div>
             </section>
 
@@ -120,9 +142,14 @@ const roleLabels = {
                         View all logs
                     </Link>
                 </div>
-                <div v-if="recentActivity.length === 0" class="mt-3 text-sm text-slate-500">
-                    No activity logged yet.
-                </div>
+                <EmptyState
+                    v-if="recentActivity.length === 0"
+                    title="No activity logged yet"
+                    description="Auditable system events will appear here after users take action."
+                    :icon="ClipboardDocumentListIcon"
+                    compact
+                    class="mt-3"
+                />
                 <ul v-else class="mt-3 divide-y divide-slate-100">
                     <li v-for="log in recentActivity" :key="log.id" class="py-3 text-sm">
                         <p class="font-medium text-slate-900">{{ log.action }}</p>

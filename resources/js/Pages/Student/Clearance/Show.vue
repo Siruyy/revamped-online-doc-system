@@ -1,8 +1,10 @@
 <script setup>
 import FileUpload from '@/Components/FileUpload.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import { CheckBadgeIcon } from '@heroicons/vue/24/outline';
 import { computed } from 'vue';
 
 const props = defineProps({
@@ -69,12 +71,12 @@ const submit = () => {
         </template>
 
         <div class="mx-auto max-w-6xl space-y-6 px-4 sm:px-6 lg:px-8">
-            <div
+            <EmptyState
                 v-if="!clearance"
-                class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm"
-            >
-                No clearance record is available yet.
-            </div>
+                title="No clearance record yet"
+                description="Your clearance status will appear after an approved request requires department signing."
+                :icon="CheckBadgeIcon"
+            />
 
             <template v-else>
                 <section class="grid gap-4 md:grid-cols-2">

@@ -1,8 +1,10 @@
 <script setup>
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
 import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
+import { UserPlusIcon } from '@heroicons/vue/24/outline';
 import { computed, ref } from 'vue';
 
 const props = defineProps({
@@ -140,7 +142,14 @@ const bulkApprove = () => {
                             </td>
                         </tr>
                         <tr v-if="users.length === 0">
-                            <td colspan="5" class="px-4 py-8 text-center text-slate-500">No pending users.</td>
+                            <td colspan="5" class="px-4 py-8">
+                                <EmptyState
+                                    title="No pending registrations"
+                                    description="New student registration requests will appear here for approval."
+                                    :icon="UserPlusIcon"
+                                    compact
+                                />
+                            </td>
                         </tr>
                     </tbody>
                 </table>

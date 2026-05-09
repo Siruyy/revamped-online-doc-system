@@ -1,6 +1,8 @@
 <script setup>
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { DocumentTextIcon } from '@heroicons/vue/24/outline';
 import { reactive } from 'vue';
 
 const props = defineProps({
@@ -37,7 +39,7 @@ const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '
                 <h2 class="text-xl font-semibold leading-tight text-slate-900">My Requests</h2>
                 <Link
                     :href="route('student.requests.create')"
-                    class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+                    class="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
                 >
                     New Request
                 </Link>
@@ -93,14 +95,30 @@ const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '
                             <td class="px-4 py-3">
                                 <Link
                                     :href="route('student.requests.show', row.id)"
-                                    class="text-indigo-600 hover:text-indigo-500"
+                                    class="font-semibold text-brand-700 hover:text-brand-600"
                                 >
                                     View
                                 </Link>
                             </td>
                         </tr>
                         <tr v-if="requests.data.length === 0">
-                            <td colspan="6" class="px-4 py-8 text-center text-slate-500">No requests found.</td>
+                            <td colspan="6" class="px-4 py-8">
+                                <EmptyState
+                                    title="No requests found"
+                                    description="Start a new request or adjust your filters to see older submissions."
+                                    :icon="DocumentTextIcon"
+                                    compact
+                                >
+                                    <template #actions>
+                                        <Link
+                                            :href="route('student.requests.create')"
+                                            class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500"
+                                        >
+                                            New request
+                                        </Link>
+                                    </template>
+                                </EmptyState>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -113,9 +131,7 @@ const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '
                     :href="link.url || '#'"
                     class="rounded border px-3 py-1 text-sm"
                     :class="
-                        link.active
-                            ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                            : 'border-slate-300 text-slate-600'
+                        link.active ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-slate-300 text-slate-600'
                     "
                 >
                     {{ decodeLabel(link.label) }}

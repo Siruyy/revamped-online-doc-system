@@ -1,6 +1,8 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import { Head } from '@inertiajs/vue3';
+import { QuestionMarkCircleIcon } from '@heroicons/vue/24/outline';
 import { computed, ref } from 'vue';
 
 const props = defineProps({
@@ -34,12 +36,13 @@ const filteredFaqs = computed(() => {
                 class="block w-full rounded-md border-slate-300 text-sm shadow-sm"
             />
 
-            <div
+            <EmptyState
                 v-if="filteredFaqs.length === 0"
-                class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm"
-            >
-                No FAQ entries match your search.
-            </div>
+                :title="search ? 'No FAQ entries match your search' : 'No staff FAQ entries yet'"
+                description="Try a different keyword or check back after staff guidance is published."
+                :icon="QuestionMarkCircleIcon"
+                compact
+            />
 
             <details
                 v-for="faq in filteredFaqs"

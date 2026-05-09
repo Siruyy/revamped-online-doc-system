@@ -1,5 +1,6 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { reactive, ref } from 'vue';
 import {
@@ -356,16 +357,12 @@ function paginationLabel(label) {
                     </form>
                 </article>
 
-                <div
+                <EmptyState
                     v-if="slips.data.length === 0"
-                    class="rounded-2xl bg-white p-12 text-center shadow-sm ring-1 ring-slate-200"
-                >
-                    <UserGroupIcon class="mx-auto h-12 w-12 text-slate-300" />
-                    <p class="mt-3 font-display font-semibold text-slate-700">No claim slips for this filter</p>
-                    <p class="mt-1 text-xs text-slate-500">
-                        Slips appear here once a request is marked ready for pickup.
-                    </p>
-                </div>
+                    title="No claim slips for this filter"
+                    description="Slips appear here once a request is marked ready for pickup."
+                    :icon="UserGroupIcon"
+                />
             </div>
 
             <nav

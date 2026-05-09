@@ -1,6 +1,7 @@
 <script setup>
 import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
 import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
@@ -130,13 +131,14 @@ function relativeAge(value) {
                         </div>
                     </li>
                 </ul>
-                <div v-else class="px-6 py-12 text-center">
-                    <BuildingOffice2Icon class="mx-auto h-10 w-10 text-slate-300" />
-                    <p class="mt-2 font-display font-semibold text-slate-700">All caught up</p>
-                    <p class="text-xs text-slate-500">
-                        Your inbox is clear. New clearances will appear here in real time.
-                    </p>
-                </div>
+                <EmptyState
+                    v-else
+                    title="All caught up"
+                    description="Your inbox is clear. New clearances will appear here in real time."
+                    :icon="BuildingOffice2Icon"
+                    compact
+                    class="m-6"
+                />
             </section>
         </div>
     </StaffLayout>

@@ -1,6 +1,8 @@
 <script setup>
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
+import { BanknotesIcon } from '@heroicons/vue/24/outline';
 import { reactive, watch } from 'vue';
 
 const props = defineProps({
@@ -116,11 +118,12 @@ const deny = (id) => {
                     </div>
                 </article>
 
-                <div
-                    v-if="payments.data.length === 0"
-                    class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm"
-                >
-                    No payments found.
+                <div v-if="payments.data.length === 0">
+                    <EmptyState
+                        title="No payments found"
+                        description="Receipt submissions and payment reviews will appear here once students upload proof of payment."
+                        :icon="BanknotesIcon"
+                    />
                 </div>
             </div>
         </div>

@@ -1,6 +1,8 @@
 <script setup>
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ClipboardDocumentListIcon } from '@heroicons/vue/24/outline';
 import { ref } from 'vue';
 
 const props = defineProps({
@@ -124,7 +126,14 @@ const toggle = (id) => {
                             </tr>
                         </template>
                         <tr v-if="logs.data.length === 0">
-                            <td colspan="5" class="px-3 py-8 text-center text-slate-500">No log entries.</td>
+                            <td colspan="5" class="px-3 py-8">
+                                <EmptyState
+                                    title="No log entries"
+                                    description="System activity will appear here after users take auditable actions."
+                                    :icon="ClipboardDocumentListIcon"
+                                    compact
+                                />
+                            </td>
                         </tr>
                     </tbody>
                 </table>

@@ -1,6 +1,8 @@
 <script setup>
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { UsersIcon } from '@heroicons/vue/24/outline';
 import { computed, ref } from 'vue';
 
 const props = defineProps({
@@ -196,7 +198,23 @@ const bulkDelete = () => {
                             </td>
                         </tr>
                         <tr v-if="users.data.length === 0">
-                            <td colspan="6" class="px-3 py-8 text-center text-slate-500">No users match.</td>
+                            <td colspan="6" class="px-3 py-8">
+                                <EmptyState
+                                    title="No users match"
+                                    description="Adjust filters or create a staff account if this role should exist."
+                                    :icon="UsersIcon"
+                                    compact
+                                >
+                                    <template #actions>
+                                        <Link
+                                            :href="route('superadmin.users.create')"
+                                            class="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500"
+                                        >
+                                            Create staff
+                                        </Link>
+                                    </template>
+                                </EmptyState>
+                            </td>
                         </tr>
                     </tbody>
                 </table>

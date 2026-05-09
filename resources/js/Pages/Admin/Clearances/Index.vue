@@ -1,6 +1,8 @@
 <script setup>
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { CheckBadgeIcon } from '@heroicons/vue/24/outline';
 import { reactive } from 'vue';
 
 const props = defineProps({
@@ -90,7 +92,14 @@ const applyFilters = () => {
                             </td>
                         </tr>
                         <tr v-if="clearances.data.length === 0">
-                            <td colspan="8" class="px-4 py-8 text-center text-slate-500">No clearances found.</td>
+                            <td colspan="8" class="px-4 py-8">
+                                <EmptyState
+                                    title="No clearances found"
+                                    description="Clearance records will appear after approved requests require department signing."
+                                    :icon="CheckBadgeIcon"
+                                    compact
+                                />
+                            </td>
                         </tr>
                     </tbody>
                 </table>

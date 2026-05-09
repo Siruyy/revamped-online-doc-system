@@ -1,4 +1,5 @@
 <script setup>
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
 import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
@@ -268,23 +269,23 @@ function paginationLabel(label) {
                             </td>
                         </tr>
                         <tr v-if="requests.data.length === 0">
-                            <td colspan="8" class="px-4 py-12 text-center">
-                                <div class="mx-auto max-w-sm">
-                                    <BoltIcon class="mx-auto h-10 w-10 text-slate-300" />
-                                    <p class="mt-3 font-display font-semibold text-slate-700">
-                                        No requests match your filters
-                                    </p>
-                                    <p class="mt-1 text-xs text-slate-500">
-                                        Try clearing filters or widening your date range.
-                                    </p>
-                                    <button
-                                        type="button"
-                                        class="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-700"
-                                        @click="clearFilters"
-                                    >
-                                        <ArrowsRightLeftIcon class="h-3.5 w-3.5" /> Reset filters
-                                    </button>
-                                </div>
+                            <td colspan="8" class="px-4 py-8">
+                                <EmptyState
+                                    title="No requests match your filters"
+                                    description="Try clearing filters or widening your date range. New submissions will appear here automatically."
+                                    :icon="BoltIcon"
+                                    compact
+                                >
+                                    <template #actions>
+                                        <button
+                                            type="button"
+                                            class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-50"
+                                            @click="clearFilters"
+                                        >
+                                            <ArrowsRightLeftIcon class="h-3.5 w-3.5" /> Reset filters
+                                        </button>
+                                    </template>
+                                </EmptyState>
                             </td>
                         </tr>
                     </tbody>

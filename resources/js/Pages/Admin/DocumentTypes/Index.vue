@@ -1,5 +1,6 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import {
@@ -293,9 +294,18 @@ function formatPeso(n) {
                         <span class="text-right">Actions</span>
                     </div>
 
-                    <p v-if="!filtered.length" class="py-10 text-center text-sm text-slate-500">
-                        No document types match your filter.
-                    </p>
+                    <EmptyState
+                        v-if="!filtered.length"
+                        :title="documentTypes.length ? 'No document types match your filter' : 'No document types yet'"
+                        :description="
+                            documentTypes.length
+                                ? 'Adjust search or status filters to find an existing document type.'
+                                : 'Use the form above to add the first requestable document type.'
+                        "
+                        :icon="DocumentTextIcon"
+                        compact
+                        class="m-4"
+                    />
 
                     <template v-for="type in filtered" :key="type.id">
                         <!-- Compact summary row -->
@@ -461,10 +471,6 @@ function formatPeso(n) {
                         </div>
                     </template>
                 </div>
-
-                <p v-if="!documentTypes.length" class="mt-4 text-center text-sm text-slate-500">
-                    No document types yet. Use the form above to add one.
-                </p>
             </section>
         </div>
     </StaffLayout>

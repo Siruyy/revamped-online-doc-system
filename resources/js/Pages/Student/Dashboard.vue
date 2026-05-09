@@ -1,5 +1,7 @@
 <script setup>
 import StudentLayout from '@/Layouts/StudentLayout.vue';
+import EmptyState from '@/Components/UI/EmptyState.vue';
+import Skeleton from '@/Components/UI/Skeleton.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import {
@@ -112,7 +114,7 @@ function formatDate(value) {
 
             <!-- Stats -->
             <section v-if="showSkeleton" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div v-for="index in 3" :key="index" class="h-28 animate-pulse rounded-2xl bg-slate-200/70" />
+                <Skeleton v-for="index in 3" :key="index" :lines="2" />
             </section>
 
             <section v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -220,12 +222,14 @@ function formatDate(value) {
                         <MegaphoneIcon class="h-5 w-5 text-brand-600" />
                         <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Announcements</h3>
                     </div>
-                    <div
+                    <EmptyState
                         v-if="announcements.length === 0"
-                        class="mt-4 rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-500"
-                    >
-                        No announcements yet.
-                    </div>
+                        title="No announcements yet"
+                        description="Registrar updates and campus reminders will appear here when available."
+                        :icon="MegaphoneIcon"
+                        compact
+                        class="mt-4"
+                    />
                     <div v-else class="mt-4 space-y-3">
                         <article
                             v-for="item in announcements"
@@ -251,12 +255,14 @@ function formatDate(value) {
                         <QuestionMarkCircleIcon class="h-5 w-5 text-brand-600" />
                         <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Top FAQs</h3>
                     </div>
-                    <div
+                    <EmptyState
                         v-if="faqs.length === 0"
-                        class="mt-4 rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-500"
-                    >
-                        No FAQ entries yet.
-                    </div>
+                        title="No FAQ entries yet"
+                        description="Common document request answers will show up here after they are published."
+                        :icon="QuestionMarkCircleIcon"
+                        compact
+                        class="mt-4"
+                    />
                     <details
                         v-for="faq in faqs"
                         :key="faq.id"
@@ -276,12 +282,14 @@ function formatDate(value) {
                     <BellAlertIcon class="h-5 w-5 text-brand-600" />
                     <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Recent Activity</h3>
                 </div>
-                <div
+                <EmptyState
                     v-if="notifications.length === 0"
-                    class="mt-4 rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-500"
-                >
-                    No recent notifications yet.
-                </div>
+                    title="No recent activity"
+                    description="Request, payment, clearance, and release updates will appear here."
+                    :icon="BellAlertIcon"
+                    compact
+                    class="mt-4"
+                />
                 <ul v-else class="mt-3 divide-y divide-slate-100">
                     <li v-for="item in notifications" :key="item.id" class="py-3 first:pt-0 last:pb-0">
                         <div class="flex items-start justify-between gap-3">

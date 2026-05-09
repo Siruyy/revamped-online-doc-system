@@ -1,3 +1,74 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+    @keyframes slow-float {
+        0%,
+        100% {
+            transform: translate3d(-50%, 0, 0) scale(1);
+        }
+
+        50% {
+            transform: translate3d(-50%, 12px, 0) scale(1.04);
+        }
+    }
+
+    @keyframes fade-in-up {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 16px, 0);
+        }
+
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    .animate-slow-float {
+        animation: slow-float 7s ease-in-out infinite;
+    }
+
+    .animate-fade-in-up {
+        animation: fade-in-up 360ms ease-out both;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+@media print {
+    body {
+        background: white !important;
+        color: #0f172a !important;
+    }
+
+    nav,
+    aside,
+    form,
+    button,
+    .no-print {
+        display: none !important;
+    }
+
+    main,
+    section,
+    article,
+    div {
+        box-shadow: none !important;
+    }
+
+    a {
+        color: inherit !important;
+        text-decoration: none !important;
+    }
+}

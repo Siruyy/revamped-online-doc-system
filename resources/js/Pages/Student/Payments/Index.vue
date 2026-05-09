@@ -1,5 +1,6 @@
 <script setup>
 import InputError from '@/Components/InputError.vue';
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { reactive } from 'vue';
@@ -180,14 +181,12 @@ function requestItems(payment) {
             <!-- ════════════════════════
                  PAYMENTS LIST
                  ════════════════════════ -->
-            <div
+            <EmptyState
                 v-if="payments.data.length === 0"
-                class="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm"
-            >
-                <BanknotesIcon class="h-12 w-12 text-slate-300" />
-                <p class="font-semibold text-slate-600">No pending payments</p>
-                <p class="text-sm text-slate-500">Once you submit a document request, your payment will appear here.</p>
-            </div>
+                title="No pending payments"
+                description="Once you submit a document request, your payment will appear here."
+                :icon="BanknotesIcon"
+            />
 
             <div
                 v-for="payment in payments.data"

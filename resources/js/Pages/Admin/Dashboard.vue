@@ -1,5 +1,6 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import {
     ArrowRightIcon,
@@ -173,9 +174,14 @@ function relativeAge(value) {
                             View all →
                         </Link>
                     </div>
-                    <div v-if="pendingQueue.length === 0" class="px-6 py-10 text-center text-sm text-slate-500">
-                        No pending requests right now.
-                    </div>
+                    <EmptyState
+                        v-if="pendingQueue.length === 0"
+                        title="No pending requests right now"
+                        description="New student submissions will appear here for triage."
+                        :icon="BoltIcon"
+                        compact
+                        class="m-6"
+                    />
                     <ul v-else class="divide-y divide-slate-100">
                         <li
                             v-for="item in pendingQueue"
@@ -223,9 +229,14 @@ function relativeAge(value) {
                         </div>
                         <p class="mt-1 text-xs text-slate-500">Students expected to claim documents today.</p>
                     </div>
-                    <div v-if="claimToday.length === 0" class="px-6 py-10 text-center text-sm text-slate-500">
-                        No pickups scheduled.
-                    </div>
+                    <EmptyState
+                        v-if="claimToday.length === 0"
+                        title="No pickups scheduled"
+                        description="Students expected to claim documents today will appear here."
+                        :icon="TicketIcon"
+                        compact
+                        class="m-6"
+                    />
                     <ul v-else class="divide-y divide-slate-100">
                         <li v-for="slip in claimToday" :key="slip.id" class="px-6 py-3">
                             <p class="text-sm font-semibold text-slate-900">{{ slip.user?.fullname }}</p>
@@ -249,9 +260,14 @@ function relativeAge(value) {
                         {{ overdueRequests.length }} flagged
                     </span>
                 </div>
-                <div v-if="overdueRequests.length === 0" class="px-6 py-10 text-center text-sm text-slate-500">
-                    No overdue requests.
-                </div>
+                <EmptyState
+                    v-if="overdueRequests.length === 0"
+                    title="No overdue requests"
+                    description="Requests that pass their expected release date will be flagged here."
+                    :icon="ExclamationTriangleIcon"
+                    compact
+                    class="m-6"
+                />
                 <table v-else class="min-w-full text-sm">
                     <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                         <tr>

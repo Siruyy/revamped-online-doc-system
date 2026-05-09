@@ -1,7 +1,9 @@
 <script setup>
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { BellIcon } from '@heroicons/vue/24/outline';
 import { computed } from 'vue';
 
 const { notifications, filters, routePrefix } = defineProps({
@@ -119,11 +121,13 @@ const markAllAsRead = () => {
                     </button>
                 </article>
 
-                <div
-                    v-if="notifications.data.length === 0"
-                    class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm"
-                >
-                    No notifications found.
+                <div v-if="notifications.data.length === 0">
+                    <EmptyState
+                        title="No notifications found"
+                        description="Updates about requests, payments, clearances, and releases will appear here."
+                        :icon="BellIcon"
+                        compact
+                    />
                 </div>
             </div>
 

@@ -1,8 +1,9 @@
 <script setup>
+import EmptyState from '@/Components/UI/EmptyState.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { reactive } from 'vue';
-import { ArrowRightIcon, FunnelIcon, XMarkIcon } from '@heroicons/vue/24/outline';
+import { ArrowRightIcon, CheckBadgeIcon, FunnelIcon, XMarkIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     clearances: { type: Object, required: true },
@@ -151,8 +152,13 @@ function badge(status) {
                             </td>
                         </tr>
                         <tr v-if="clearances.data.length === 0">
-                            <td colspan="5" class="px-4 py-12 text-center text-sm text-slate-500">
-                                No clearances match these filters.
+                            <td colspan="5" class="px-4 py-8">
+                                <EmptyState
+                                    title="No clearances match these filters"
+                                    description="Your queue is clear for the selected status. New assignments will appear here."
+                                    :icon="CheckBadgeIcon"
+                                    compact
+                                />
                             </td>
                         </tr>
                     </tbody>
