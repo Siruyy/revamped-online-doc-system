@@ -50,6 +50,31 @@ class BroadcastNotificationRegressionTest extends TestCase
         $this->assertNotificationSentWithType($superadmin, 'request_submitted');
     }
 
+    public function test_wizard_request_submission_dispatches_event_and_notifies_admins(): void
+    {
+        $student = $this->activeUser('student');
+        $admin = $this->activeUser('admin');
+        $superadmin = $this->activeUser('superadmin');
+        $documentType = DocumentType::factory()->create(['fee' => 150, 'default_page_count' => 2]);
+
+        Event::fake([RequestSubmitted::class]);
+        NotificationFake::fake();
+
+        $result = app(RequestService::class)->createMultiItemRequest($student, [
+            'items' => [[
+                'document_type_id' => $documentType->id,
+                'copies' => 2,
+            ]],
+            'purpose' => 'Scholarship application',
+        ]);
+
+        Event::assertDispatched(RequestSubmitted::class, fn (RequestSubmitted $event) => $event->requestIds === [$result['request']->id]
+            && $event->paymentId === $result['payment']->id
+            && $event->studentId === $student->id);
+        $this->assertNotificationSentWithType($admin, 'request_submitted');
+        $this->assertNotificationSentWithType($superadmin, 'request_submitted');
+    }
+
     public function test_request_approval_dispatches_event_and_notifies_student(): void
     {
         $admin = $this->activeUser('admin');
@@ -166,6 +191,30 @@ class BroadcastNotificationRegressionTest extends TestCase
         app(ClearanceService::class)->signFor($clearance, $teacher, 'teacher', 'Verified');
 
         Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $clearance->id && $event->department === 'teacher');
+        $this->assertNotificationSentWithType($student, 'clearance_updated');
+    }
+
+    public function test_clearance_denial_dispatches_event_and_notifies_student(): void
+    {
+        $student = $this->activeUser('student');
+        $dean = $this->activeUser('dean');
+        $clearance = Clearance::factory()->for($student)->create([
+            'teacher_status' => 'cleared',
+            'dean_status' => 'pending',
+            'accounting_status' => 'pending',
+            'sao_status' => 'pending',
+        ]);
+
+        Event::fake([ClearanceUpdated::class]);
+        NotificationFake::fake();
+
+        app(ClearanceService::class)->denyFor($clearance, $dean, 'dean', 'Missing library clearance paperwork');
+
+        Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $clearance->id
+            && $event->studentId === $student->id
+            && $event->department === 'dean'
+            && $event->action === 'denied'
+            && $event->overallStatus === 'denied');
         $this->assertNotificationSentWithType($student, 'clearance_updated');
     }
 
