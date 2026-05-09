@@ -68,7 +68,7 @@ npm run build
 Coverage requires Xdebug or PCOV:
 
 ```bash
-php artisan test --coverage --min=80
+composer test:coverage
 ```
 
 ## Plan Maintenance Rules
