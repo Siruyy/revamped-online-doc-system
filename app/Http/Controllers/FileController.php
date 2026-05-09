@@ -40,6 +40,8 @@ class FileController extends Controller
 
     public function paymentQr(PaymentProfile $paymentProfile): StreamedResponse
     {
+        $this->authorize('viewQr', $paymentProfile);
+
         abort_if(
             empty($paymentProfile->qr_path)
                 || ! Storage::disk('local')->exists($paymentProfile->qr_path),

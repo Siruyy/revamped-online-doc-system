@@ -16,8 +16,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
+Route::middleware('throttle:sensitive-actions')->group(function () {
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
+});
 
 Route::get('/requests', [RequestController::class, 'index'])->name('requests.index');
 Route::get('/requests/{documentRequest}', [RequestController::class, 'show'])->name('requests.show');
@@ -49,31 +51,41 @@ Route::get('/clearances', [ClearanceMonitorController::class, 'index'])->name('c
 Route::get('/clearances/{clearance}', [ClearanceMonitorController::class, 'show'])->name('clearances.show');
 
 Route::get('/document-types', [DocumentTypeController::class, 'index'])->name('document-types.index');
-Route::post('/document-types', [DocumentTypeController::class, 'store'])->name('document-types.store');
-Route::patch('/document-types/{documentType}', [DocumentTypeController::class, 'update'])->name('document-types.update');
-Route::delete('/document-types/{documentType}', [DocumentTypeController::class, 'destroy'])->name('document-types.destroy');
+Route::middleware('throttle:sensitive-actions')->group(function () {
+    Route::post('/document-types', [DocumentTypeController::class, 'store'])->name('document-types.store');
+    Route::patch('/document-types/{documentType}', [DocumentTypeController::class, 'update'])->name('document-types.update');
+    Route::delete('/document-types/{documentType}', [DocumentTypeController::class, 'destroy'])->name('document-types.destroy');
+});
 
 Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
-Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
-Route::patch('/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');
-Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+Route::middleware('throttle:sensitive-actions')->group(function () {
+    Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+    Route::patch('/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');
+    Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+});
 
 Route::get('/faqs', [FaqController::class, 'index'])->name('faqs.index');
-Route::post('/faqs', [FaqController::class, 'store'])->name('faqs.store');
-Route::patch('/faqs/{faq}', [FaqController::class, 'update'])->name('faqs.update');
-Route::delete('/faqs/{faq}', [FaqController::class, 'destroy'])->name('faqs.destroy');
+Route::middleware('throttle:sensitive-actions')->group(function () {
+    Route::post('/faqs', [FaqController::class, 'store'])->name('faqs.store');
+    Route::patch('/faqs/{faq}', [FaqController::class, 'update'])->name('faqs.update');
+    Route::delete('/faqs/{faq}', [FaqController::class, 'destroy'])->name('faqs.destroy');
+});
 
 Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
 Route::get('/settings/payment-profile', [PaymentProfileController::class, 'index'])->name('settings.payment-profile.index');
-Route::post('/settings/payment-profile', [PaymentProfileController::class, 'store'])->name('settings.payment-profile.store');
-Route::patch('/settings/payment-profile/{paymentProfile}', [PaymentProfileController::class, 'update'])->name('settings.payment-profile.update');
-Route::patch('/settings/payment-profile/{paymentProfile}/toggle', [PaymentProfileController::class, 'toggle'])->name('settings.payment-profile.toggle');
-Route::delete('/settings/payment-profile/{paymentProfile}', [PaymentProfileController::class, 'destroy'])->name('settings.payment-profile.destroy');
-Route::delete('/settings/payment-profile/{paymentProfile}/qr', [PaymentProfileController::class, 'removeQr'])->name('settings.payment-profile.remove-qr');
-// Legacy alias so existing code/tests don't break
-Route::post('/settings/payment-profile/upsert', [PaymentProfileController::class, 'store'])->name('settings.payment-profile.upsert');
+Route::middleware('throttle:sensitive-actions')->group(function () {
+    Route::post('/settings/payment-profile', [PaymentProfileController::class, 'store'])->name('settings.payment-profile.store');
+    Route::patch('/settings/payment-profile/{paymentProfile}', [PaymentProfileController::class, 'update'])->name('settings.payment-profile.update');
+    Route::patch('/settings/payment-profile/{paymentProfile}/toggle', [PaymentProfileController::class, 'toggle'])->name('settings.payment-profile.toggle');
+    Route::delete('/settings/payment-profile/{paymentProfile}', [PaymentProfileController::class, 'destroy'])->name('settings.payment-profile.destroy');
+    Route::delete('/settings/payment-profile/{paymentProfile}/qr', [PaymentProfileController::class, 'removeQr'])->name('settings.payment-profile.remove-qr');
+    // Legacy alias so existing code/tests don't break
+    Route::post('/settings/payment-profile/upsert', [PaymentProfileController::class, 'store'])->name('settings.payment-profile.upsert');
+});
 
 Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
-Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
+Route::middleware('throttle:sensitive-actions')->group(function () {
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
+});
