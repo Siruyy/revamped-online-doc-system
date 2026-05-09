@@ -127,6 +127,10 @@ class RequestSubmissionTest extends TestCase
         $response->assertSessionHasErrors([
             'request' => 'Only the request owner can cancel this request.',
         ]);
+        $this->assertDatabaseHas('document_requests', [
+            'id' => $request->id,
+            'status' => 'pending',
+        ]);
     }
 
     private function createActiveStudent(): User
