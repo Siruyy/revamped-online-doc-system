@@ -23,15 +23,17 @@ Route::post('/notifications/read-all', [NotificationController::class, 'markAllR
 Route::prefix('users')->name('users.')->group(function () {
     Route::get('/', [UserController::class, 'index'])->name('index');
     Route::get('/create', [UserController::class, 'create'])->name('create');
-    Route::post('/', [UserController::class, 'store'])->name('store');
-    Route::post('/bulk-approve', [UserController::class, 'bulkApprove'])->name('bulk-approve');
-    Route::post('/bulk-destroy', [UserController::class, 'bulkDestroy'])->name('bulk-destroy');
     Route::get('/pending', [UserController::class, 'pending'])->name('pending');
     Route::get('/{user}/edit', [UserController::class, 'edit'])->name('edit');
-    Route::patch('/{user}', [UserController::class, 'update'])->name('update');
-    Route::post('/{user}/approve', [UserController::class, 'approve'])->name('approve');
-    Route::post('/{user}/reject', [UserController::class, 'reject'])->name('reject');
-    Route::post('/{user}/suspend', [UserController::class, 'suspend'])->name('suspend');
-    Route::post('/{user}/reactivate', [UserController::class, 'reactivate'])->name('reactivate');
-    Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
+    Route::middleware('throttle:sensitive-actions')->group(function () {
+        Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::post('/bulk-approve', [UserController::class, 'bulkApprove'])->name('bulk-approve');
+        Route::post('/bulk-destroy', [UserController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/{user}', [UserController::class, 'update'])->name('update');
+        Route::post('/{user}/approve', [UserController::class, 'approve'])->name('approve');
+        Route::post('/{user}/reject', [UserController::class, 'reject'])->name('reject');
+        Route::post('/{user}/suspend', [UserController::class, 'suspend'])->name('suspend');
+        Route::post('/{user}/reactivate', [UserController::class, 'reactivate'])->name('reactivate');
+        Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
+    });
 });

@@ -49,5 +49,9 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perDay(60)->by($scope),
             ];
         });
+
+        RateLimiter::for('sensitive-actions', function (Request $request) {
+            return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
+        });
     }
 }

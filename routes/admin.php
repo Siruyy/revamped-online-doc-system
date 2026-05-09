@@ -21,23 +21,29 @@ Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name
 
 Route::get('/requests', [RequestController::class, 'index'])->name('requests.index');
 Route::get('/requests/{documentRequest}', [RequestController::class, 'show'])->name('requests.show');
-Route::post('/requests/{documentRequest}/approve', [RequestController::class, 'approve'])->name('requests.approve');
-Route::post('/requests/{documentRequest}/deny', [RequestController::class, 'deny'])->name('requests.deny');
-Route::post('/requests/{documentRequest}/stage', [RequestController::class, 'updateStage'])->name('requests.stage');
-Route::post('/requests/{documentRequest}/requirements/{requirement}/validate', [RequestController::class, 'validateRequirement'])->name('requests.requirements.validate');
-Route::post('/requests/{documentRequest}/requirements/{requirement}/reject', [RequestController::class, 'rejectRequirement'])->name('requests.requirements.reject');
-Route::post('/requests/{documentRequest}/sla/pause', [RequestController::class, 'pauseSla'])->name('requests.sla.pause');
-Route::post('/requests/{documentRequest}/sla/resume', [RequestController::class, 'resumeSla'])->name('requests.sla.resume');
-Route::post('/requests/{documentRequest}/release', [RequestController::class, 'release'])->name('requests.release');
-Route::post('/requests/{documentRequest}/honorable-dismissal', [ReleaseController::class, 'markHonorableDismissal'])->name('requests.hd');
+Route::middleware('throttle:sensitive-actions')->group(function () {
+    Route::post('/requests/{documentRequest}/approve', [RequestController::class, 'approve'])->name('requests.approve');
+    Route::post('/requests/{documentRequest}/deny', [RequestController::class, 'deny'])->name('requests.deny');
+    Route::post('/requests/{documentRequest}/stage', [RequestController::class, 'updateStage'])->name('requests.stage');
+    Route::post('/requests/{documentRequest}/requirements/{requirement}/validate', [RequestController::class, 'validateRequirement'])->name('requests.requirements.validate');
+    Route::post('/requests/{documentRequest}/requirements/{requirement}/reject', [RequestController::class, 'rejectRequirement'])->name('requests.requirements.reject');
+    Route::post('/requests/{documentRequest}/sla/pause', [RequestController::class, 'pauseSla'])->name('requests.sla.pause');
+    Route::post('/requests/{documentRequest}/sla/resume', [RequestController::class, 'resumeSla'])->name('requests.sla.resume');
+    Route::post('/requests/{documentRequest}/release', [RequestController::class, 'release'])->name('requests.release');
+    Route::post('/requests/{documentRequest}/honorable-dismissal', [ReleaseController::class, 'markHonorableDismissal'])->name('requests.hd');
+});
 
 Route::get('/releases', [ReleaseController::class, 'index'])->name('releases.index');
-Route::post('/releases/{claimSlip}/release', [ReleaseController::class, 'release'])->name('releases.release');
-Route::post('/releases/{claimSlip}/void', [ReleaseController::class, 'void'])->name('releases.void');
+Route::middleware('throttle:sensitive-actions')->group(function () {
+    Route::post('/releases/{claimSlip}/release', [ReleaseController::class, 'release'])->name('releases.release');
+    Route::post('/releases/{claimSlip}/void', [ReleaseController::class, 'void'])->name('releases.void');
+});
 
 Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
-Route::post('/payments/{payment}/approve', [PaymentController::class, 'approve'])->name('payments.approve');
-Route::post('/payments/{payment}/deny', [PaymentController::class, 'deny'])->name('payments.deny');
+Route::middleware('throttle:sensitive-actions')->group(function () {
+    Route::post('/payments/{payment}/approve', [PaymentController::class, 'approve'])->name('payments.approve');
+    Route::post('/payments/{payment}/deny', [PaymentController::class, 'deny'])->name('payments.deny');
+});
 
 Route::get('/clearances', [ClearanceMonitorController::class, 'index'])->name('clearances.index');
 Route::get('/clearances/{clearance}', [ClearanceMonitorController::class, 'show'])->name('clearances.show');

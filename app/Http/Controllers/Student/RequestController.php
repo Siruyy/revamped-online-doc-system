@@ -238,7 +238,7 @@ class RequestController extends Controller
         abort_unless($requirement->document_request_id === $documentRequest->id, 404);
 
         $request->validate([
-            'file' => ['required', 'file', 'mimes:pdf,png,jpg,jpeg', 'max:5120'],
+            'file' => ['required', 'file', 'mimes:pdf,png,jpg,jpeg', 'mimetypes:application/pdf,image/png,image/jpeg', 'max:5120'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 

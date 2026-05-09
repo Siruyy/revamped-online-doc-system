@@ -15,8 +15,10 @@ Route::post('/profile/signature', [ProfileController::class, 'updateSignature'])
 
 Route::get('/clearances', [ClearanceController::class, 'index'])->name('clearances.index');
 Route::get('/clearances/{clearance}', [ClearanceController::class, 'show'])->name('clearances.show');
-Route::post('/clearances/{clearance}/sign', [ClearanceController::class, 'sign'])->name('clearances.sign');
-Route::post('/clearances/{clearance}/deny', [ClearanceController::class, 'deny'])->name('clearances.deny');
+Route::middleware('throttle:sensitive-actions')->group(function () {
+    Route::post('/clearances/{clearance}/sign', [ClearanceController::class, 'sign'])->name('clearances.sign');
+    Route::post('/clearances/{clearance}/deny', [ClearanceController::class, 'deny'])->name('clearances.deny');
+});
 
 Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');
 
