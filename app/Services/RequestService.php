@@ -12,12 +12,14 @@ use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\RequestRequirement;
 use App\Models\User;
+use App\Notifications\RequestCancelledNotification;
 use App\Services\Policy\ClaimSlipService;
 use App\Services\Policy\RequestRulesEngine;
 use App\Services\Policy\SlaCalculator;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class RequestService
 {
@@ -340,6 +342,43 @@ class RequestService
             $documentRequest->user_id,
             $admin->id,
             $reason
+        );
+
+        return $documentRequest->refresh();
+    }
+
+    public function cancelRequest(DocumentRequest $documentRequest, User $student): DocumentRequest
+    {
+        if ($documentRequest->user_id !== $student->id) {
+            throw new \RuntimeException('Only the request owner can cancel this request.');
+        }
+
+        $hasUploadedReceipt = $documentRequest->payments()
+            ->whereNotNull('receipt_path')
+            ->exists();
+
+        if ($hasUploadedReceipt) {
+            throw new \RuntimeException('This request cannot be cancelled because a receipt was already uploaded.');
+        }
+
+        $documentRequest->update([
+            'status' => 'cancelled',
+            'processing_stage' => 'not_started',
+        ]);
+
+        $admins = User::query()
+            ->whereIn('role', ['admin', 'superadmin'])
+            ->where('status', 'active')
+            ->get();
+
+        Notification::send($admins, new RequestCancelledNotification($documentRequest, $student));
+
+        ActivityLogger::log(
+            'request_cancelled',
+            "User {$student->email} cancelled request {$documentRequest->reference_no}.",
+            $student,
+            $student,
+            ['document_request_id' => $documentRequest->id]
         );
 
         return $documentRequest->refresh();

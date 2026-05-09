@@ -9,14 +9,11 @@ use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\PaymentProfile;
 use App\Models\RequestRequirement;
-use App\Models\User;
-use App\Notifications\RequestCancelledNotification;
 use App\Services\ActivityLogger;
 use App\Services\Policy\RequestRulesEngine;
 use App\Services\RequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -218,41 +215,19 @@ class RequestController extends Controller
         ]);
     }
 
-    public function cancel(Request $request, DocumentRequest $documentRequest): RedirectResponse
+    public function cancel(Request $request, DocumentRequest $documentRequest, RequestService $requests): RedirectResponse
     {
         $this->authorize('cancel', $documentRequest);
 
         abort_unless($documentRequest->user_id === $request->user()->id, 403);
 
-        $hasUploadedReceipt = $documentRequest->payments()
-            ->whereNotNull('receipt_path')
-            ->exists();
-
-        if ($hasUploadedReceipt) {
+        try {
+            $requests->cancelRequest($documentRequest, $request->user());
+        } catch (\RuntimeException) {
             return back()->withErrors([
                 'request' => 'This request cannot be cancelled because a receipt was already uploaded.',
             ]);
         }
-
-        $documentRequest->update([
-            'status' => 'cancelled',
-            'processing_stage' => 'not_started',
-        ]);
-
-        $admins = User::query()
-            ->whereIn('role', ['admin', 'superadmin'])
-            ->where('status', 'active')
-            ->get();
-
-        Notification::send($admins, new RequestCancelledNotification($documentRequest, $request->user()));
-
-        ActivityLogger::log(
-            'request_cancelled',
-            "User {$request->user()->email} cancelled request {$documentRequest->reference_no}.",
-            $request->user(),
-            $request->user(),
-            ['document_request_id' => $documentRequest->id]
-        );
 
         return back()->with('status', 'Request cancelled successfully.');
     }
