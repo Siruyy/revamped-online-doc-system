@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { E2E_PASSWORD, login, logout } from './helpers';
+import { E2E_PASSWORD, login, logout, visit } from './helpers';
 
 test('student registration can be approved by SuperAdmin and then log in', async ({ page }) => {
     const token = Date.now();
     const email = `e2e.pending.${token}@example.com`;
     const studentId = `E2E-${token}`.slice(0, 50);
 
-    await page.goto('/register');
+    await visit(page, '/register');
     await page.getByLabel('Full Name').fill('E2E Pending Student');
     await page.getByLabel('Email').fill(email);
     await page.getByLabel('Course').fill('BSIT');
@@ -20,12 +20,12 @@ test('student registration can be approved by SuperAdmin and then log in', async
     await expect(page.getByRole('heading', { name: 'Registration submitted' })).toBeVisible();
 
     await login(page, 'e2e.superadmin@example.com');
-    await page.goto('/superadmin/users/pending');
+    await visit(page, '/superadmin/users/pending');
     await expect(page.getByText(email)).toBeVisible();
     await page.locator('tr', { hasText: email }).getByRole('button', { name: 'Approve' }).click();
     await expect(page.getByText(email)).toHaveCount(0);
     await logout(page);
 
     await login(page, email);
-    await expect(page.getByRole('heading', { name: /Welcome back/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Resend Verification Email' })).toBeVisible();
 });

@@ -36,7 +36,7 @@ export default defineConfig({
         },
         {
             command: `npm run dev -- --host ${host} --port ${vitePort}`,
-            url: `http://${host}:${vitePort}`,
+            url: `http://${host}:${vitePort}/resources/js/app.js`,
             reuseExistingServer: !process.env.CI,
             timeout: 120_000,
         },

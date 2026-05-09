@@ -19,4 +19,50 @@ class SecurityHeadersTest extends TestCase
         $response->assertHeader('Permissions-Policy');
         $response->assertHeader('Content-Security-Policy');
     }
+
+    public function test_content_security_policy_allows_current_vite_hot_origin(): void
+    {
+        $this->withHotFile('http://127.0.0.1:5190', function (): void {
+            $response = $this->get('/');
+
+            $csp = $response->headers->get('Content-Security-Policy');
+
+            $this->assertStringContainsString('http://127.0.0.1:5190', $csp);
+            $this->assertStringContainsString('ws://127.0.0.1:5190', $csp);
+        });
+    }
+
+    public function test_content_security_policy_rejects_non_local_vite_hot_origin(): void
+    {
+        $this->withHotFile('http://attacker.example:5190', function (): void {
+            $response = $this->get('/');
+
+            $csp = $response->headers->get('Content-Security-Policy');
+
+            $this->assertStringNotContainsString('attacker.example', $csp);
+            $this->assertStringContainsString('http://127.0.0.1:5173', $csp);
+            $this->assertStringContainsString('ws://127.0.0.1:5173', $csp);
+        });
+    }
+
+    /**
+     * @param  callable(): void  $callback
+     */
+    private function withHotFile(string $contents, callable $callback): void
+    {
+        $hotPath = public_path('hot');
+        $previousHot = file_exists($hotPath) ? file_get_contents($hotPath) : null;
+
+        file_put_contents($hotPath, $contents);
+
+        try {
+            $callback();
+        } finally {
+            if ($previousHot === null) {
+                @unlink($hotPath);
+            } else {
+                file_put_contents($hotPath, $previousHot);
+            }
+        }
+    }
 }

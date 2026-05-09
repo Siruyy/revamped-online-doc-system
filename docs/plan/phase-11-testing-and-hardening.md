@@ -2,7 +2,7 @@
 
 > **Goal:** Make the pipeline trustworthy, raise coverage on business logic, add critical E2E coverage, and complete security/performance hardening.
 
-**Status:** Not started. Audit found CI blockers that should be fixed before new feature work.
+**Status:** Finished with documented local environment blocker: `composer test:coverage` requires Xdebug or PCOV locally; CI installs Xdebug and enforces coverage.
 
 **Depends on:** Can start now for CI blockers. Full E2E/security pass depends on feature completion.
 
@@ -185,4 +185,6 @@ npm run build
 ```
 
 **Acceptance:**
-- [ ] All checks pass or any blocker is documented with owner and next action.
+- [x] All checks pass or any blocker is documented with owner and next action.
+
+**Result:** Final sweep passed for tests, Pint, PHPStan, ESLint, build, dependency audits, route listing, Playwright list, and Playwright E2E with an isolated test database. Local coverage remains blocked without Xdebug/PCOV; owner: CI/local environment setup; next action: use CI coverage or install Xdebug/PCOV locally.

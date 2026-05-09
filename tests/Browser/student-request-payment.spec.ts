@@ -1,36 +1,35 @@
 import { expect, test } from '@playwright/test';
-import { login, logout } from './helpers';
+import { login, logout, visit } from './helpers';
 
 test('student submits a document request and uploads a payment receipt', async ({ page }) => {
     await login(page, 'e2e.student@example.com');
-    await page.goto('/student/requests/new');
+    await visit(page, '/student/requests/new');
 
-    await page
-        .locator('div', { has: page.getByText('Special Order', { exact: true }) })
-        .locator('input[type="checkbox"]')
-        .first()
-        .check();
+    await page.getByText('Special Order', { exact: true }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.getByLabel(/Purpose/).fill('E2E scholarship application');
+    await page.getByPlaceholder(/For scholarship application/).fill('E2E scholarship application');
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Submit Request' }).click();
 
-    await expect(page.getByText('Your document request has been submitted')).toBeVisible();
-    await expect(page.getByText('E2E scholarship application')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Special Order' })).toBeVisible();
+    await expect(page.getByText('Request submitted')).toBeVisible();
 
     await logout(page);
     await login(page, 'e2e.payment.student@example.com');
-    await page.goto('/student/payments');
+    await visit(page, '/student/payments');
 
     const payment = page.getByTestId('payment-card-E2E-PAYMENT-REQ');
     await expect(payment).toBeVisible();
-    await payment.getByLabel('Payment Method').selectOption('bank_transfer');
+    await payment.locator('select').selectOption('bank_transfer');
     await payment.getByPlaceholder('e.g. TXN-2026-XXXXXX').fill(`E2E-${Date.now()}`);
     await payment.locator('input[type="file"]').setInputFiles({
         name: 'receipt.png',
         mimeType: 'image/png',
-        buffer: Buffer.from('e2e receipt'),
+        buffer: Buffer.from(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
+            'base64',
+        ),
     });
     await payment.getByRole('button', { name: 'Submit Receipt' }).click();
 

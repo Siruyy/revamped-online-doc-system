@@ -25,18 +25,39 @@ class SecurityHeaders
 
         // Ziggy @routes() emits an inline script — needs 'unsafe-inline' on script-src.
         // Google Fonts in app.blade.php need explicit style-src / font-src / connect-src.
-        // Vite dev server runs on another origin (e.g. :5173) — allow when public/hot exists.
+        // Vite dev server runs on another origin — allow the active hot-file origin.
         $scriptSrc = "'self' 'unsafe-inline'";
+        $viteHotScriptOrigins = '';
+        $viteHotConnectOrigins = '';
 
         if (Vite::isRunningHot()) {
-            $scriptSrc .= ' http://127.0.0.1:5173 http://localhost:5173';
+            $hotUrl = trim((string) file_get_contents(public_path('hot')));
+            $parts = parse_url($hotUrl);
+            $allowedViteHosts = ['127.0.0.1', 'localhost', '[::1]'];
+
+            if (
+                is_array($parts)
+                && isset($parts['scheme'], $parts['host'])
+                && in_array($parts['scheme'], ['http', 'https'], true)
+                && in_array($parts['host'], $allowedViteHosts, true)
+            ) {
+                $viteHotOrigin = $parts['scheme'].'://'.$parts['host'].(isset($parts['port']) ? ':'.$parts['port'] : '');
+                $wsScheme = $parts['scheme'] === 'https' ? 'wss' : 'ws';
+                $viteHotScriptOrigins = ' '.$viteHotOrigin;
+                $viteHotConnectOrigins = ' '.$wsScheme.'://'.$parts['host'].(isset($parts['port']) ? ':'.$parts['port'] : '');
+            } else {
+                $viteHotScriptOrigins = ' http://127.0.0.1:5173 http://localhost:5173';
+                $viteHotConnectOrigins = ' ws://127.0.0.1:5173 ws://localhost:5173';
+            }
+
+            $scriptSrc .= $viteHotScriptOrigins;
         }
 
         $connectSrc = "'self' ws://127.0.0.1:* ws://localhost:* wss://127.0.0.1:* wss://localhost:* ".
             'http://127.0.0.1:* http://localhost:* https://fonts.googleapis.com https://fonts.gstatic.com';
 
         if (Vite::isRunningHot()) {
-            $connectSrc .= ' ws://127.0.0.1:5173 ws://localhost:5173';
+            $connectSrc .= $viteHotConnectOrigins;
         }
 
         $response->headers->set(
