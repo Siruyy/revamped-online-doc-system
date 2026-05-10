@@ -15,12 +15,20 @@ const props = defineProps({
 });
 
 const variantClasses = {
-    panel: 'rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200',
+    panel: 'rounded-2xl bg-white text-center shadow-sm ring-1 ring-slate-200',
     inline: 'rounded-lg bg-slate-50 p-4 text-center',
     table: 'p-8 text-center',
 };
 
-const containerClass = computed(() => variantClasses[props.variant]);
+const containerClass = computed(() => {
+    const variantClass = variantClasses[props.variant] ?? variantClasses.panel;
+
+    if (variantClass === variantClasses.panel) {
+        return [variantClass, props.compact ? 'p-6' : 'p-10'];
+    }
+
+    return variantClass;
+});
 </script>
 
 <template>
