@@ -2,6 +2,8 @@
 import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
 import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import StatCard from '@/Components/UI/StatCard.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
@@ -44,14 +46,14 @@ function relativeAge(value) {
 
     <StaffLayout>
         <template #header>
-            <div>
-                <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Department Workspace</p>
-                <h2 class="mt-1 text-2xl font-display font-bold text-slate-900 capitalize">{{ department }} Office</h2>
-                <p class="text-sm text-slate-500">Sign or deny clearances assigned to your office.</p>
-            </div>
+            <PageHeader
+                :title="`${department} Office`"
+                subtitle="Sign or deny clearances assigned to your office."
+                eyebrow="Department Workspace"
+            />
         </template>
 
-        <div class="mx-auto max-w-7xl space-y-8 px-4 pb-12 sm:px-6 lg:px-8">
+        <div class="space-y-8 pb-12">
             <!-- Stats -->
             <section class="grid gap-4 sm:grid-cols-3">
                 <Link
@@ -72,23 +74,9 @@ function relativeAge(value) {
                     </p>
                 </Link>
 
-                <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                    <div class="flex items-center gap-3">
-                        <div class="rounded-xl bg-emerald-100 p-2.5 text-emerald-700">
-                            <CheckCircleIcon class="h-5 w-5" />
-                        </div>
-                        <p class="text-xs uppercase tracking-wider text-slate-500">Signed today</p>
-                    </div>
-                    <p class="mt-3 text-3xl font-display font-bold text-slate-900">{{ stats.signed_today }}</p>
-                </div>
+                <StatCard label="Signed today" :value="stats.signed_today" :icon="CheckCircleIcon" tone="success" />
 
-                <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                    <div class="flex items-center gap-3">
-                        <div class="rounded-xl bg-rose-100 p-2.5 text-rose-700"><XCircleIcon class="h-5 w-5" /></div>
-                        <p class="text-xs uppercase tracking-wider text-slate-500">Denied (total)</p>
-                    </div>
-                    <p class="mt-3 text-3xl font-display font-bold text-slate-900">{{ stats.denied }}</p>
-                </div>
+                <StatCard label="Denied (total)" :value="stats.denied" :icon="XCircleIcon" tone="danger" />
             </section>
 
             <!-- Latest queue -->

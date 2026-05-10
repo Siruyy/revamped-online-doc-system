@@ -1,7 +1,9 @@
 <script setup>
 import EmptyState from '@/Components/UI/EmptyState.vue';
 import DataTableShell from '@/Components/UI/DataTableShell.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
 import ResponsiveRecordList from '@/Components/UI/ResponsiveRecordList.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { DocumentTextIcon } from '@heroicons/vue/24/outline';
@@ -30,6 +32,18 @@ const applyFilters = () => {
 };
 
 const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '').trim();
+
+function requestStatusTone(status) {
+    return (
+        {
+            pending: 'warning',
+            approved: 'info',
+            completed: 'success',
+            denied: 'danger',
+            cancelled: 'neutral',
+        }[status] ?? 'neutral'
+    );
+}
 </script>
 
 <template>
@@ -37,18 +51,22 @@ const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '
 
     <StudentLayout>
         <template #header>
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold leading-tight text-slate-900">My Requests</h2>
-                <Link
-                    :href="route('student.requests.create')"
-                    class="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
-                >
-                    New Request
-                </Link>
-            </div>
+            <PageHeader
+                title="My Requests"
+                subtitle="Track document requests, payment status, and fulfillment progress."
+            >
+                <template #actions>
+                    <Link
+                        :href="route('student.requests.create')"
+                        class="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-600 px-4 text-sm font-semibold text-white transition hover:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                    >
+                        New Request
+                    </Link>
+                </template>
+            </PageHeader>
         </template>
 
-        <div class="mx-auto max-w-7xl space-y-4 px-4 sm:px-6 lg:px-8">
+        <div class="space-y-6">
             <div class="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4">
                 <input
                     v-model="filterForm.search"
@@ -107,11 +125,7 @@ const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '
                                 </h3>
                                 <p class="mt-0.5 truncate font-mono text-xs text-slate-500">{{ row.reference_no }}</p>
                             </div>
-                            <span
-                                class="inline-flex shrink-0 items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold capitalize text-slate-700"
-                            >
-                                {{ row.status }}
-                            </span>
+                            <StatusBadge :label="row.status" :tone="requestStatusTone(row.status)" class="shrink-0" />
                         </div>
 
                         <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
@@ -155,7 +169,9 @@ const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '
                                 <tr v-for="row in requests.data" :key="row.id">
                                     <td class="px-4 py-3 font-medium text-slate-900">{{ row.reference_no }}</td>
                                     <td class="px-4 py-3 text-slate-700">{{ row.document_type?.name }}</td>
-                                    <td class="px-4 py-3 capitalize text-slate-700">{{ row.status }}</td>
+                                    <td class="px-4 py-3">
+                                        <StatusBadge :label="row.status" :tone="requestStatusTone(row.status)" />
+                                    </td>
                                     <td class="px-4 py-3 text-slate-700">{{ row.payments?.[0]?.status || 'n/a' }}</td>
                                     <td class="px-4 py-3 text-slate-700">{{ row.created_at }}</td>
                                     <td class="px-4 py-3">

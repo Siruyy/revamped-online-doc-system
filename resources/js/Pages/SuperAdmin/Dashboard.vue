@@ -1,6 +1,9 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import StatCard from '@/Components/UI/StatCard.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ChartBarIcon, ClipboardDocumentListIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline';
 import { computed } from 'vue';
@@ -34,10 +37,13 @@ const roleLabels = {
 
     <StaffLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-slate-900">SuperAdmin Dashboard</h2>
+            <PageHeader
+                title="SuperAdmin Dashboard"
+                subtitle="Monitor registrations, requests, payments, clearances, and recent system activity."
+            />
         </template>
 
-        <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+        <div class="space-y-6">
             <div
                 v-if="banner"
                 class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
@@ -46,26 +52,16 @@ const roleLabels = {
             </div>
 
             <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Link
+                <StatCard
+                    label="Pending registrations"
+                    :value="pendingRegistrations"
+                    tone="brand"
                     :href="route('superadmin.users.pending')"
-                    class="rounded-lg border border-violet-200 bg-white p-4 shadow-sm transition hover:border-violet-400"
-                >
-                    <p class="text-xs uppercase text-slate-500">Pending registrations</p>
-                    <p class="mt-2 text-2xl font-bold text-violet-800">{{ pendingRegistrations }}</p>
-                    <p class="mt-1 text-xs text-violet-600">Review queue →</p>
-                </Link>
-                <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                    <p class="text-xs uppercase text-slate-500">Pending document requests</p>
-                    <p class="mt-2 text-2xl font-bold text-slate-900">{{ requestCounts.pending }}</p>
-                </div>
-                <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                    <p class="text-xs uppercase text-slate-500">Payments awaiting approval</p>
-                    <p class="mt-2 text-2xl font-bold text-slate-900">{{ paymentCounts.pending_approval }}</p>
-                </div>
-                <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                    <p class="text-xs uppercase text-slate-500">Completed requests</p>
-                    <p class="mt-2 text-2xl font-bold text-slate-900">{{ requestCounts.completed }}</p>
-                </div>
+                    cta="Review queue"
+                />
+                <StatCard label="Pending document requests" :value="requestCounts.pending" tone="warning" />
+                <StatCard label="Payments awaiting approval" :value="paymentCounts.pending_approval" tone="warning" />
+                <StatCard label="Completed requests" :value="requestCounts.completed" tone="success" />
             </section>
 
             <section class="grid gap-6 lg:grid-cols-2">
@@ -114,13 +110,13 @@ const roleLabels = {
                     Clearances by overall status
                 </h3>
                 <div class="mt-3 flex flex-wrap gap-3 text-sm">
-                    <span
+                    <StatusBadge
                         v-for="(count, overallKey) in clearanceCounts"
                         :key="overallKey"
-                        class="rounded-full bg-slate-100 px-3 py-1 capitalize text-slate-800"
-                    >
-                        {{ overallKey.replace(/_/g, ' ') }}: <strong>{{ count }}</strong>
-                    </span>
+                        :label="`${overallKey.replace(/_/g, ' ')}: ${count}`"
+                        tone="neutral"
+                        size="md"
+                    />
                     <EmptyState
                         v-if="Object.keys(clearanceCounts).length === 0"
                         title="No clearances yet"

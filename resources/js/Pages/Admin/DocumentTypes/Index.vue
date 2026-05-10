@@ -2,6 +2,8 @@
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import EmptyState from '@/Components/UI/EmptyState.vue';
 import FormField from '@/Components/UI/FormField.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import {
@@ -106,10 +108,13 @@ function formatPeso(n) {
 
     <StaffLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-slate-900">Document Types</h2>
+            <PageHeader
+                title="Document Types"
+                subtitle="Manage requestable documents, fees, processing windows, and student-facing availability."
+            />
         </template>
 
-        <div class="mx-auto max-w-6xl space-y-6 px-4 sm:px-6 lg:px-8">
+        <div class="space-y-6">
             <!-- ── Add New Type ─────────────────────────────── -->
             <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
                 <button
@@ -387,16 +392,11 @@ function formatPeso(n) {
                             <span class="sm:text-center text-sm text-slate-600"> {{ type.processing_days }}d </span>
                             <!-- Status -->
                             <div class="sm:flex sm:justify-center">
-                                <span
-                                    :class="
-                                        type.is_active
-                                            ? 'bg-emerald-100 text-emerald-800'
-                                            : 'bg-slate-100 text-slate-500'
-                                    "
-                                    class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
-                                >
-                                    {{ type.is_active ? 'Active' : 'Inactive' }}
-                                </span>
+                                <StatusBadge
+                                    :label="type.is_active ? 'Active' : 'Inactive'"
+                                    :tone="type.is_active ? 'success' : 'neutral'"
+                                    size="xs"
+                                />
                             </div>
                             <!-- Actions -->
                             <div class="flex items-center justify-end gap-1">

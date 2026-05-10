@@ -1,6 +1,7 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ChartBarIcon } from '@heroicons/vue/24/outline';
 
@@ -27,14 +28,13 @@ const apply = () => {
 
     <StaffLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-slate-900">System reports</h2>
+            <PageHeader
+                title="System reports"
+                subtitle="Review summary counts for the selected date range. Excel exports are planned for Phase 09."
+            />
         </template>
 
-        <div class="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
-            <p class="text-sm text-slate-600">
-                Summary counts for the selected date range. Excel exports are planned for Phase 09.
-            </p>
-
+        <div class="space-y-6">
             <form
                 class="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
                 @submit.prevent="apply"

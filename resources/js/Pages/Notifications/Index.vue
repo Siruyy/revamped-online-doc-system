@@ -1,5 +1,7 @@
 <script setup>
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -38,19 +40,23 @@ const markAllAsRead = () => {
 
     <component :is="activeLayout">
         <template #header>
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 class="text-xl font-semibold leading-tight text-slate-900">Notifications</h2>
-                <button
-                    type="button"
-                    class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
-                    @click="markAllAsRead"
-                >
-                    Mark all as read
-                </button>
-            </div>
+            <PageHeader
+                title="Notifications"
+                subtitle="Review updates about requests, payments, clearances, and releases."
+            >
+                <template #actions>
+                    <button
+                        type="button"
+                        class="inline-flex min-h-11 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                        @click="markAllAsRead"
+                    >
+                        Mark all as read
+                    </button>
+                </template>
+            </PageHeader>
         </template>
 
-        <div class="mx-auto max-w-5xl space-y-4 px-4 sm:px-6 lg:px-8">
+        <div class="space-y-6">
             <div class="flex gap-2">
                 <button
                     type="button"
@@ -102,14 +108,10 @@ const markAllAsRead = () => {
                             <p class="mt-1 text-sm text-slate-600">{{ notification.message }}</p>
                             <p class="mt-1 text-xs text-slate-500">{{ notification.created_at }}</p>
                         </div>
-                        <span
-                            class="rounded-full px-2 py-1 text-xs font-semibold"
-                            :class="
-                                notification.read_at ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-                            "
-                        >
-                            {{ notification.read_at ? 'Read' : 'Unread' }}
-                        </span>
+                        <StatusBadge
+                            :label="notification.read_at ? 'Read' : 'Unread'"
+                            :tone="notification.read_at ? 'success' : 'warning'"
+                        />
                     </div>
                     <button
                         v-if="!notification.read_at"

@@ -1,5 +1,7 @@
 <script setup>
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { BanknotesIcon } from '@heroicons/vue/24/outline';
@@ -37,6 +39,17 @@ const deny = (id) => {
         denial_reason: denyReasons[id] ?? '',
     });
 };
+
+function paymentStatusTone(status) {
+    return (
+        {
+            pending: 'neutral',
+            pending_approval: 'warning',
+            approved: 'success',
+            denied: 'danger',
+        }[status] ?? 'neutral'
+    );
+}
 </script>
 
 <template>
@@ -44,10 +57,13 @@ const deny = (id) => {
 
     <StaffLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-slate-900">Payments Management</h2>
+            <PageHeader
+                title="Payments Management"
+                subtitle="Review receipt submissions, approve valid payments, and record denial reasons."
+            />
         </template>
 
-        <div class="mx-auto max-w-7xl space-y-4 px-4 sm:px-6 lg:px-8">
+        <div class="space-y-6">
             <div
                 class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
             >
@@ -87,9 +103,13 @@ const deny = (id) => {
                                 {{ item.user?.fullname }} | {{ item.document_request?.document_type?.name }} | PHP
                                 {{ Number(item.total_amount).toFixed(2) }}
                             </p>
-                            <p class="text-sm text-slate-600">
-                                Status: <span class="font-semibold capitalize">{{ item.status }}</span>
-                            </p>
+                            <div class="mt-2 flex items-center gap-2 text-sm text-slate-600">
+                                <span>Status:</span>
+                                <StatusBadge
+                                    :label="item.status.replaceAll('_', ' ')"
+                                    :tone="paymentStatusTone(item.status)"
+                                />
+                            </div>
                             <p v-if="item.receipt_path" class="mt-1 text-sm">
                                 <a
                                     :href="route('files.payment-receipt', item.id)"

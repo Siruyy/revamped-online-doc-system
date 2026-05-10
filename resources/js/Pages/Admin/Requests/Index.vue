@@ -1,7 +1,9 @@
 <script setup>
 import EmptyState from '@/Components/UI/EmptyState.vue';
 import DataTableShell from '@/Components/UI/DataTableShell.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
 import ResponsiveRecordList from '@/Components/UI/ResponsiveRecordList.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
 import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
@@ -56,26 +58,26 @@ useEchoPrivateChannel(() => (isAdmin.value ? 'role.admin' : null), {
 
 useRealtimeOrPoll(reloadRequests, { intervalMs: 90000 });
 
-function statusBadge(status) {
+function statusTone(status) {
     return (
         {
-            pending: 'bg-amber-100 text-amber-800',
-            approved: 'bg-sky-100 text-sky-800',
-            completed: 'bg-emerald-100 text-emerald-800',
-            denied: 'bg-rose-100 text-rose-800',
-            cancelled: 'bg-slate-100 text-slate-600',
-        }[status] ?? 'bg-slate-100 text-slate-600'
+            pending: 'warning',
+            approved: 'info',
+            completed: 'success',
+            denied: 'danger',
+            cancelled: 'neutral',
+        }[status] ?? 'neutral'
     );
 }
 
-function paymentBadge(status) {
+function paymentTone(status) {
     return (
         {
-            pending: 'bg-slate-100 text-slate-600',
-            pending_approval: 'bg-amber-100 text-amber-800',
-            approved: 'bg-emerald-100 text-emerald-800',
-            denied: 'bg-rose-100 text-rose-800',
-        }[status] ?? 'bg-slate-100 text-slate-600'
+            pending: 'neutral',
+            pending_approval: 'warning',
+            approved: 'success',
+            denied: 'danger',
+        }[status] ?? 'neutral'
     );
 }
 
@@ -103,23 +105,22 @@ function paginationLabel(label) {
 
     <StaffLayout>
         <template #header>
-            <div class="flex items-center justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-display font-bold text-slate-900">Document Requests</h2>
-                    <p class="text-sm text-slate-500">
-                        Triage, approve, and manage document requests across all students.
-                    </p>
-                </div>
-                <Link
-                    :href="route('admin.dashboard')"
-                    class="hidden text-xs font-semibold text-brand-700 hover:underline sm:block"
-                >
-                    Back to dashboard →
-                </Link>
-            </div>
+            <PageHeader
+                title="Document Requests"
+                subtitle="Triage, approve, and manage document requests across all students."
+            >
+                <template #actions>
+                    <Link
+                        :href="route('admin.dashboard')"
+                        class="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-semibold text-brand-700 hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                    >
+                        Back to dashboard →
+                    </Link>
+                </template>
+            </PageHeader>
         </template>
 
-        <div class="mx-auto max-w-7xl space-y-5 px-4 pb-12 sm:px-6 lg:px-8">
+        <div class="space-y-6 pb-12">
             <!-- Filters -->
             <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                 <div class="mb-4 flex items-center gap-2">
@@ -227,14 +228,7 @@ function paginationLabel(label) {
                                     {{ item.document_type?.name }} · {{ item.reference_no }}
                                 </p>
                             </div>
-                            <span
-                                :class="[
-                                    'inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
-                                    statusBadge(item.status),
-                                ]"
-                            >
-                                {{ item.status }}
-                            </span>
+                            <StatusBadge :label="item.status" :tone="statusTone(item.status)" class="shrink-0" />
                         </div>
 
                         <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
@@ -317,25 +311,14 @@ function paginationLabel(label) {
                                         <p class="text-xs text-slate-500">{{ item.document_type?.category }}</p>
                                     </td>
                                     <td class="px-5 py-3">
-                                        <span
-                                            :class="[
-                                                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
-                                                statusBadge(item.status),
-                                            ]"
-                                        >
-                                            {{ item.status }}
-                                        </span>
+                                        <StatusBadge :label="item.status" :tone="statusTone(item.status)" />
                                     </td>
                                     <td class="px-5 py-3">
-                                        <span
+                                        <StatusBadge
                                             v-if="item.payments?.[0]"
-                                            :class="[
-                                                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
-                                                paymentBadge(item.payments[0].status),
-                                            ]"
-                                        >
-                                            {{ item.payments[0].status?.replaceAll('_', ' ') }}
-                                        </span>
+                                            :label="item.payments[0].status?.replaceAll('_', ' ')"
+                                            :tone="paymentTone(item.payments[0].status)"
+                                        />
                                         <span v-else class="text-xs text-slate-400">n/a</span>
                                     </td>
                                     <td class="px-5 py-3 text-xs text-slate-600">{{ relativeAge(item.created_at) }}</td>
