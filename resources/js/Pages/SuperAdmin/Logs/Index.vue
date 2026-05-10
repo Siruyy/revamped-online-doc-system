@@ -1,5 +1,6 @@
 <script setup>
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import DataTableShell from '@/Components/UI/DataTableShell.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ClipboardDocumentListIcon } from '@heroicons/vue/24/outline';
@@ -84,7 +85,8 @@ const toggle = (id) => {
                 </div>
             </form>
 
-            <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <p class="text-xs text-slate-500 md:hidden">Swipe horizontally to view all columns.</p>
+            <DataTableShell label="Activity logs table" min-width="min-w-[64rem]">
                 <table class="min-w-full divide-y divide-slate-200 text-sm">
                     <thead class="bg-slate-50">
                         <tr>
@@ -137,7 +139,7 @@ const toggle = (id) => {
                         </tr>
                     </tbody>
                 </table>
-            </div>
+            </DataTableShell>
 
             <div v-if="logs.links?.length > 3" class="flex flex-wrap gap-2">
                 <Link
