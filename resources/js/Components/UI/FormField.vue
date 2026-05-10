@@ -17,9 +17,8 @@ const describedBy = computed(() => [helpId.value, errorId.value].filter(Boolean)
 
 <template>
     <div>
-        <label :for="id" class="block text-sm font-medium text-slate-700">
+        <label :for="id" class="block text-sm font-medium text-slate-700" :class="{ 'is-required': required }">
             {{ label }}
-            <span v-if="required" class="text-rose-600" aria-hidden="true">*</span>
         </label>
 
         <div class="mt-1">
@@ -30,3 +29,11 @@ const describedBy = computed(() => [helpId.value, errorId.value].filter(Boolean)
         <InputError :id="errorId" class="mt-1" :message="error" />
     </div>
 </template>
+
+<style scoped>
+.is-required::after {
+    margin-left: 0.25rem;
+    color: #e11d48;
+    content: '*';
+}
+</style>

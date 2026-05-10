@@ -21,8 +21,9 @@ test('student registration can be approved by SuperAdmin and then log in', async
 
     await login(page, 'e2e.superadmin@example.com');
     await visit(page, '/superadmin/users/pending');
-    await expect(page.getByText(email)).toBeVisible();
-    await page.locator('tr', { hasText: email }).getByRole('button', { name: 'Approve' }).click();
+    const pendingRow = page.locator('tr', { hasText: email });
+    await expect(pendingRow).toBeVisible();
+    await pendingRow.getByRole('button', { name: 'Approve' }).click();
     await expect(page.getByText(email)).toHaveCount(0);
     await logout(page);
 

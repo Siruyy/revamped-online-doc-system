@@ -88,15 +88,18 @@ theme: {
 | Component | Purpose |
 |-----------|---------|
 | `<AppLayout>` | Wraps content with appropriate role layout |
-| `<PageHeader>` | Title + subtitle + actions slot |
+| `<PageHeader>` | Consistent page title, optional eyebrow/subtitle, and responsive actions slot |
 | `<Card>` | Surface container with optional title and footer |
 | `<DataTable>` | Sortable, searchable, paginated table |
+| `<DataTableShell>` | Scroll-safe wrapper for wide log/report tables |
+| `<ResponsiveRecordList>` | Mobile card + desktop table split for record indexes |
 | `<StatusBadge>` | Colored pill for statuses (pending/approved/denied/etc.) |
 | `<StatCard>` | Big number with icon, label, optional trend |
 | `<EmptyState>` | Friendly illustration + message when list is empty |
 | `<Modal>` | Headless UI dialog wrapper |
 | `<ConfirmDialog>` | "Are you sure?" modal with destructive button styling |
 | `<FormField>` | Label + input + error message |
+| `<IconButton>` | Accessible icon-only button/link with minimum touch target |
 | `<FileUpload>` | Drag-and-drop with preview |
 | `<NotificationBell>` | Dropdown with recent notifications, real-time updates |
 | `<MessageBell>` | Same for unread messages |
@@ -135,6 +138,24 @@ const classes = computed(() => variants[props.status] ?? variants.pending);
 </template>
 ```
 
+### Responsive UI Primitives
+
+Use `resources/js/Components/UI/*` primitives for new role pages instead of page-local wrappers.
+
+- `<PageHeader>` is the default heading block for public, student, admin, department, and superadmin pages. Pass `title`, optional `eyebrow`, optional `subtitle`, and place primary actions in `#actions`; actions stack on mobile and align horizontally from `sm` up.
+- `<ResponsiveRecordList>` is the default list shell for user-facing records. Put compact stacked cards in `#cards`, the desktop table in `#table`, and an `#empty` state when `empty` is true. This avoids horizontal page overflow on phones while keeping desktop scanability.
+- `<DataTableShell>` wraps intentionally wide tables such as logs, reports, and desktop-only record tables. Provide a clear `label` and an explicit `min-width`; the wrapper owns the horizontal scroll area with keyboard focus and an accessible scroll hint.
+- `<FormField>` owns the visible `<label>`, help text, and error text IDs. Slotted inputs must bind the slot props: `:id="id"`, `:aria-describedby="describedBy"`, and `:aria-invalid="invalid"`.
+- `<IconButton>` is required for icon-only controls. The `label` prop becomes `aria-label`; the component enforces at least `44x44px` hit area and supports button or Inertia link rendering.
+
+### Compact Mobile Cards
+
+- Use cards for user-facing request, payment, clearance, and user records below `md`.
+- Keep each card scannable: title/reference first, status badge near the top, 2-4 key facts, then actions.
+- Use `min-w-0`, `break-words`, and short labels for long names, email addresses, reference numbers, and filenames.
+- Keep primary actions full-width or clearly separated on the smallest phones; icon-only actions still need `IconButton` labels.
+- Do not mask layout bugs with page-level `overflow-x-hidden`. Fix the overflowing child or move intentionally wide tabular data into `DataTableShell`.
+
 ## Page Structure Template
 
 Every Inertia page follows this skeleton:
@@ -142,7 +163,7 @@ Every Inertia page follows this skeleton:
 ```vue
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
-import PageHeader from '@/Components/PageHeader.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
 
 defineOptions({ layout: StaffLayout });
 
