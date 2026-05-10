@@ -149,7 +149,7 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
     <div class="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-brand-600 selection:text-white flex">
         <!-- ── Desktop Sidebar ──────────────────────────────────────────── -->
         <aside
-            class="hidden lg:flex lg:flex-col bg-slate-900 text-slate-300 shrink-0 shadow-xl fixed h-screen z-50 transition-all duration-300"
+            class="hidden lg:flex lg:flex-col bg-slate-900 text-slate-300 shrink-0 shadow-xl fixed h-dvh z-50 transition-all duration-300"
             :class="sidebarCollapsed ? 'w-16' : 'w-64'"
         >
             <!-- Logo -->
@@ -261,7 +261,7 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
 
         <!-- ── Main Content ─────────────────────────────────────────────── -->
         <div
-            class="flex-1 flex flex-col min-w-0 transition-all duration-300"
+            class="flex-1 flex flex-col min-w-0 overflow-x-hidden transition-all duration-300"
             :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'"
         >
             <!-- Top Header -->
@@ -272,10 +272,13 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                 <div class="flex items-center gap-3 lg:hidden">
                     <button
                         type="button"
-                        class="p-1.5 -ml-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
+                        class="inline-flex min-h-11 min-w-11 -ml-2 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                        :aria-label="showSidebar ? 'Close navigation menu' : 'Open navigation menu'"
+                        :aria-expanded="showSidebar"
+                        aria-controls="staff-mobile-navigation"
                         @click="showSidebar = !showSidebar"
                     >
-                        <Bars3Icon class="w-5 h-5" />
+                        <Bars3Icon class="h-5 w-5" aria-hidden="true" />
                     </button>
                     <span class="font-display font-bold text-base text-slate-900">SVCI</span>
                 </div>
@@ -307,7 +310,10 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
             <Transition name="fade">
                 <div v-if="showSidebar" class="fixed inset-0 z-50 lg:hidden">
                     <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" @click="showSidebar = false" />
-                    <aside class="absolute inset-y-0 left-0 w-64 bg-slate-900 text-slate-300 shadow-2xl flex flex-col">
+                    <aside
+                        id="staff-mobile-navigation"
+                        class="absolute inset-y-0 left-0 flex max-h-dvh min-h-dvh w-64 flex-col bg-slate-900 text-slate-300 shadow-2xl"
+                    >
                         <div class="h-14 flex items-center justify-between px-5 bg-slate-950 border-b border-slate-800">
                             <span class="font-display font-bold text-base text-white">SVCI Staff</span>
                             <button

@@ -45,7 +45,10 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                 <div class="flex h-14 items-center justify-between gap-4">
                     <!-- Logo + nav links -->
                     <div class="flex items-center gap-6">
-                        <Link :href="route('student.dashboard')" class="flex items-center gap-2.5 group shrink-0">
+                        <Link
+                            :href="route('student.dashboard')"
+                            class="flex min-h-11 min-w-11 items-center gap-2.5 group shrink-0"
+                        >
                             <div
                                 class="bg-brand-600 p-1.5 rounded-lg shadow-sm group-hover:bg-brand-500 transition-colors"
                             >
@@ -57,7 +60,7 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                         </Link>
 
                         <!-- Desktop nav links -->
-                        <div class="hidden md:flex items-center gap-1">
+                        <div class="hidden lg:flex items-center gap-1">
                             <Link
                                 v-for="link in studentLinks"
                                 :key="link.route"
@@ -81,8 +84,8 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
 
                     <!-- Right side: icons + avatar -->
                     <div class="flex items-center gap-1">
-                        <MessageBell class="hidden md:inline-flex" />
-                        <NotificationBell />
+                        <MessageBell class="hidden min-h-11 min-w-11 md:inline-flex" />
+                        <NotificationBell class="min-h-11 min-w-11" />
                         <div class="h-5 w-px bg-slate-200 mx-1 hidden md:block"></div>
                         <div class="hidden md:block">
                             <UserAvatar />
@@ -100,11 +103,14 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                         <!-- Mobile hamburger -->
                         <button
                             type="button"
-                            class="md:hidden p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                            class="lg:hidden inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                            :aria-label="showMobileMenu ? 'Close navigation menu' : 'Open navigation menu'"
+                            :aria-expanded="showMobileMenu"
+                            aria-controls="student-mobile-navigation"
                             @click="showMobileMenu = !showMobileMenu"
                         >
-                            <Bars3Icon v-if="!showMobileMenu" class="w-5 h-5" />
-                            <XMarkIcon v-else class="w-5 h-5" />
+                            <Bars3Icon v-if="!showMobileMenu" class="h-5 w-5" aria-hidden="true" />
+                            <XMarkIcon v-else class="h-5 w-5" aria-hidden="true" />
                         </button>
                     </div>
                 </div>
@@ -114,7 +120,8 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
             <Transition name="slide-down">
                 <div
                     v-if="showMobileMenu"
-                    class="md:hidden bg-white border-t border-slate-200 shadow-lg absolute w-full"
+                    id="student-mobile-navigation"
+                    class="lg:hidden bg-white border-t border-slate-200 shadow-lg absolute w-full"
                 >
                     <div class="px-4 py-3 space-y-1">
                         <Link

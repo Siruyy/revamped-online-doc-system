@@ -1,9 +1,9 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
+import StudentLayout from '@/Layouts/StudentLayout.vue';
 import DeleteUserForm from './Partials/DeleteUserForm.vue';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm.vue';
@@ -21,12 +21,13 @@ defineProps({
 
 const page = usePage();
 const user = page.props.auth.user;
+const role = computed(() => page.props.auth?.user?.role ?? 'student');
 
 const isDepartmentOfficer = computed(() => ['teacher', 'dean', 'accounting', 'sao'].includes(user?.role));
 
 const profileUpdateRoute = computed(() => (isDepartmentOfficer.value ? 'department.profile.update' : 'profile.update'));
 
-const Layout = computed(() => (isDepartmentOfficer.value ? StaffLayout : AuthenticatedLayout));
+const layoutComponent = computed(() => (role.value === 'student' ? StudentLayout : StaffLayout));
 
 const signatureForm = useForm({
     signature: null,
@@ -48,9 +49,10 @@ const submitSignature = () => {
 <template>
     <Head title="Profile" />
 
-    <component :is="Layout">
+    <component :is="layoutComponent">
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">Profile</h2>
+            <h2 class="text-2xl font-display font-bold text-slate-900">Profile</h2>
+            <p class="mt-1 text-sm text-slate-600">Manage your account details, avatar, password, and signature.</p>
         </template>
 
         <div class="py-12">
