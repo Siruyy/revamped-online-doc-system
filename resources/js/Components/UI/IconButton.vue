@@ -2,7 +2,6 @@
 import { Link } from '@inertiajs/vue3';
 
 defineProps({
-    as: { type: String, default: 'button' },
     href: { type: String, default: null },
     label: { type: String, required: true },
     variant: { type: String, default: 'subtle' },
@@ -22,10 +21,13 @@ const variantClasses = {
         v-if="href"
         :href="href"
         :aria-label="label"
+        :aria-disabled="disabled ? 'true' : undefined"
         :class="[
             'inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
             variantClasses[variant] ?? variantClasses.subtle,
+            disabled ? 'pointer-events-none opacity-50' : '',
         ]"
+        @click="disabled && $event.preventDefault()"
     >
         <slot />
     </Link>
