@@ -1,5 +1,7 @@
 <script setup>
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import DataTableShell from '@/Components/UI/DataTableShell.vue';
+import ResponsiveRecordList from '@/Components/UI/ResponsiveRecordList.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { UsersIcon } from '@heroicons/vue/24/outline';
@@ -160,65 +162,126 @@ const bulkDelete = () => {
                 </button>
             </div>
 
-            <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-                <table class="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="w-10 px-3 py-3">
-                                <input type="checkbox" class="rounded border-slate-300" @change="toggleAll" />
-                            </th>
-                            <th class="px-3 py-3 text-left font-semibold text-slate-700">Name</th>
-                            <th class="px-3 py-3 text-left font-semibold text-slate-700">Email</th>
-                            <th class="px-3 py-3 text-left font-semibold text-slate-700">Role</th>
-                            <th class="px-3 py-3 text-left font-semibold text-slate-700">Status</th>
-                            <th class="px-3 py-3 text-left font-semibold text-slate-700">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-200">
-                        <tr v-for="row in users.data" :key="row.id">
-                            <td class="px-3 py-3">
+            <ResponsiveRecordList :empty="users.data.length === 0">
+                <template #empty>
+                    <EmptyState
+                        title="No users match"
+                        description="Adjust filters or create a staff account if this role should exist."
+                        :icon="UsersIcon"
+                        compact
+                    >
+                        <template #actions>
+                            <Link
+                                :href="route('superadmin.users.create')"
+                                class="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500"
+                            >
+                                Create staff
+                            </Link>
+                        </template>
+                    </EmptyState>
+                </template>
+
+                <template #cards>
+                    <article
+                        v-for="row in users.data"
+                        :key="row.id"
+                        class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
+                    >
+                        <div class="flex items-start justify-between gap-3">
+                            <label class="flex min-w-0 items-start gap-3">
                                 <input
                                     type="checkbox"
-                                    class="rounded border-slate-300"
+                                    class="mt-0.5 rounded border-slate-300"
                                     :checked="selected.includes(row.id)"
                                     @change="(e) => onRowCheck(row.id, e.target.checked)"
                                 />
-                            </td>
-                            <td class="px-3 py-3 text-slate-900">{{ row.fullname }}</td>
-                            <td class="px-3 py-3 text-slate-600">{{ row.email }}</td>
-                            <td class="px-3 py-3 capitalize text-slate-700">{{ row.role }}</td>
-                            <td class="px-3 py-3 capitalize text-slate-700">{{ row.status }}</td>
-                            <td class="px-3 py-3">
-                                <Link
-                                    :href="route('superadmin.users.edit', row.id)"
-                                    class="font-semibold text-violet-700 hover:text-violet-600"
-                                >
-                                    Edit
-                                </Link>
-                            </td>
-                        </tr>
-                        <tr v-if="users.data.length === 0">
-                            <td colspan="6" class="px-3 py-8">
-                                <EmptyState
-                                    title="No users match"
-                                    description="Adjust filters or create a staff account if this role should exist."
-                                    :icon="UsersIcon"
-                                    compact
-                                >
-                                    <template #actions>
+                                <span class="min-w-0">
+                                    <span class="block truncate text-sm font-semibold text-slate-950">{{
+                                        row.fullname
+                                    }}</span>
+                                    <span class="mt-0.5 block truncate text-xs text-slate-500">{{ row.email }}</span>
+                                </span>
+                            </label>
+                            <span
+                                class="inline-flex shrink-0 items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold capitalize text-slate-700"
+                            >
+                                {{ row.status }}
+                            </span>
+                        </div>
+
+                        <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                            <div>
+                                <dt class="font-medium text-slate-500">Role</dt>
+                                <dd class="mt-0.5 capitalize text-slate-800">{{ row.role }}</dd>
+                            </div>
+                            <div>
+                                <dt class="font-medium text-slate-500">Student ID</dt>
+                                <dd class="mt-0.5 text-slate-800">{{ row.student_id || '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="font-medium text-slate-500">Course</dt>
+                                <dd class="mt-0.5 text-slate-800">{{ row.course || '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="font-medium text-slate-500">Year</dt>
+                                <dd class="mt-0.5 text-slate-800">{{ row.year_level || '—' }}</dd>
+                            </div>
+                        </dl>
+
+                        <div class="mt-4">
+                            <Link
+                                :href="route('superadmin.users.edit', row.id)"
+                                class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-violet-600 px-3 text-sm font-semibold text-white hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                            >
+                                Edit user
+                            </Link>
+                        </div>
+                    </article>
+                </template>
+
+                <template #table>
+                    <DataTableShell label="Users table" min-width="min-w-[56rem]">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="w-10 px-3 py-3">
+                                        <input type="checkbox" class="rounded border-slate-300" @change="toggleAll" />
+                                    </th>
+                                    <th class="px-3 py-3 text-left font-semibold text-slate-700">Name</th>
+                                    <th class="px-3 py-3 text-left font-semibold text-slate-700">Email</th>
+                                    <th class="px-3 py-3 text-left font-semibold text-slate-700">Role</th>
+                                    <th class="px-3 py-3 text-left font-semibold text-slate-700">Status</th>
+                                    <th class="px-3 py-3 text-left font-semibold text-slate-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                <tr v-for="row in users.data" :key="row.id">
+                                    <td class="px-3 py-3">
+                                        <input
+                                            type="checkbox"
+                                            class="rounded border-slate-300"
+                                            :checked="selected.includes(row.id)"
+                                            @change="(e) => onRowCheck(row.id, e.target.checked)"
+                                        />
+                                    </td>
+                                    <td class="px-3 py-3 text-slate-900">{{ row.fullname }}</td>
+                                    <td class="px-3 py-3 text-slate-600">{{ row.email }}</td>
+                                    <td class="px-3 py-3 capitalize text-slate-700">{{ row.role }}</td>
+                                    <td class="px-3 py-3 capitalize text-slate-700">{{ row.status }}</td>
+                                    <td class="px-3 py-3">
                                         <Link
-                                            :href="route('superadmin.users.create')"
-                                            class="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500"
+                                            :href="route('superadmin.users.edit', row.id)"
+                                            class="font-semibold text-violet-700 hover:text-violet-600"
                                         >
-                                            Create staff
+                                            Edit
                                         </Link>
-                                    </template>
-                                </EmptyState>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </DataTableShell>
+                </template>
+            </ResponsiveRecordList>
 
             <div v-if="users.links?.length > 3" class="flex flex-wrap gap-2">
                 <Link

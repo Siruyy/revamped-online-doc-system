@@ -1,5 +1,7 @@
 <script setup>
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import DataTableShell from '@/Components/UI/DataTableShell.vue';
+import ResponsiveRecordList from '@/Components/UI/ResponsiveRecordList.vue';
 import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
 import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
@@ -192,105 +194,182 @@ function paginationLabel(label) {
             </div>
 
             <!-- Results -->
-            <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-                <table class="min-w-full divide-y divide-slate-100 text-sm">
-                    <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
-                        <tr>
-                            <th class="px-5 py-3 text-left">Reference</th>
-                            <th class="px-5 py-3 text-left">Student</th>
-                            <th class="px-5 py-3 text-left">Document</th>
-                            <th class="px-5 py-3 text-left">Status</th>
-                            <th class="px-5 py-3 text-left">Payment</th>
-                            <th class="px-5 py-3 text-left">Age</th>
-                            <th class="px-5 py-3 text-left">SLA</th>
-                            <th class="px-5 py-3"></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        <tr v-for="item in requests.data" :key="item.id" class="transition hover:bg-brand-50/30">
-                            <td class="px-5 py-3 font-mono text-xs text-slate-700">{{ item.reference_no }}</td>
-                            <td class="px-5 py-3">
-                                <p class="font-semibold text-slate-900">{{ item.user?.fullname }}</p>
-                                <p class="text-xs text-slate-500">
-                                    {{ item.user?.course || '—' }} Y{{ item.user?.year_level || '?' }}
+            <ResponsiveRecordList :empty="requests.data.length === 0">
+                <template #empty>
+                    <EmptyState
+                        title="No requests match your filters"
+                        description="Try clearing filters or widening your date range. New submissions will appear here automatically."
+                        :icon="BoltIcon"
+                        compact
+                    >
+                        <template #actions>
+                            <button
+                                type="button"
+                                class="inline-flex min-h-11 items-center gap-1 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-brand-700 hover:bg-brand-50"
+                                @click="clearFilters"
+                            >
+                                <ArrowsRightLeftIcon class="h-3.5 w-3.5" /> Reset filters
+                            </button>
+                        </template>
+                    </EmptyState>
+                </template>
+
+                <template #cards>
+                    <article
+                        v-for="item in requests.data"
+                        :key="item.id"
+                        class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
+                    >
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <h3 class="truncate text-sm font-semibold text-slate-950">{{ item.user?.fullname }}</h3>
+                                <p class="mt-0.5 truncate text-xs text-slate-500">
+                                    {{ item.document_type?.name }} · {{ item.reference_no }}
                                 </p>
-                            </td>
-                            <td class="px-5 py-3">
-                                <p class="font-medium text-slate-900">{{ item.document_type?.name }}</p>
-                                <p class="text-xs text-slate-500">{{ item.document_type?.category }}</p>
-                            </td>
-                            <td class="px-5 py-3">
-                                <span
-                                    :class="[
-                                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
-                                        statusBadge(item.status),
-                                    ]"
+                            </div>
+                            <span
+                                :class="[
+                                    'inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
+                                    statusBadge(item.status),
+                                ]"
+                            >
+                                {{ item.status }}
+                            </span>
+                        </div>
+
+                        <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                            <div>
+                                <dt class="font-medium text-slate-500">Submitted</dt>
+                                <dd class="mt-0.5 text-slate-800">{{ relativeAge(item.created_at) }}</dd>
+                            </div>
+                            <div>
+                                <dt class="font-medium text-slate-500">Payment</dt>
+                                <dd class="mt-0.5 text-slate-800">
+                                    {{ item.payments?.[0]?.status?.replaceAll('_', ' ') || 'n/a' }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="font-medium text-slate-500">Student</dt>
+                                <dd class="mt-0.5 text-slate-800">
+                                    {{ item.user?.course || '—' }} Y{{ item.user?.year_level || '?' }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="font-medium text-slate-500">SLA</dt>
+                                <dd class="mt-0.5 text-slate-800">
+                                    <span v-if="isOverdue(item.expected_release_on)" class="font-semibold text-rose-700"
+                                        >Overdue</span
+                                    >
+                                    <span v-else-if="item.expected_release_on">
+                                        {{
+                                            new Date(item.expected_release_on).toLocaleDateString('en-US', {
+                                                month: 'short',
+                                                day: 'numeric',
+                                            })
+                                        }}
+                                    </span>
+                                    <span v-else>—</span>
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <div class="mt-4">
+                            <Link
+                                :href="route('admin.requests.show', item.id)"
+                                class="inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-lg bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                            >
+                                Review <ArrowRightIcon class="h-3.5 w-3.5" />
+                            </Link>
+                        </div>
+                    </article>
+                </template>
+
+                <template #table>
+                    <DataTableShell label="Admin requests table" min-width="min-w-[64rem]">
+                        <table class="min-w-full divide-y divide-slate-100 text-sm">
+                            <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                                <tr>
+                                    <th class="px-5 py-3 text-left">Reference</th>
+                                    <th class="px-5 py-3 text-left">Student</th>
+                                    <th class="px-5 py-3 text-left">Document</th>
+                                    <th class="px-5 py-3 text-left">Status</th>
+                                    <th class="px-5 py-3 text-left">Payment</th>
+                                    <th class="px-5 py-3 text-left">Age</th>
+                                    <th class="px-5 py-3 text-left">SLA</th>
+                                    <th class="px-5 py-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr
+                                    v-for="item in requests.data"
+                                    :key="item.id"
+                                    class="transition hover:bg-brand-50/30"
                                 >
-                                    {{ item.status }}
-                                </span>
-                            </td>
-                            <td class="px-5 py-3">
-                                <span
-                                    v-if="item.payments?.[0]"
-                                    :class="[
-                                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
-                                        paymentBadge(item.payments[0].status),
-                                    ]"
-                                >
-                                    {{ item.payments[0].status?.replaceAll('_', ' ') }}
-                                </span>
-                                <span v-else class="text-xs text-slate-400">n/a</span>
-                            </td>
-                            <td class="px-5 py-3 text-xs text-slate-600">{{ relativeAge(item.created_at) }}</td>
-                            <td class="px-5 py-3">
-                                <span
-                                    v-if="isOverdue(item.expected_release_on)"
-                                    class="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700"
-                                >
-                                    <ExclamationTriangleIcon class="h-3 w-3" /> Overdue
-                                </span>
-                                <span v-else-if="item.expected_release_on" class="text-xs text-slate-600">
-                                    {{
-                                        new Date(item.expected_release_on).toLocaleDateString('en-US', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                        })
-                                    }}
-                                </span>
-                                <span v-else class="text-xs text-slate-400">—</span>
-                            </td>
-                            <td class="px-5 py-3 text-right">
-                                <Link
-                                    :href="route('admin.requests.show', item.id)"
-                                    class="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
-                                >
-                                    Open <ArrowRightIcon class="h-3.5 w-3.5" />
-                                </Link>
-                            </td>
-                        </tr>
-                        <tr v-if="requests.data.length === 0">
-                            <td colspan="8" class="px-4 py-8">
-                                <EmptyState
-                                    title="No requests match your filters"
-                                    description="Try clearing filters or widening your date range. New submissions will appear here automatically."
-                                    :icon="BoltIcon"
-                                    compact
-                                >
-                                    <template #actions>
-                                        <button
-                                            type="button"
-                                            class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-50"
-                                            @click="clearFilters"
+                                    <td class="px-5 py-3 font-mono text-xs text-slate-700">{{ item.reference_no }}</td>
+                                    <td class="px-5 py-3">
+                                        <p class="font-semibold text-slate-900">{{ item.user?.fullname }}</p>
+                                        <p class="text-xs text-slate-500">
+                                            {{ item.user?.course || '—' }} Y{{ item.user?.year_level || '?' }}
+                                        </p>
+                                    </td>
+                                    <td class="px-5 py-3">
+                                        <p class="font-medium text-slate-900">{{ item.document_type?.name }}</p>
+                                        <p class="text-xs text-slate-500">{{ item.document_type?.category }}</p>
+                                    </td>
+                                    <td class="px-5 py-3">
+                                        <span
+                                            :class="[
+                                                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
+                                                statusBadge(item.status),
+                                            ]"
                                         >
-                                            <ArrowsRightLeftIcon class="h-3.5 w-3.5" /> Reset filters
-                                        </button>
-                                    </template>
-                                </EmptyState>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                                            {{ item.status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-3">
+                                        <span
+                                            v-if="item.payments?.[0]"
+                                            :class="[
+                                                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
+                                                paymentBadge(item.payments[0].status),
+                                            ]"
+                                        >
+                                            {{ item.payments[0].status?.replaceAll('_', ' ') }}
+                                        </span>
+                                        <span v-else class="text-xs text-slate-400">n/a</span>
+                                    </td>
+                                    <td class="px-5 py-3 text-xs text-slate-600">{{ relativeAge(item.created_at) }}</td>
+                                    <td class="px-5 py-3">
+                                        <span
+                                            v-if="isOverdue(item.expected_release_on)"
+                                            class="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700"
+                                        >
+                                            <ExclamationTriangleIcon class="h-3 w-3" /> Overdue
+                                        </span>
+                                        <span v-else-if="item.expected_release_on" class="text-xs text-slate-600">
+                                            {{
+                                                new Date(item.expected_release_on).toLocaleDateString('en-US', {
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                })
+                                            }}
+                                        </span>
+                                        <span v-else class="text-xs text-slate-400">—</span>
+                                    </td>
+                                    <td class="px-5 py-3 text-right">
+                                        <Link
+                                            :href="route('admin.requests.show', item.id)"
+                                            class="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
+                                        >
+                                            Open <ArrowRightIcon class="h-3.5 w-3.5" />
+                                        </Link>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </DataTableShell>
+                </template>
+            </ResponsiveRecordList>
 
             <!-- Pagination -->
             <nav

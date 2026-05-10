@@ -1,5 +1,7 @@
 <script setup>
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import DataTableShell from '@/Components/UI/DataTableShell.vue';
+import ResponsiveRecordList from '@/Components/UI/ResponsiveRecordList.vue';
 import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
 import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
@@ -96,64 +98,133 @@ const bulkApprove = () => {
                 {{ banner }}
             </div>
 
-            <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-                <table class="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="w-10 px-4 py-3">
-                                <input type="checkbox" class="rounded border-slate-300" @change="toggleAll" />
-                            </th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Name</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Email</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Student ID</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-200">
-                        <tr v-for="user in users" :key="user.id">
-                            <td class="px-4 py-3">
+            <ResponsiveRecordList :empty="users.length === 0">
+                <template #empty>
+                    <EmptyState
+                        title="No pending registrations"
+                        description="New student registration requests will appear here for approval."
+                        :icon="UserPlusIcon"
+                        compact
+                    />
+                </template>
+
+                <template #cards>
+                    <article
+                        v-for="user in users"
+                        :key="user.id"
+                        class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
+                    >
+                        <div class="flex items-start justify-between gap-3">
+                            <label class="flex min-w-0 items-start gap-3">
                                 <input
                                     type="checkbox"
-                                    class="rounded border-slate-300"
+                                    class="mt-0.5 rounded border-slate-300"
                                     :checked="selected.includes(user.id)"
                                     @change="(e) => onRowCheck(user.id, e.target.checked)"
                                 />
-                            </td>
-                            <td class="px-4 py-3 text-slate-900">{{ user.fullname }}</td>
-                            <td class="px-4 py-3 text-slate-700">{{ user.email }}</td>
-                            <td class="px-4 py-3 text-slate-700">{{ user.student_id }}</td>
-                            <td class="px-4 py-3">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <button
-                                        type="button"
-                                        class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500"
-                                        @click="approve(user.id)"
-                                    >
-                                        Approve
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-500"
-                                        @click="reject(user.id)"
-                                    >
-                                        Reject
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr v-if="users.length === 0">
-                            <td colspan="5" class="px-4 py-8">
-                                <EmptyState
-                                    title="No pending registrations"
-                                    description="New student registration requests will appear here for approval."
-                                    :icon="UserPlusIcon"
-                                    compact
-                                />
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                                <span class="min-w-0">
+                                    <span class="block truncate text-sm font-semibold text-slate-950">{{
+                                        user.fullname
+                                    }}</span>
+                                    <span class="mt-0.5 block truncate text-xs text-slate-500">{{ user.email }}</span>
+                                </span>
+                            </label>
+                            <span
+                                class="inline-flex shrink-0 items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800"
+                            >
+                                Pending
+                            </span>
+                        </div>
+
+                        <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                            <div>
+                                <dt class="font-medium text-slate-500">Student ID</dt>
+                                <dd class="mt-0.5 text-slate-800">{{ user.student_id || '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="font-medium text-slate-500">Registered</dt>
+                                <dd class="mt-0.5 text-slate-800">{{ user.created_at }}</dd>
+                            </div>
+                            <div>
+                                <dt class="font-medium text-slate-500">Course</dt>
+                                <dd class="mt-0.5 text-slate-800">{{ user.course || '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="font-medium text-slate-500">Year</dt>
+                                <dd class="mt-0.5 text-slate-800">{{ user.year_level || '—' }}</dd>
+                            </div>
+                        </dl>
+
+                        <div class="mt-4 grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                class="inline-flex min-h-11 items-center justify-center rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+                                @click="approve(user.id)"
+                            >
+                                Approve
+                            </button>
+                            <button
+                                type="button"
+                                class="inline-flex min-h-11 items-center justify-center rounded-lg bg-rose-600 px-3 text-sm font-semibold text-white hover:bg-rose-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600"
+                                @click="reject(user.id)"
+                            >
+                                Reject
+                            </button>
+                        </div>
+                    </article>
+                </template>
+
+                <template #table>
+                    <DataTableShell label="Pending users table" min-width="min-w-[48rem]">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="w-10 px-4 py-3">
+                                        <input type="checkbox" class="rounded border-slate-300" @change="toggleAll" />
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-semibold text-slate-700">Name</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-slate-700">Email</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-slate-700">Student ID</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-slate-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                <tr v-for="user in users" :key="user.id">
+                                    <td class="px-4 py-3">
+                                        <input
+                                            type="checkbox"
+                                            class="rounded border-slate-300"
+                                            :checked="selected.includes(user.id)"
+                                            @change="(e) => onRowCheck(user.id, e.target.checked)"
+                                        />
+                                    </td>
+                                    <td class="px-4 py-3 text-slate-900">{{ user.fullname }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ user.email }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ user.student_id }}</td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <button
+                                                type="button"
+                                                class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500"
+                                                @click="approve(user.id)"
+                                            >
+                                                Approve
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-500"
+                                                @click="reject(user.id)"
+                                            >
+                                                Reject
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </DataTableShell>
+                </template>
+            </ResponsiveRecordList>
         </div>
     </StaffLayout>
 </template>

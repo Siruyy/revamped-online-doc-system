@@ -1,5 +1,7 @@
 <script setup>
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import DataTableShell from '@/Components/UI/DataTableShell.vue';
+import ResponsiveRecordList from '@/Components/UI/ResponsiveRecordList.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { reactive } from 'vue';
@@ -100,70 +102,136 @@ function badge(status) {
                 </button>
             </div>
 
-            <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-                <table class="min-w-full divide-y divide-slate-100 text-sm">
-                    <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
-                        <tr>
-                            <th class="px-5 py-3 text-left">Reference</th>
-                            <th class="px-5 py-3 text-left">Student</th>
-                            <th class="px-5 py-3 text-left">Your Status</th>
-                            <th class="px-5 py-3 text-left">Overall</th>
-                            <th class="px-5 py-3"></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        <tr v-for="row in clearances.data" :key="row.id" class="transition hover:bg-brand-50/30">
-                            <td class="px-5 py-3 font-mono text-xs text-slate-700">
-                                {{ row.document_request?.reference_no }}
-                            </td>
-                            <td class="px-5 py-3">
-                                <p class="font-semibold text-slate-900">{{ row.user?.fullname }}</p>
-                                <p class="text-xs text-slate-500">
+            <ResponsiveRecordList :empty="clearances.data.length === 0">
+                <template #empty>
+                    <EmptyState
+                        title="No clearances match these filters"
+                        description="Your queue is clear for the selected status. New assignments will appear here."
+                        :icon="CheckBadgeIcon"
+                        compact
+                    />
+                </template>
+
+                <template #cards>
+                    <article
+                        v-for="row in clearances.data"
+                        :key="row.id"
+                        class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
+                    >
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <h3 class="truncate text-sm font-semibold text-slate-950">{{ row.user?.fullname }}</h3>
+                                <p class="mt-0.5 truncate text-xs text-slate-500">
                                     {{ row.user?.course }} · Y{{ row.user?.year_level }}
                                 </p>
-                            </td>
-                            <td class="px-5 py-3">
-                                <span
-                                    :class="[
-                                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
-                                        badge(row[departmentStatusColumn]),
-                                    ]"
-                                >
-                                    {{ row[departmentStatusColumn] }}
-                                </span>
-                            </td>
-                            <td class="px-5 py-3">
-                                <span
-                                    :class="[
-                                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
-                                        badge(row.overall_status),
-                                    ]"
-                                >
+                            </div>
+                            <span
+                                :class="[
+                                    'inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
+                                    badge(row[departmentStatusColumn]),
+                                ]"
+                            >
+                                {{ row[departmentStatusColumn] }}
+                            </span>
+                        </div>
+
+                        <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                            <div>
+                                <dt class="font-medium text-slate-500">Reference</dt>
+                                <dd class="mt-0.5 font-mono text-slate-800">
+                                    {{ row.document_request?.reference_no }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="font-medium text-slate-500">Request</dt>
+                                <dd class="mt-0.5 capitalize text-slate-800">
+                                    {{ row.document_request?.status || '—' }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="font-medium text-slate-500">Overall</dt>
+                                <dd class="mt-0.5 capitalize text-slate-800">
                                     {{ row.overall_status?.replaceAll('_', ' ') }}
-                                </span>
-                            </td>
-                            <td class="px-5 py-3 text-right">
-                                <Link
-                                    :href="route('department.clearances.show', row.id)"
-                                    class="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="font-medium text-slate-500">Student ID</dt>
+                                <dd class="mt-0.5 text-slate-800">{{ row.user?.student_id || '—' }}</dd>
+                            </div>
+                        </dl>
+
+                        <div class="mt-4">
+                            <Link
+                                :href="route('department.clearances.show', row.id)"
+                                class="inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-lg bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                            >
+                                Review <ArrowRightIcon class="h-3.5 w-3.5" />
+                            </Link>
+                        </div>
+                    </article>
+                </template>
+
+                <template #table>
+                    <DataTableShell label="Department clearances table" min-width="min-w-[48rem]">
+                        <table class="min-w-full divide-y divide-slate-100 text-sm">
+                            <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                                <tr>
+                                    <th class="px-5 py-3 text-left">Reference</th>
+                                    <th class="px-5 py-3 text-left">Student</th>
+                                    <th class="px-5 py-3 text-left">Your Status</th>
+                                    <th class="px-5 py-3 text-left">Overall</th>
+                                    <th class="px-5 py-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr
+                                    v-for="row in clearances.data"
+                                    :key="row.id"
+                                    class="transition hover:bg-brand-50/30"
                                 >
-                                    Open <ArrowRightIcon class="h-3.5 w-3.5" />
-                                </Link>
-                            </td>
-                        </tr>
-                        <tr v-if="clearances.data.length === 0">
-                            <td colspan="5" class="px-4 py-8">
-                                <EmptyState
-                                    title="No clearances match these filters"
-                                    description="Your queue is clear for the selected status. New assignments will appear here."
-                                    :icon="CheckBadgeIcon"
-                                    compact
-                                />
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                                    <td class="px-5 py-3 font-mono text-xs text-slate-700">
+                                        {{ row.document_request?.reference_no }}
+                                    </td>
+                                    <td class="px-5 py-3">
+                                        <p class="font-semibold text-slate-900">{{ row.user?.fullname }}</p>
+                                        <p class="text-xs text-slate-500">
+                                            {{ row.user?.course }} · Y{{ row.user?.year_level }}
+                                        </p>
+                                    </td>
+                                    <td class="px-5 py-3">
+                                        <span
+                                            :class="[
+                                                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
+                                                badge(row[departmentStatusColumn]),
+                                            ]"
+                                        >
+                                            {{ row[departmentStatusColumn] }}
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-3">
+                                        <span
+                                            :class="[
+                                                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
+                                                badge(row.overall_status),
+                                            ]"
+                                        >
+                                            {{ row.overall_status?.replaceAll('_', ' ') }}
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-3 text-right">
+                                        <Link
+                                            :href="route('department.clearances.show', row.id)"
+                                            class="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
+                                        >
+                                            Open <ArrowRightIcon class="h-3.5 w-3.5" />
+                                        </Link>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </DataTableShell>
+                </template>
+            </ResponsiveRecordList>
         </div>
     </StaffLayout>
 </template>
