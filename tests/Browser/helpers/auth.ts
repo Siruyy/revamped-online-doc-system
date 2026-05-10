@@ -1,20 +1,16 @@
 import type { Page } from '@playwright/test';
+import { login } from '../helpers';
 
 export type RoleName = 'student' | 'admin' | 'department' | 'superadmin';
 
-const accounts: Record<RoleName, { email: string; password: string }> = {
-    student: { email: 'e2e.student@example.com', password: 'password' },
-    admin: { email: 'e2e.admin@example.com', password: 'password' },
-    department: { email: 'e2e.teacher@example.com', password: 'password' },
-    superadmin: { email: 'e2e.superadmin@example.com', password: 'password' },
+const accounts: Record<RoleName, { email: string }> = {
+    student: { email: 'e2e.student@example.com' },
+    admin: { email: 'e2e.admin@example.com' },
+    // E2E seed uses a teacher account for department clearance workflows.
+    department: { email: 'e2e.teacher@example.com' },
+    superadmin: { email: 'e2e.superadmin@example.com' },
 };
 
 export async function loginAs(page: Page, role: RoleName): Promise<void> {
-    const account = accounts[role];
-
-    await page.goto('/login');
-    await page.getByLabel('Email').fill(account.email);
-    await page.getByLabel('Password').fill(account.password);
-    await page.getByRole('button', { name: /log in/i }).click();
-    await page.waitForLoadState('networkidle');
+    await login(page, accounts[role].email);
 }

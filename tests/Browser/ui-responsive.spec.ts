@@ -23,6 +23,11 @@ const roleRoutes: Record<RoleName, string[]> = {
     superadmin: ['/superadmin/dashboard', '/superadmin/users', '/superadmin/users/pending', '/superadmin/logs', '/superadmin/reports'],
 };
 
+async function visitReady(page: Page, route: string): Promise<void> {
+    await page.goto(route, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('body')).toBeVisible();
+}
+
 async function expectNoHorizontalOverflow(page: Page): Promise<void> {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
@@ -35,6 +40,15 @@ async function expectPrimaryTouchTargets(page: Page): Promise<void> {
         return interactive
             .map((element) => {
                 const rect = element.getBoundingClientRect();
+                const checkVisibility = (
+                    element as Element & {
+                        checkVisibility?: (options?: { checkOpacity?: boolean; checkVisibilityCSS?: boolean }) => boolean;
+                    }
+                ).checkVisibility;
+                const inViewport = rect.bottom > 0 && rect.right > 0 && rect.top < window.innerHeight && rect.left < window.innerWidth;
+                const visible = checkVisibility
+                    ? checkVisibility.call(element, { checkOpacity: true, checkVisibilityCSS: true }) && inViewport
+                    : rect.width > 0 && rect.height > 0 && inViewport;
                 const text = (element.textContent || element.getAttribute('aria-label') || element.getAttribute('name') || '').trim();
 
                 return {
@@ -42,7 +56,7 @@ async function expectPrimaryTouchTargets(page: Page): Promise<void> {
                     text,
                     width: Math.round(rect.width),
                     height: Math.round(rect.height),
-                    visible: rect.width > 0 && rect.height > 0,
+                    visible,
                     inlineTextLink: element.tagName.toLowerCase() === 'a' && rect.height < 30 && text.length > 12,
                 };
             })
@@ -61,8 +75,7 @@ for (const viewport of viewports) {
 
         for (const route of publicRoutes) {
             test(`${route} has no horizontal overflow`, async ({ page }) => {
-                await page.goto(route);
-                await page.waitForLoadState('networkidle');
+                await visitReady(page, route);
                 await expectNoHorizontalOverflow(page);
             });
         }
@@ -78,8 +91,7 @@ for (const viewport of viewports) {
 
             for (const route of routes) {
                 test(`${route} has no horizontal overflow`, async ({ page }) => {
-                    await page.goto(route);
-                    await page.waitForLoadState('networkidle');
+                    await visitReady(page, route);
                     await expectNoHorizontalOverflow(page);
                 });
             }
@@ -92,23 +104,23 @@ test.describe('mobile interaction guardrails', () => {
 
     test('student navigation exposes accessible mobile controls', async ({ page }) => {
         await loginAs(page, 'student');
-        await page.goto('/student/dashboard');
+        await visitReady(page, '/student/dashboard');
 
-        await page.getByRole('button', { name: /navigation|menu/i }).click();
+        await page.getByRole('button', { name: /navigation menu/i }).click();
         await expect(page.getByRole('link', { name: /my requests/i })).toBeVisible();
     });
 
     test('admin navigation exposes accessible mobile controls', async ({ page }) => {
         await loginAs(page, 'admin');
-        await page.goto('/admin/dashboard');
+        await visitReady(page, '/admin/dashboard');
 
-        await page.getByRole('button', { name: /navigation|menu/i }).click();
+        await page.getByRole('button', { name: /navigation menu/i }).click();
         await expect(page.getByRole('link', { name: /requests/i })).toBeVisible();
     });
 
     test('student dashboard primary controls meet touch target minimums', async ({ page }) => {
         await loginAs(page, 'student');
-        await page.goto('/student/dashboard');
+        await visitReady(page, '/student/dashboard');
         await expectPrimaryTouchTargets(page);
     });
 });
