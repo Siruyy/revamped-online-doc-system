@@ -4,9 +4,9 @@ import PageHeader from '@/Components/UI/PageHeader.vue';
 import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { BellIcon } from '@heroicons/vue/24/outline';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const { notifications, filters, routePrefix } = defineProps({
     notifications: {
@@ -25,13 +25,29 @@ const { notifications, filters, routePrefix } = defineProps({
 
 const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '').trim();
 const activeLayout = computed(() => (routePrefix === 'student' ? StudentLayout : StaffLayout));
+const markAllReadForm = useForm({});
+const markingReadId = ref(null);
 
 const filterByReadState = (value) => {
     router.get(route(`${routePrefix}.notifications.index`), { read: value }, { preserveState: true, replace: true });
 };
 
 const markAllAsRead = () => {
-    router.post(route(`${routePrefix}.notifications.mark-all-read`));
+    markAllReadForm.post(route(`${routePrefix}.notifications.mark-all-read`));
+};
+
+const markAsRead = (notification) => {
+    markingReadId.value = notification.id;
+
+    router.post(
+        route(`${routePrefix}.notifications.mark-read`, notification.id),
+        {},
+        {
+            onFinish: () => {
+                markingReadId.value = null;
+            },
+        },
+    );
 };
 </script>
 
@@ -47,10 +63,12 @@ const markAllAsRead = () => {
                 <template #actions>
                     <button
                         type="button"
-                        class="inline-flex min-h-11 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                        :disabled="markAllReadForm.processing"
+                        :aria-busy="markAllReadForm.processing ? 'true' : undefined"
+                        class="inline-flex min-h-11 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
                         @click="markAllAsRead"
                     >
-                        Mark all as read
+                        {{ markAllReadForm.processing ? 'Marking...' : 'Mark all as read' }}
                     </button>
                 </template>
             </PageHeader>
@@ -116,10 +134,12 @@ const markAllAsRead = () => {
                     <button
                         v-if="!notification.read_at"
                         type="button"
-                        class="mt-3 text-xs font-semibold text-indigo-600 hover:text-indigo-500"
-                        @click="router.post(route(`${routePrefix}.notifications.mark-read`, notification.id))"
+                        :disabled="markingReadId === notification.id"
+                        :aria-busy="markingReadId === notification.id ? 'true' : undefined"
+                        class="mt-3 text-xs font-semibold text-indigo-600 hover:text-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                        @click="markAsRead(notification)"
                     >
-                        Mark as read
+                        {{ markingReadId === notification.id ? 'Marking...' : 'Mark as read' }}
                     </button>
                 </article>
 
@@ -128,6 +148,7 @@ const markAllAsRead = () => {
                         title="No notifications found"
                         description="Updates about requests, payments, clearances, and releases will appear here."
                         :icon="BellIcon"
+                        variant="inline"
                         compact
                     />
                 </div>

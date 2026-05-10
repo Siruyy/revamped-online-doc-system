@@ -99,6 +99,7 @@ function requestStatusTone(status) {
                         title="No requests found"
                         description="Start a new request or adjust your filters to see older submissions."
                         :icon="DocumentTextIcon"
+                        variant="panel"
                         compact
                     >
                         <template #actions>

@@ -227,6 +227,7 @@ function formatDate(value) {
                         title="No announcements yet"
                         description="Registrar updates and campus reminders will appear here when available."
                         :icon="MegaphoneIcon"
+                        variant="inline"
                         compact
                         class="mt-4"
                     />
@@ -260,6 +261,7 @@ function formatDate(value) {
                         title="No FAQ entries yet"
                         description="Common document request answers will show up here after they are published."
                         :icon="QuestionMarkCircleIcon"
+                        variant="inline"
                         compact
                         class="mt-4"
                     />
@@ -287,6 +289,7 @@ function formatDate(value) {
                     title="No recent activity"
                     description="Request, payment, clearance, and release updates will appear here."
                     :icon="BellAlertIcon"
+                    variant="inline"
                     compact
                     class="mt-4"
                 />

@@ -128,8 +128,9 @@ const toggle = (id) => {
                             </tr>
                         </template>
                         <tr v-if="logs.data.length === 0">
-                            <td colspan="5" class="px-3 py-8">
+                            <td colspan="5" class="p-8">
                                 <EmptyState
+                                    variant="table"
                                     title="No log entries"
                                     description="System activity will appear here after users take auditable actions."
                                     :icon="ClipboardDocumentListIcon"

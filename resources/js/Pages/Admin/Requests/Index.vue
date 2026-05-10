@@ -201,6 +201,7 @@ function paginationLabel(label) {
                         title="No requests match your filters"
                         description="Try clearing filters or widening your date range. New submissions will appear here automatically."
                         :icon="BoltIcon"
+                        variant="panel"
                         compact
                     >
                         <template #actions>
