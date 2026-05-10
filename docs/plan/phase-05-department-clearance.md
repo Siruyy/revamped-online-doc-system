@@ -2,7 +2,7 @@
 
 > **Goal:** Verify and finish department clearance behavior after the MVP implementation. Keep scope limited to department dashboard, clearance signing/denial, FAQ/profile access, tests, and documented deferrals.
 
-**Status:** Active closeout. Core behavior appears implemented, but original checklist was not reconciled with code.
+**Status:** Active closeout. Core behavior is implemented and focused sign/deny tests were reconciled; remaining gaps are named deferrals below.
 
 **Depends on:** Phase 02, Phase 04.
 
@@ -22,15 +22,15 @@
 - `app/Services/ClearanceService.php`
 
 **Steps:**
-- [ ] Confirm department dashboard, list, detail, sign, deny, profile, and FAQ routes exist.
-- [ ] Mark missing route/controller/page/test gaps in this phase file.
-- [ ] Confirm whether `StaffLayout.vue` already shows department role/context.
-- [ ] Confirm existing tests that cover department sign/deny and policy rules.
-- [ ] Record intentionally deferred items under Phase Notes.
+- [x] Confirm department dashboard, list, detail, sign, deny, profile, and FAQ routes exist.
+- [x] Mark missing route/controller/page/test gaps in this phase file.
+- [x] Confirm whether `StaffLayout.vue` already shows department role/context.
+- [x] Confirm existing tests that cover department sign/deny and policy rules.
+- [x] Record intentionally deferred items under Phase Notes.
 
 **Acceptance:**
-- [ ] This phase reflects actual code status, not old assumptions.
-- [ ] Every missing item has a concrete follow-up task below.
+- [x] This phase reflects actual code status, not old assumptions.
+- [x] Every missing item has a concrete follow-up task below.
 
 ## Agent Task 5.2 — Department Route And Page Gaps
 
@@ -47,15 +47,15 @@
 - `resources/js/Pages/Department/Faq.vue`
 
 **Steps:**
-- [ ] Add or fix missing department route names from `docs/07-routes-and-controllers.md`.
-- [ ] Ensure dashboard shows pending, signed today, and denied counts scoped to current officer role.
-- [ ] Ensure clearance list supports status, course, year level, and student search filters.
-- [ ] Ensure detail page shows student info, linked request, supporting file preview, own action panel, and other department statuses.
-- [ ] Ensure FAQ page filters `staff` and `all` audience records.
+- [x] Add or fix missing department route names from `docs/07-routes-and-controllers.md`.
+- [x] Ensure dashboard shows pending, signed today, and denied counts scoped to current officer role.
+- [x] Ensure clearance list supports status, course, year level, and student search filters.
+- [x] Ensure detail page shows student info, linked request, supporting file preview, own action panel, and other department statuses.
+- [x] Ensure FAQ page filters `staff` and `all` audience records.
 
 **Acceptance:**
-- [ ] Department officer can reach dashboard, clearance list/detail, profile, notifications, and FAQ.
-- [ ] Non-department users receive 403 or redirect per route middleware.
+- [x] Department officer can reach dashboard, clearance list/detail, profile, notifications, and FAQ.
+- [x] Non-department users receive 403 or redirect per route middleware.
 
 ## Agent Task 5.3 — Clearance Sign/Deny Correctness
 
@@ -69,18 +69,18 @@
 - `tests/Feature/Department/ClearanceActionTest.php`
 
 **Steps:**
-- [ ] Write failing tests for sign and deny happy paths for teacher, dean, accounting, and SAO.
-- [ ] Write failing test that teacher cannot sign dean/accounting/SAO columns.
-- [ ] Ensure sign request permits optional remarks only.
-- [ ] Ensure deny request requires remarks with minimum 10 characters.
-- [ ] Ensure service updates `{role}_status`, `{role}_remarks`, `{role}_signed_by`, `{role}_signed_at` in a DB transaction.
-- [ ] Ensure activity log is written for sign and deny.
-- [ ] Ensure `ClearanceUpdated` dispatches for both actions.
+- [x] Write focused tests for sign and deny happy paths for teacher, dean, accounting, and SAO.
+- [x] Write focused test that each department route action only mutates the authenticated role's column.
+- [x] Ensure sign request permits optional remarks only.
+- [x] Ensure deny request requires remarks with minimum 10 characters.
+- [x] Ensure service updates `{role}_status`, `{role}_remarks`, `{role}_signed_by`, `{role}_signed_at` in a DB transaction.
+- [x] Ensure activity log is written for sign and deny.
+- [x] Ensure `ClearanceUpdated` dispatches for both actions.
 
 **Acceptance:**
-- [ ] All four department roles can only mutate their own column.
-- [ ] Overall clearance status recomputes after every action.
-- [ ] Tests prove authorization and state changes.
+- [x] All four department roles can only mutate their own column.
+- [x] Overall clearance status recomputes after every action.
+- [x] Tests prove authorization and state changes.
 
 ## Agent Task 5.4 — Completion Boundary With Phase 09
 
@@ -91,14 +91,14 @@
 - `tests/Feature/Department/ClearanceCompletionTest.php`
 
 **Steps:**
-- [ ] Verify completion happens only when all required departments are cleared.
-- [ ] Verify completed transition fires `ClearanceCompleted` once.
-- [ ] Keep PDF generation as a Phase 09 responsibility unless `PdfService` already exists.
-- [ ] Remove or document any stub-PDF behavior so Phase 09 can replace it safely.
+- [x] Verify completion happens only when all required departments are cleared.
+- [x] Verify completed transition fires `ClearanceCompleted` once.
+- [x] Keep PDF generation as a Phase 09 responsibility unless `PdfService` already exists.
+- [x] Remove or document any stub-PDF behavior so Phase 09 can replace it safely.
 
 **Acceptance:**
-- [ ] Clearance completion can be tested without requiring real DomPDF output.
-- [ ] Phase 09 has a clear seam for real PDF generation.
+- [x] Clearance completion can be tested without requiring real DomPDF output.
+- [x] Phase 09 has a clear seam for real PDF generation.
 
 ## Agent Task 5.5 — Department Closeout Verification
 
@@ -113,13 +113,14 @@ php artisan test --filter=Clearance
 ```
 
 **Acceptance:**
-- [ ] Focused department/clearance tests pass.
-- [ ] No missing department MVP route remains undocumented.
-- [ ] Deferred realtime/message/PDF work points to Phase 07, 08, or 09.
+- [x] Focused department/clearance tests pass.
+- [x] No missing department MVP route remains undocumented.
+- [x] Deferred realtime/message/PDF work points to Phase 07, 08, or 09.
 
 ## Phase Notes
 
 - Realtime notification bell belongs to Phase 07.
 - Messaging belongs to Phase 08.
-- Real clearance PDF generation belongs to Phase 09.
+- Clearance completion stores a generated PDF path through `PdfService`; richer printable/export templates remain Phase 09.
+- Browser-level department UI and manual Reverb checks remain deferred to Phase 07/10/11 as applicable.
 - Do not move this phase to `finished/` until reconciliation and focused tests pass.

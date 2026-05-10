@@ -24,6 +24,40 @@ class CsvExportTest extends TestCase
         $this->assertStringContainsString('Export Student', $response->streamedContent());
     }
 
+    public function test_superadmin_users_export_preserves_filters(): void
+    {
+        $superadmin = User::factory()->superadmin()->create();
+        User::factory()->student()->create([
+            'fullname' => 'Filtered Export Student',
+            'email' => 'filtered-export@example.test',
+            'role' => 'student',
+            'status' => 'active',
+            'course' => 'BSIT',
+            'year_level' => 2,
+        ]);
+        User::factory()->student()->create([
+            'fullname' => 'Hidden Export Student',
+            'email' => 'hidden-export@example.test',
+            'role' => 'student',
+            'status' => 'pending',
+            'course' => 'BSCS',
+            'year_level' => 1,
+        ]);
+
+        $response = $this->actingAs($superadmin)->get(route('superadmin.users.export', [
+            'role' => 'student',
+            'status' => 'active',
+            'course' => 'BSIT',
+            'year' => 2,
+            'search' => 'filtered-export',
+        ]));
+
+        $response->assertOk();
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('Filtered Export Student', $content);
+        $this->assertStringNotContainsString('Hidden Export Student', $content);
+    }
+
     public function test_csv_exports_escape_formula_cells(): void
     {
         $superadmin = User::factory()->superadmin()->create();
@@ -52,6 +86,35 @@ class CsvExportTest extends TestCase
         $this->assertStringContainsString('REQ-EXPORT-001', $response->streamedContent());
     }
 
+    public function test_admin_requests_export_preserves_report_filters(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $includedStudent = User::factory()->student()->create(['course' => 'BSIT']);
+        $excludedStudent = User::factory()->student()->create(['course' => 'BSCS']);
+        DocumentRequest::factory()->for($includedStudent)->create([
+            'created_at' => now()->setDate(2026, 1, 15),
+            'reference_no' => 'REQ-FILTERED-001',
+            'status' => 'completed',
+        ]);
+        DocumentRequest::factory()->for($excludedStudent)->create([
+            'created_at' => now()->setDate(2026, 1, 15),
+            'reference_no' => 'REQ-HIDDEN-001',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.reports.exports.requests', [
+            'from' => '2026-01-01',
+            'to' => '2026-01-31',
+            'status' => 'completed',
+            'course' => 'BSIT',
+        ]));
+
+        $response->assertOk();
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('REQ-FILTERED-001', $content);
+        $this->assertStringNotContainsString('REQ-HIDDEN-001', $content);
+    }
+
     public function test_admin_can_export_payments_csv(): void
     {
         $admin = User::factory()->admin()->create();
@@ -65,6 +128,28 @@ class CsvExportTest extends TestCase
         $this->assertStringContainsString('REQ-PAY-001', $response->streamedContent());
     }
 
+    public function test_admin_payments_export_preserves_report_filters(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $includedStudent = User::factory()->student()->create(['course' => 'BSIT']);
+        $excludedStudent = User::factory()->student()->create(['course' => 'BSCS']);
+        $includedRequest = DocumentRequest::factory()->for($includedStudent)->create(['reference_no' => 'REQ-PAY-FILTERED']);
+        $excludedRequest = DocumentRequest::factory()->for($excludedStudent)->create(['reference_no' => 'REQ-PAY-HIDDEN']);
+        Payment::factory()->for($includedStudent)->for($includedRequest)->create(['created_at' => now()->setDate(2026, 1, 15)]);
+        Payment::factory()->for($excludedStudent)->for($excludedRequest)->create(['created_at' => now()->setDate(2026, 1, 15)]);
+
+        $response = $this->actingAs($admin)->get(route('admin.reports.exports.payments', [
+            'from' => '2026-01-01',
+            'to' => '2026-01-31',
+            'course' => 'BSIT',
+        ]));
+
+        $response->assertOk();
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('REQ-PAY-FILTERED', $content);
+        $this->assertStringNotContainsString('REQ-PAY-HIDDEN', $content);
+    }
+
     public function test_superadmin_can_export_activity_logs_csv(): void
     {
         $superadmin = User::factory()->superadmin()->create();
@@ -74,6 +159,39 @@ class CsvExportTest extends TestCase
 
         $response->assertOk();
         $this->assertStringContainsString('Export log row', $response->streamedContent());
+    }
+
+    public function test_superadmin_activity_logs_export_preserves_filters(): void
+    {
+        $superadmin = User::factory()->superadmin()->create();
+        $actor = User::factory()->admin()->create();
+        $affected = User::factory()->student()->create();
+        ActivityLog::factory()->create([
+            'action' => 'filtered_action',
+            'description' => 'Filtered log row',
+            'user_id' => $actor->id,
+            'affected_user_id' => $affected->id,
+            'created_at' => now()->setDate(2026, 1, 15),
+        ]);
+        ActivityLog::factory()->create([
+            'action' => 'hidden_action',
+            'description' => 'Hidden log row',
+            'created_at' => now()->setDate(2026, 1, 15),
+        ]);
+
+        $response = $this->actingAs($superadmin)->get(route('superadmin.logs.export', [
+            'action' => 'filtered_action',
+            'user_id' => $actor->id,
+            'affected_user_id' => $affected->id,
+            'from' => '2026-01-01',
+            'to' => '2026-01-31',
+            'q' => 'Filtered',
+        ]));
+
+        $response->assertOk();
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('Filtered log row', $content);
+        $this->assertStringNotContainsString('Hidden log row', $content);
     }
 
     public function test_student_cannot_export_admin_reports(): void

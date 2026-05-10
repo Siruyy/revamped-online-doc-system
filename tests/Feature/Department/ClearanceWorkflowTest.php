@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Department;
 
+use App\Events\ClearanceUpdated;
 use App\Models\Clearance;
 use App\Models\DocumentRequest;
 use App\Models\User;
@@ -38,7 +39,8 @@ class ClearanceWorkflowTest extends TestCase
 
     public function test_teacher_can_sign_pending_clearance(): void
     {
-        Event::fake();
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
         $teacher = $this->makeOfficer('teacher');
         $student = $this->makeStudent();
         $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
@@ -51,11 +53,59 @@ class ClearanceWorkflowTest extends TestCase
 
         $this->actingAs($teacher)->post(route('department.clearances.sign', $clearance), [
             'remarks' => 'Verified',
-        ])->assertRedirect();
+        ])->assertRedirect()->assertSessionHasNoErrors();
 
         $clearance->refresh();
         $this->assertSame('cleared', $clearance->teacher_status);
         $this->assertSame($teacher->id, $clearance->teacher_signed_by);
+        $this->assertSame('pending', $clearance->dean_status);
+        $this->assertSame('pending', $clearance->accounting_status);
+        $this->assertSame('pending', $clearance->sao_status);
+
+        Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $clearance->id
+            && $event->studentId === $student->id
+            && $event->department === 'teacher'
+            && $event->action === 'signed'
+            && $event->overallStatus === 'in_progress'
+        );
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'clearance_signed',
+            'user_id' => $teacher->id,
+            'affected_user_id' => $student->id,
+        ]);
+    }
+
+    public function test_each_department_role_can_sign_only_its_own_pending_column(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
+
+        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
+            $officer = $this->makeOfficer($role);
+            $student = $this->makeStudent();
+            $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
+            $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
+                'teacher_status' => 'pending',
+                'dean_status' => 'pending',
+                'accounting_status' => 'pending',
+                'sao_status' => 'pending',
+            ]);
+
+            $this->actingAs($officer)->post(route('department.clearances.sign', $clearance), [
+                'remarks' => "{$role} verified",
+            ])->assertRedirect()->assertSessionHasNoErrors();
+
+            $clearance->refresh();
+            $this->assertSame('cleared', $clearance->getAttribute("{$role}_status"));
+            $this->assertSame("{$role} verified", $clearance->getAttribute("{$role}_remarks"));
+            $this->assertSame($officer->id, $clearance->getAttribute("{$role}_signed_by"));
+            $this->assertNotNull($clearance->getAttribute("{$role}_signed_at"));
+
+            foreach (array_diff(['teacher', 'dean', 'accounting', 'sao'], [$role]) as $otherRole) {
+                $this->assertSame('pending', $clearance->getAttribute("{$otherRole}_status"));
+                $this->assertNull($clearance->getAttribute("{$otherRole}_signed_by"));
+            }
+        }
     }
 
     public function test_teacher_cannot_sign_when_teacher_column_not_pending(): void
@@ -79,7 +129,8 @@ class ClearanceWorkflowTest extends TestCase
 
     public function test_dean_can_deny_with_remarks(): void
     {
-        Event::fake();
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
         $dean = $this->makeOfficer('dean');
         $student = $this->makeStudent();
         $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
@@ -92,12 +143,57 @@ class ClearanceWorkflowTest extends TestCase
 
         $this->actingAs($dean)->post(route('department.clearances.deny', $clearance), [
             'remarks' => 'Missing library clearance paperwork',
-        ])->assertRedirect();
+        ])->assertRedirect()->assertSessionHasNoErrors();
 
         $clearance->refresh();
         $this->assertSame('denied', $clearance->dean_status);
         $this->assertStringContainsString('library', $clearance->dean_remarks ?? '');
         $this->assertSame('denied', $clearance->overall_status);
+
+        Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $clearance->id
+            && $event->studentId === $student->id
+            && $event->department === 'dean'
+            && $event->action === 'denied'
+            && $event->overallStatus === 'denied'
+        );
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'clearance_denied',
+            'user_id' => $dean->id,
+            'affected_user_id' => $student->id,
+        ]);
+    }
+
+    public function test_each_department_role_can_deny_only_its_own_pending_column(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
+
+        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
+            $officer = $this->makeOfficer($role);
+            $student = $this->makeStudent();
+            $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
+            $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
+                'teacher_status' => 'pending',
+                'dean_status' => 'pending',
+                'accounting_status' => 'pending',
+                'sao_status' => 'pending',
+            ]);
+
+            $this->actingAs($officer)->post(route('department.clearances.deny', $clearance), [
+                'remarks' => "{$role} requirement missing",
+            ])->assertRedirect()->assertSessionHasNoErrors();
+
+            $clearance->refresh();
+            $this->assertSame('denied', $clearance->getAttribute("{$role}_status"));
+            $this->assertSame("{$role} requirement missing", $clearance->getAttribute("{$role}_remarks"));
+            $this->assertSame($officer->id, $clearance->getAttribute("{$role}_signed_by"));
+            $this->assertSame('denied', $clearance->overall_status);
+
+            foreach (array_diff(['teacher', 'dean', 'accounting', 'sao'], [$role]) as $otherRole) {
+                $this->assertSame('pending', $clearance->getAttribute("{$otherRole}_status"));
+                $this->assertNull($clearance->getAttribute("{$otherRole}_signed_by"));
+            }
+        }
     }
 
     public function test_deny_requires_minimum_remarks_length(): void
@@ -117,7 +213,7 @@ class ClearanceWorkflowTest extends TestCase
         ])->assertSessionHasErrors('remarks');
     }
 
-    public function test_all_departments_clearing_completes_clearance_and_stubs_pdf(): void
+    public function test_all_departments_clearing_completes_clearance_and_generates_pdf_record(): void
     {
         Event::fake();
         Notification::fake();

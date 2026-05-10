@@ -2,7 +2,7 @@
 
 > **Goal:** Verify and close gaps in SuperAdmin user management, reports, logs, route coverage, and sensitive-action security.
 
-**Status:** Active closeout. Core MVP appears implemented, but original checklist still had unchecked items and known route/export gaps.
+**Status:** Active closeout. Core MVP is implemented and covered for current user, log, report, and CSV export workflows. Remaining gaps are explicit SuperAdmin aliases for some admin-managed resources from older route docs.
 
 **Depends on:** Phase 02, Phase 04.
 
@@ -22,15 +22,15 @@
 - `tests/Feature/SuperAdmin/*`
 
 **Steps:**
-- [ ] Confirm dashboard, users, pending users, approve/reject/suspend/reactivate/delete/bulk delete, staff creation, logs, reports, profile, and notifications exist.
-- [ ] Confirm all sensitive actions use policies and audit logging.
-- [ ] Confirm self-delete and self-suspend are blocked.
-- [ ] List missing docs-required routes from `docs/07-routes-and-controllers.md`.
-- [ ] Update Phase Notes with explicit deferrals.
+- [x] Confirm dashboard, users, pending users, approve/reject/suspend/reactivate/delete/bulk delete, staff creation, logs, reports, profile, and notifications exist.
+- [x] Confirm all sensitive actions use policies and audit logging.
+- [x] Confirm self-delete and self-suspend are blocked.
+- [x] List missing docs-required routes from `docs/07-routes-and-controllers.md`.
+- [x] Update Phase Notes with explicit deferrals.
 
 **Acceptance:**
-- [ ] SuperAdmin plan reflects actual code state.
-- [ ] Each missing item maps to a task below.
+- [x] SuperAdmin plan reflects actual code state.
+- [x] Each missing item maps to a task below.
 
 ## Agent Task 6.2 — User Management Closeout
 
@@ -44,15 +44,16 @@
 - `tests/Feature/SuperAdmin/UserManagementTest.php`
 
 **Steps:**
-- [ ] Add tests for approve, reject, suspend, reactivate, soft delete, bulk approve, and bulk delete.
-- [ ] Add tests for empty bulk selection, mixed-status selections, self-delete blocked, and self-suspend blocked.
-- [ ] Verify filters: role, status, course, year, and search.
-- [ ] Verify staff creation sends reset/setup email and never exposes generated password in logs.
-- [ ] Verify every action writes `activity_logs` with actor and affected user.
+- [x] Add tests for approve, reject, suspend, reactivate, soft delete, bulk approve, and bulk delete.
+- [ ] Add tests for empty bulk selection and mixed-status selections.
+- [x] Add tests for self-delete blocked and self-suspend blocked.
+- [x] Verify filters: role, status, course, year, and search.
+- [x] Verify staff creation sends reset/setup email and never exposes generated password in logs.
+- [x] Verify every current user-management action writes `activity_logs` with actor and affected user.
 
 **Acceptance:**
-- [ ] User management actions are covered by feature tests.
-- [ ] Sensitive operations require explicit confirmation where destructive.
+- [x] User management actions are covered by feature tests.
+- [x] Sensitive operations require explicit confirmation where destructive.
 
 ## Agent Task 6.3 — SuperAdmin Route Coverage
 
@@ -88,14 +89,14 @@
 - `tests/Feature/SuperAdmin/LogsAndReportsTest.php`
 
 **Steps:**
-- [ ] Verify logs are server-side paginated.
-- [ ] Verify filters: action, actor, affected user, date range, and search.
-- [ ] Verify report page supports request, payment, and clearance summaries.
-- [ ] Ensure export buttons route to Phase 09 endpoints or are hidden until Phase 09 is complete.
+- [x] Verify logs are server-side paginated.
+- [x] Verify filters: action, actor, affected user, date range, and search.
+- [x] Verify report page supports request, payment, and clearance summaries.
+- [x] Ensure export buttons route to Phase 09 endpoints or are hidden until Phase 09 is complete.
 
 **Acceptance:**
-- [ ] Large log tables do not load fully into Vue.
-- [ ] Export functionality is not presented as working until Phase 09 lands.
+- [x] Large log tables do not load fully into Vue.
+- [x] Export functionality is not presented as working until Phase 09 lands.
 
 ## Agent Task 6.5 — SuperAdmin Security Review
 
@@ -120,7 +121,8 @@ php artisan route:list --path=superadmin
 
 ## Phase Notes
 
-- Excel exports belong to Phase 09.
+- CSV exports for SuperAdmin users and activity logs exist; XLSX exports remain deferred to Phase 09.
+- Current SuperAdmin routes cover dashboard, users, pending users, logs, reports, notifications, and profile. Older docs-required aliases for `/superadmin/requests`, `/superadmin/reports/export`, `/superadmin/announcements`, `/superadmin/faqs`, and `/superadmin/document-types` remain deferred until shared admin-resource access is designed.
 - Broadcast announcements are stretch unless client explicitly asks.
 - Session revoke is stretch unless security requirements change.
-- Do not move this phase to `finished/` until route and test reconciliation pass.
+- Do not move this phase to `finished/` until SuperAdmin route coverage and final security review pass.

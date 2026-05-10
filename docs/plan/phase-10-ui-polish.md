@@ -4,7 +4,7 @@
 
 **Status:** Partial.
 
-**Phase Notes:** Responsive/accessibility hardening added shared UI primitives and Playwright coverage; remaining Phase 10 tasks still need a full design drift audit and acceptance review before this phase can be marked finished.
+**Phase Notes:** Responsive/accessibility hardening added shared UI primitives and Playwright coverage. A focused clearance status badge consistency slice now uses `StatusBadge` on admin, department, and student clearance screens; remaining Phase 10 tasks still need a full design drift audit and acceptance review before this phase can be marked finished.
 
 **Depends on:** Stable feature pages from Phases 03-09.
 
@@ -44,7 +44,7 @@
 - `resources/js/Pages/SuperAdmin/**/*`
 
 **Steps:**
-- [ ] Use `StatusBadge` for every request, payment, clearance, user, and account status.
+- [ ] Use `StatusBadge` for every request, payment, clearance, user, and account status. Clearance status screens are done; request, payment, user, and account status screens still need a full sweep.
 - [ ] Use `EmptyState` for empty lists.
 - [ ] Use `ConfirmDialog` for destructive actions.
 - [ ] Use consistent card containers for dashboards and detail pages.

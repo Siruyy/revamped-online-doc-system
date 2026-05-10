@@ -41,6 +41,11 @@ class UserApprovalTest extends TestCase
             'status' => 'active',
             'approved_by' => $superAdmin->id,
         ]);
+        $this->assertDatabaseHas('activity_logs', [
+            'user_id' => $superAdmin->id,
+            'affected_user_id' => $pendingStudent->id,
+            'action' => 'registration_approved',
+        ]);
 
         Notification::assertSentTo($pendingStudent, RegistrationApprovedNotification::class);
     }
@@ -61,6 +66,11 @@ class UserApprovalTest extends TestCase
         $this->assertDatabaseHas('users', [
             'id' => $pendingStudent->id,
             'status' => 'rejected',
+        ]);
+        $this->assertDatabaseHas('activity_logs', [
+            'user_id' => $superAdmin->id,
+            'affected_user_id' => $pendingStudent->id,
+            'action' => 'registration_rejected',
         ]);
 
         Notification::assertSentTo($pendingStudent, RegistrationRejectedNotification::class);

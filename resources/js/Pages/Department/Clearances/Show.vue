@@ -1,4 +1,5 @@
 <script setup>
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -19,6 +20,16 @@ const denyForm = useForm({ remarks: '' });
 
 const submitSign = () => signForm.post(route('department.clearances.sign', props.clearance.id));
 const submitDeny = () => denyForm.post(route('department.clearances.deny', props.clearance.id));
+
+const statusTone = (status) => {
+    if (['cleared', 'completed', 'approved'].includes(status)) return 'success';
+    if (['denied', 'rejected'].includes(status)) return 'danger';
+    if (['pending', 'in_progress'].includes(status)) return 'warning';
+
+    return 'neutral';
+};
+
+const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
 </script>
 
 <template>
@@ -65,26 +76,42 @@ const submitDeny = () => denyForm.post(route('department.clearances.deny', props
             <section class="grid gap-4 md:grid-cols-2">
                 <article class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                     <p class="text-xs font-semibold uppercase text-slate-500">Teacher</p>
-                    <p class="mt-1 text-sm capitalize">{{ clearance.teacher_status }}</p>
+                    <StatusBadge
+                        class="mt-2"
+                        :tone="statusTone(clearance.teacher_status)"
+                        :label="statusLabel(clearance.teacher_status)"
+                    />
                     <p v-if="clearance.teacher_remarks" class="text-xs text-rose-600">
                         {{ clearance.teacher_remarks }}
                     </p>
                 </article>
                 <article class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                     <p class="text-xs font-semibold uppercase text-slate-500">Dean</p>
-                    <p class="mt-1 text-sm capitalize">{{ clearance.dean_status }}</p>
+                    <StatusBadge
+                        class="mt-2"
+                        :tone="statusTone(clearance.dean_status)"
+                        :label="statusLabel(clearance.dean_status)"
+                    />
                     <p v-if="clearance.dean_remarks" class="text-xs text-rose-600">{{ clearance.dean_remarks }}</p>
                 </article>
                 <article class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                     <p class="text-xs font-semibold uppercase text-slate-500">Accounting</p>
-                    <p class="mt-1 text-sm capitalize">{{ clearance.accounting_status }}</p>
+                    <StatusBadge
+                        class="mt-2"
+                        :tone="statusTone(clearance.accounting_status)"
+                        :label="statusLabel(clearance.accounting_status)"
+                    />
                     <p v-if="clearance.accounting_remarks" class="text-xs text-rose-600">
                         {{ clearance.accounting_remarks }}
                     </p>
                 </article>
                 <article class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                     <p class="text-xs font-semibold uppercase text-slate-500">SAO</p>
-                    <p class="mt-1 text-sm capitalize">{{ clearance.sao_status }}</p>
+                    <StatusBadge
+                        class="mt-2"
+                        :tone="statusTone(clearance.sao_status)"
+                        :label="statusLabel(clearance.sao_status)"
+                    />
                     <p v-if="clearance.sao_remarks" class="text-xs text-rose-600">{{ clearance.sao_remarks }}</p>
                 </article>
             </section>
@@ -95,7 +122,10 @@ const submitDeny = () => denyForm.post(route('department.clearances.deny', props
                 </h3>
                 <p class="text-sm text-slate-600">
                     Current status:
-                    <span class="font-semibold capitalize">{{ clearance[deptStatusKey] }}</span>
+                    <StatusBadge
+                        :tone="statusTone(clearance[deptStatusKey])"
+                        :label="statusLabel(clearance[deptStatusKey])"
+                    />
                 </p>
                 <p v-if="clearance[deptRemarksKey]" class="text-xs text-slate-500">
                     Remarks: {{ clearance[deptRemarksKey] }}

@@ -2,6 +2,7 @@
 import FileUpload from '@/Components/FileUpload.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { CheckBadgeIcon } from '@heroicons/vue/24/outline';
@@ -60,6 +61,16 @@ const statuses = computed(() => {
 const submit = () => {
     form.post(route('student.clearance.submit'), { forceFormData: true });
 };
+
+const statusTone = (status) => {
+    if (['cleared', 'completed', 'approved'].includes(status)) return 'success';
+    if (['denied', 'rejected'].includes(status)) return 'danger';
+    if (['pending', 'in_progress'].includes(status)) return 'warning';
+
+    return 'neutral';
+};
+
+const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
 </script>
 
 <template>
@@ -86,9 +97,9 @@ const submit = () => {
                         class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
                     >
                         <p class="text-sm font-semibold text-slate-700">{{ item.label }}</p>
-                        <p class="mt-2 text-sm">
+                        <p class="mt-2 flex flex-wrap items-center gap-2 text-sm">
                             Status:
-                            <span class="font-semibold capitalize">{{ item.status }}</span>
+                            <StatusBadge :tone="statusTone(item.status)" :label="statusLabel(item.status)" />
                         </p>
                         <p class="text-xs text-slate-500">Signer: {{ item.signer || 'N/A' }}</p>
                         <p class="text-xs text-slate-500">Signed at: {{ item.signedAt || 'N/A' }}</p>
@@ -98,7 +109,11 @@ const submit = () => {
 
                 <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
                     <p class="text-sm font-semibold uppercase tracking-wide text-slate-600">
-                        Overall Status: <span class="capitalize text-slate-900">{{ clearance.overall_status }}</span>
+                        Overall Status:
+                        <StatusBadge
+                            :tone="statusTone(clearance.overall_status)"
+                            :label="statusLabel(clearance.overall_status)"
+                        />
                     </p>
 
                     <form class="mt-4 space-y-4" @submit.prevent="submit">

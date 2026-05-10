@@ -81,7 +81,46 @@ class ClearanceServiceTest extends TestCase
         $this->assertSame($teacher->id, $updated->teacher_signed_by);
         $this->assertNotNull($updated->teacher_signed_at);
         $this->assertSame('in_progress', $updated->overall_status);
-        Event::assertDispatched(ClearanceUpdated::class);
+        Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $updated->id
+            && $event->studentId === $student->id
+            && $event->department === 'teacher'
+            && $event->action === 'signed'
+            && $event->overallStatus === 'in_progress'
+        );
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'clearance_signed',
+            'user_id' => $teacher->id,
+            'affected_user_id' => $student->id,
+        ]);
+    }
+
+    public function test_it_signs_each_department_column_independently(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
+
+        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
+            $officer = User::factory()->{$role}()->create();
+            $student = User::factory()->student()->create();
+            $clearance = Clearance::factory()->for($student)->create([
+                'teacher_status' => 'pending',
+                'dean_status' => 'pending',
+                'accounting_status' => 'pending',
+                'sao_status' => 'pending',
+            ]);
+
+            $updated = $this->service()->signFor($clearance, $officer, $role, "{$role} clear");
+
+            $this->assertSame('cleared', $updated->getAttribute("{$role}_status"));
+            $this->assertSame("{$role} clear", $updated->getAttribute("{$role}_remarks"));
+            $this->assertSame($officer->id, $updated->getAttribute("{$role}_signed_by"));
+            $this->assertNotNull($updated->getAttribute("{$role}_signed_at"));
+
+            foreach (array_diff(['teacher', 'dean', 'accounting', 'sao'], [$role]) as $otherRole) {
+                $this->assertSame('pending', $updated->getAttribute("{$otherRole}_status"));
+                $this->assertNull($updated->getAttribute("{$otherRole}_signed_by"));
+            }
+        }
     }
 
     public function test_it_denies_department_and_recomputes_denied_status(): void
@@ -105,7 +144,47 @@ class ClearanceServiceTest extends TestCase
         $this->assertSame($dean->id, $updated->dean_signed_by);
         $this->assertSame('denied', $updated->overall_status);
         $this->assertNull($updated->completed_at);
-        Event::assertDispatched(ClearanceUpdated::class);
+        Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $updated->id
+            && $event->studentId === $student->id
+            && $event->department === 'dean'
+            && $event->action === 'denied'
+            && $event->overallStatus === 'denied'
+        );
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'clearance_denied',
+            'user_id' => $dean->id,
+            'affected_user_id' => $student->id,
+        ]);
+    }
+
+    public function test_it_denies_each_department_column_independently(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
+
+        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
+            $officer = User::factory()->{$role}()->create();
+            $student = User::factory()->student()->create();
+            $clearance = Clearance::factory()->for($student)->create([
+                'teacher_status' => 'pending',
+                'dean_status' => 'pending',
+                'accounting_status' => 'pending',
+                'sao_status' => 'pending',
+            ]);
+
+            $updated = $this->service()->denyFor($clearance, $officer, $role, "{$role} requirement missing");
+
+            $this->assertSame('denied', $updated->getAttribute("{$role}_status"));
+            $this->assertSame("{$role} requirement missing", $updated->getAttribute("{$role}_remarks"));
+            $this->assertSame($officer->id, $updated->getAttribute("{$role}_signed_by"));
+            $this->assertNotNull($updated->getAttribute("{$role}_signed_at"));
+            $this->assertSame('denied', $updated->overall_status);
+
+            foreach (array_diff(['teacher', 'dean', 'accounting', 'sao'], [$role]) as $otherRole) {
+                $this->assertSame('pending', $updated->getAttribute("{$otherRole}_status"));
+                $this->assertNull($updated->getAttribute("{$otherRole}_signed_by"));
+            }
+        }
     }
 
     public function test_it_completes_clearance_once_all_departments_sign(): void

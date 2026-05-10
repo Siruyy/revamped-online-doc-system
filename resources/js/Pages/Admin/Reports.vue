@@ -1,7 +1,7 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { reactive } from 'vue';
+import { computed, reactive } from 'vue';
 
 const props = defineProps({
     summary: { type: Object, required: true },
@@ -18,6 +18,13 @@ const form = reactive({
 const applyFilters = () => {
     router.get(route('admin.reports.index'), form, { preserveState: true, replace: true });
 };
+
+const exportFilters = computed(() => ({
+    from: form.from,
+    to: form.to,
+    status: form.status,
+    course: form.course,
+}));
 </script>
 
 <template>
@@ -46,13 +53,27 @@ const applyFilters = () => {
                     placeholder="Course"
                     class="rounded-md border-slate-300 text-sm shadow-sm"
                 />
-                <button
-                    type="button"
-                    class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 md:col-span-4"
-                    @click="applyFilters"
-                >
-                    Generate
-                </button>
+                <div class="flex flex-wrap items-center gap-2 md:col-span-4">
+                    <button
+                        type="button"
+                        class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                        @click="applyFilters"
+                    >
+                        Generate
+                    </button>
+                    <a
+                        :href="route('admin.reports.exports.requests', exportFilters)"
+                        class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                        Export requests CSV
+                    </a>
+                    <a
+                        :href="route('admin.reports.exports.payments', exportFilters)"
+                        class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                        Export payments CSV
+                    </a>
+                </div>
             </section>
 
             <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

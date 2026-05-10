@@ -34,6 +34,14 @@ const applyFilters = () => {
     });
 };
 
+const exportFilters = computed(() => ({
+    role: filterForm.role,
+    status: filterForm.status,
+    course: filterForm.course,
+    year: filterForm.year,
+    search: filterForm.search,
+}));
+
 const toggleAll = (e) => {
     if (e.target.checked) {
         selected.value = props.users.data.map((u) => u.id);
@@ -78,12 +86,20 @@ const bulkDelete = () => {
         <template #header>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-xl font-semibold leading-tight text-slate-900">Users</h2>
-                <Link
-                    :href="route('superadmin.users.create')"
-                    class="rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500"
-                >
-                    Create staff
-                </Link>
+                <div class="flex flex-wrap items-center gap-2">
+                    <a
+                        :href="route('superadmin.users.export', exportFilters)"
+                        class="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                        Export CSV
+                    </a>
+                    <Link
+                        :href="route('superadmin.users.create')"
+                        class="rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500"
+                    >
+                        Create staff
+                    </Link>
+                </div>
             </div>
         </template>
 

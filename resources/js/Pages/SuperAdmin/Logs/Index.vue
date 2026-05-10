@@ -4,7 +4,7 @@ import DataTableShell from '@/Components/UI/DataTableShell.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ClipboardDocumentListIcon } from '@heroicons/vue/24/outline';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
     logs: { type: Object, required: true },
@@ -26,6 +26,15 @@ const apply = () => {
     form.get(route('superadmin.logs.index'), { preserveState: true, replace: true });
 };
 
+const exportFilters = computed(() => ({
+    action: form.action,
+    user_id: form.user_id,
+    affected_user_id: form.affected_user_id,
+    from: form.from,
+    to: form.to,
+    q: form.q,
+}));
+
 const toggle = (id) => {
     expanded.value = { ...expanded.value, [id]: !expanded.value[id] };
 };
@@ -36,7 +45,15 @@ const toggle = (id) => {
 
     <StaffLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-slate-900">Activity logs</h2>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 class="text-xl font-semibold leading-tight text-slate-900">Activity logs</h2>
+                <a
+                    :href="route('superadmin.logs.export', exportFilters)"
+                    class="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                    Export CSV
+                </a>
+            </div>
         </template>
 
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">

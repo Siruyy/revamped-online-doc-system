@@ -143,6 +143,83 @@ class SuperAdminManagementTest extends TestCase
             ->assertRedirect();
 
         $this->assertDatabaseHas('users', ['id' => $b->id, 'status' => 'suspended']);
+        $this->assertDatabaseHas('activity_logs', [
+            'user_id' => $a->id,
+            'affected_user_id' => $b->id,
+            'action' => 'user_suspended',
+        ]);
+    }
+
+    public function test_superadmin_can_reactivate_suspended_user(): void
+    {
+        $superAdmin = User::factory()->superadmin()->create();
+        $target = User::factory()->admin()->create(['status' => 'suspended']);
+
+        $this->actingAs($superAdmin)
+            ->post(route('superadmin.users.reactivate', $target))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', ['id' => $target->id, 'status' => 'active']);
+        $this->assertDatabaseHas('activity_logs', [
+            'user_id' => $superAdmin->id,
+            'affected_user_id' => $target->id,
+            'action' => 'user_reactivated',
+        ]);
+    }
+
+    public function test_superadmin_can_soft_delete_user_with_activity_log(): void
+    {
+        $superAdmin = User::factory()->superadmin()->create();
+        $target = User::factory()->admin()->create();
+
+        $this->actingAs($superAdmin)
+            ->delete(route('superadmin.users.destroy', $target))
+            ->assertRedirect(route('superadmin.users.index'));
+
+        $this->assertSoftDeleted('users', ['id' => $target->id]);
+        $this->assertDatabaseHas('activity_logs', [
+            'user_id' => $superAdmin->id,
+            'affected_user_id' => $target->id,
+            'action' => 'user_soft_deleted',
+        ]);
+    }
+
+    public function test_superadmin_cannot_delete_self(): void
+    {
+        $superAdmin = User::factory()->superadmin()->create();
+
+        $this->actingAs($superAdmin)
+            ->delete(route('superadmin.users.destroy', $superAdmin))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('users', ['id' => $superAdmin->id, 'deleted_at' => null]);
+    }
+
+    public function test_bulk_destroy_deletes_selected_users_with_confirmation(): void
+    {
+        $superAdmin = User::factory()->superadmin()->create();
+        $first = User::factory()->admin()->create();
+        $second = User::factory()->teacher()->create();
+
+        $this->actingAs($superAdmin)
+            ->post(route('superadmin.users.bulk-destroy'), [
+                'user_ids' => [$first->id, $second->id],
+                'confirmation' => 'DELETE',
+            ])
+            ->assertRedirect();
+
+        $this->assertSoftDeleted('users', ['id' => $first->id]);
+        $this->assertSoftDeleted('users', ['id' => $second->id]);
+        $this->assertDatabaseHas('activity_logs', [
+            'user_id' => $superAdmin->id,
+            'affected_user_id' => $first->id,
+            'action' => 'user_soft_deleted',
+        ]);
+        $this->assertDatabaseHas('activity_logs', [
+            'user_id' => $superAdmin->id,
+            'affected_user_id' => $second->id,
+            'action' => 'user_soft_deleted',
+        ]);
     }
 
     public function test_bulk_approve_approves_pending_students(): void

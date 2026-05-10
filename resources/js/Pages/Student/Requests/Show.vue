@@ -52,6 +52,9 @@ useRealtimeOrPoll(reloadRequest, { intervalMs: 90000 });
 
 const payment = computed(() => props.request.payments?.[0] ?? null);
 const clearance = computed(() => props.request.clearances?.[0] ?? null);
+const canDownloadClearancePdf = computed(
+    () => clearance.value?.overall_status === 'completed' && clearance.value?.pdf_path,
+);
 const claimSlip = computed(() => props.request.claim_slip ?? null);
 const requirements = computed(() => props.request.requirements ?? []);
 const docType = computed(() => props.request.document_type);
@@ -790,6 +793,13 @@ function paymentStatusBadge(status) {
                                 </span>
                             </dd>
                         </div>
+                        <a
+                            v-if="canDownloadClearancePdf"
+                            :href="route('files.clearance-pdf', clearance.id)"
+                            class="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-300 px-4 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
+                        >
+                            Download clearance PDF
+                        </a>
                     </dl>
                 </div>
             </section>

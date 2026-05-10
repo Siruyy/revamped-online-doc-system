@@ -2,6 +2,7 @@
 import EmptyState from '@/Components/UI/EmptyState.vue';
 import DataTableShell from '@/Components/UI/DataTableShell.vue';
 import ResponsiveRecordList from '@/Components/UI/ResponsiveRecordList.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { CheckBadgeIcon } from '@heroicons/vue/24/outline';
@@ -21,6 +22,16 @@ const form = reactive({
 const applyFilters = () => {
     router.get(route('admin.clearances.index'), form, { preserveState: true, replace: true });
 };
+
+const statusTone = (status) => {
+    if (['cleared', 'completed', 'approved'].includes(status)) return 'success';
+    if (['denied', 'rejected'].includes(status)) return 'danger';
+    if (['pending', 'in_progress'].includes(status)) return 'warning';
+
+    return 'neutral';
+};
+
+const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
 </script>
 
 <template>
@@ -85,11 +96,11 @@ const applyFilters = () => {
                                     {{ item.document_request?.reference_no }}
                                 </p>
                             </div>
-                            <span
-                                class="inline-flex shrink-0 items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold capitalize text-slate-700"
-                            >
-                                {{ item.overall_status?.replaceAll('_', ' ') }}
-                            </span>
+                            <StatusBadge
+                                class="shrink-0"
+                                :tone="statusTone(item.overall_status)"
+                                :label="statusLabel(item.overall_status)"
+                            />
                         </div>
 
                         <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
@@ -105,11 +116,23 @@ const applyFilters = () => {
                             </div>
                             <div>
                                 <dt class="font-medium text-slate-500">Teacher</dt>
-                                <dd class="mt-0.5 capitalize text-slate-800">{{ item.teacher_status }}</dd>
+                                <dd class="mt-0.5">
+                                    <StatusBadge
+                                        :tone="statusTone(item.teacher_status)"
+                                        :label="statusLabel(item.teacher_status)"
+                                        size="xs"
+                                    />
+                                </dd>
                             </div>
                             <div>
                                 <dt class="font-medium text-slate-500">Dean</dt>
-                                <dd class="mt-0.5 capitalize text-slate-800">{{ item.dean_status }}</dd>
+                                <dd class="mt-0.5">
+                                    <StatusBadge
+                                        :tone="statusTone(item.dean_status)"
+                                        :label="statusLabel(item.dean_status)"
+                                        size="xs"
+                                    />
+                                </dd>
                             </div>
                         </dl>
 
@@ -143,11 +166,41 @@ const applyFilters = () => {
                                 <tr v-for="item in clearances.data" :key="item.id">
                                     <td class="px-4 py-3">{{ item.document_request?.reference_no }}</td>
                                     <td class="px-4 py-3">{{ item.user?.fullname }}</td>
-                                    <td class="px-4 py-3 capitalize">{{ item.teacher_status }}</td>
-                                    <td class="px-4 py-3 capitalize">{{ item.dean_status }}</td>
-                                    <td class="px-4 py-3 capitalize">{{ item.accounting_status }}</td>
-                                    <td class="px-4 py-3 capitalize">{{ item.sao_status }}</td>
-                                    <td class="px-4 py-3 capitalize">{{ item.overall_status }}</td>
+                                    <td class="px-4 py-3">
+                                        <StatusBadge
+                                            :tone="statusTone(item.teacher_status)"
+                                            :label="statusLabel(item.teacher_status)"
+                                            size="xs"
+                                        />
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <StatusBadge
+                                            :tone="statusTone(item.dean_status)"
+                                            :label="statusLabel(item.dean_status)"
+                                            size="xs"
+                                        />
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <StatusBadge
+                                            :tone="statusTone(item.accounting_status)"
+                                            :label="statusLabel(item.accounting_status)"
+                                            size="xs"
+                                        />
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <StatusBadge
+                                            :tone="statusTone(item.sao_status)"
+                                            :label="statusLabel(item.sao_status)"
+                                            size="xs"
+                                        />
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <StatusBadge
+                                            :tone="statusTone(item.overall_status)"
+                                            :label="statusLabel(item.overall_status)"
+                                            size="xs"
+                                        />
+                                    </td>
                                     <td class="px-4 py-3">
                                         <Link
                                             :href="route('admin.clearances.show', item.id)"
