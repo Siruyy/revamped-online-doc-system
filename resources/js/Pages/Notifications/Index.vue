@@ -26,7 +26,7 @@ const { notifications, filters, routePrefix } = defineProps({
 const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '').trim();
 const activeLayout = computed(() => (routePrefix === 'student' ? StudentLayout : StaffLayout));
 const markAllReadForm = useForm({});
-const markingReadId = ref(null);
+const markingReadIds = ref(new Set());
 
 const filterByReadState = (value) => {
     router.get(route(`${routePrefix}.notifications.index`), { read: value }, { preserveState: true, replace: true });
@@ -37,14 +37,16 @@ const markAllAsRead = () => {
 };
 
 const markAsRead = (notification) => {
-    markingReadId.value = notification.id;
+    markingReadIds.value = new Set(markingReadIds.value).add(notification.id);
 
     router.post(
         route(`${routePrefix}.notifications.mark-read`, notification.id),
         {},
         {
             onFinish: () => {
-                markingReadId.value = null;
+                const next = new Set(markingReadIds.value);
+                next.delete(notification.id);
+                markingReadIds.value = next;
             },
         },
     );
@@ -134,12 +136,12 @@ const markAsRead = (notification) => {
                     <button
                         v-if="!notification.read_at"
                         type="button"
-                        :disabled="markingReadId === notification.id"
-                        :aria-busy="markingReadId === notification.id ? 'true' : undefined"
+                        :disabled="markingReadIds.has(notification.id)"
+                        :aria-busy="markingReadIds.has(notification.id) ? 'true' : undefined"
                         class="mt-3 text-xs font-semibold text-indigo-600 hover:text-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
                         @click="markAsRead(notification)"
                     >
-                        {{ markingReadId === notification.id ? 'Marking...' : 'Mark as read' }}
+                        {{ markingReadIds.has(notification.id) ? 'Marking...' : 'Mark as read' }}
                     </button>
                 </article>
 
