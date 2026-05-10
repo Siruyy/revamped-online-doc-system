@@ -1,6 +1,6 @@
 <script setup>
-import InputError from '@/Components/InputError.vue';
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import FormField from '@/Components/UI/FormField.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { reactive } from 'vue';
@@ -287,74 +287,84 @@ function requestItems(payment) {
                     <h4 class="text-sm font-semibold text-slate-700 mb-4">
                         {{ payment.status === 'denied' ? 'Upload New Receipt' : 'Upload Payment Receipt' }}
                     </h4>
-                    <form class="space-y-4" @submit.prevent="submit(payment.id)">
+                    <form
+                        class="space-y-4"
+                        :aria-busy="getForm(payment.id).processing ? 'true' : undefined"
+                        @submit.prevent="submit(payment.id)"
+                    >
                         <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700">
-                                    Payment Method <span class="text-rose-500">*</span>
-                                </label>
-                                <select
-                                    v-model="getForm(payment.id).payment_method"
-                                    required
-                                    class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm"
-                                >
-                                    <option value="">Select method…</option>
-                                    <option value="bank_transfer">Bank Transfer</option>
-                                    <option value="gcash">GCash</option>
-                                    <option value="maya">Maya</option>
-                                    <option value="cash">Cash (Cashier)</option>
-                                    <option value="other">Other</option>
-                                </select>
-                                <InputError class="mt-1" :message="getForm(payment.id).errors.payment_method" />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700"
-                                    >Reference / Transaction No.</label
-                                >
-                                <input
-                                    v-model="getForm(payment.id).reference_number"
-                                    type="text"
-                                    placeholder="e.g. TXN-2026-XXXXXX"
-                                    class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm"
-                                />
-                                <InputError class="mt-1" :message="getForm(payment.id).errors.reference_number" />
-                            </div>
+                            <FormField
+                                :id="`payment-method-${payment.id}`"
+                                label="Payment Method"
+                                :error="getForm(payment.id).errors.payment_method"
+                                required
+                            >
+                                <template #default="{ id, describedBy, invalid }">
+                                    <select
+                                        :id="id"
+                                        v-model="getForm(payment.id).payment_method"
+                                        required
+                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm"
+                                        :aria-describedby="describedBy"
+                                        :aria-invalid="invalid ? 'true' : undefined"
+                                    >
+                                        <option value="">Select method…</option>
+                                        <option value="bank_transfer">Bank Transfer</option>
+                                        <option value="gcash">GCash</option>
+                                        <option value="maya">Maya</option>
+                                        <option value="cash">Cash (Cashier)</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </template>
+                            </FormField>
+                            <FormField
+                                :id="`reference-number-${payment.id}`"
+                                label="Reference / Transaction No."
+                                :error="getForm(payment.id).errors.reference_number"
+                            >
+                                <template #default="{ id, describedBy, invalid }">
+                                    <input
+                                        :id="id"
+                                        v-model="getForm(payment.id).reference_number"
+                                        type="text"
+                                        placeholder="e.g. TXN-2026-XXXXXX"
+                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm"
+                                        :aria-describedby="describedBy"
+                                        :aria-invalid="invalid ? 'true' : undefined"
+                                    />
+                                </template>
+                            </FormField>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">
-                                Receipt Screenshot / File <span class="text-rose-500">*</span>
-                            </label>
-                            <div class="flex items-center justify-center w-full">
-                                <label
-                                    class="flex flex-col items-center justify-center w-full h-36 border-2 border-brand-300 border-dashed rounded-xl cursor-pointer bg-brand-50 hover:bg-brand-100 transition-colors"
-                                >
-                                    <div class="flex flex-col items-center justify-center py-4 text-brand-700">
-                                        <ArrowUpTrayIcon class="w-8 h-8 mb-2 text-brand-500" />
-                                        <p class="text-sm font-medium">
-                                            <span v-if="getForm(payment.id).receipt">
-                                                {{ getForm(payment.id).receipt.name }}
-                                            </span>
-                                            <span v-else>Click to upload or drag and drop</span>
-                                        </p>
-                                        <p class="text-xs text-brand-500 mt-0.5">JPG, PNG, PDF – max 5 MB</p>
-                                    </div>
-                                    <input
-                                        type="file"
-                                        accept="image/jpeg,image/png,application/pdf"
-                                        class="hidden"
-                                        @change="getForm(payment.id).receipt = $event.target.files[0]"
-                                    />
-                                </label>
-                            </div>
-                            <InputError class="mt-1" :message="getForm(payment.id).errors.receipt" />
-                        </div>
+                        <FormField
+                            :id="`receipt-${payment.id}`"
+                            label="Receipt Screenshot / File"
+                            :error="getForm(payment.id).errors.receipt"
+                            help="JPG, PNG, PDF - max 5 MB."
+                            required
+                        >
+                            <template #default="{ id, describedBy, invalid }">
+                                <input
+                                    :id="id"
+                                    type="file"
+                                    accept="image/jpeg,image/png,application/pdf"
+                                    class="mt-1 block w-full rounded-lg border border-slate-300 text-sm text-slate-700 file:mr-4 file:min-h-11 file:border-0 file:bg-brand-600 file:px-4 file:text-sm file:font-semibold file:text-white hover:file:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                                    :aria-describedby="describedBy"
+                                    :aria-invalid="invalid ? 'true' : undefined"
+                                    @change="getForm(payment.id).receipt = $event.target.files[0]"
+                                />
+                                <p v-if="getForm(payment.id).receipt" class="mt-2 text-xs text-brand-700">
+                                    Selected: {{ getForm(payment.id).receipt.name }}
+                                </p>
+                            </template>
+                        </FormField>
 
                         <div class="flex items-center gap-3">
                             <button
                                 type="submit"
                                 :disabled="getForm(payment.id).processing || !getForm(payment.id).receipt"
                                 class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-brand-500 disabled:opacity-60 transition-colors"
+                                :aria-busy="getForm(payment.id).processing ? 'true' : undefined"
                             >
                                 <ArrowUpTrayIcon class="h-4 w-4" />
                                 {{ getForm(payment.id).processing ? 'Uploading…' : 'Submit Receipt' }}

@@ -48,8 +48,15 @@ const deny = (id) => {
         </template>
 
         <div class="mx-auto max-w-7xl space-y-4 px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                <select v-model="filterForm.status" class="rounded-md border-slate-300 text-sm shadow-sm">
+            <div
+                class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
+            >
+                <label for="payment-status-filter" class="sr-only">Payment status filter</label>
+                <select
+                    id="payment-status-filter"
+                    v-model="filterForm.status"
+                    class="min-h-11 rounded-md border-slate-300 text-sm shadow-sm"
+                >
                     <option value="">All statuses</option>
                     <option value="pending">Pending</option>
                     <option value="pending_approval">Pending Approval</option>
@@ -58,7 +65,7 @@ const deny = (id) => {
                 </select>
                 <button
                     type="button"
-                    class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                    class="min-h-11 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
                     @click="applyFilters"
                 >
                     Apply
@@ -92,24 +99,34 @@ const deny = (id) => {
                             </p>
                         </div>
 
-                        <div v-if="item.status === 'pending_approval'" class="flex flex-wrap items-center gap-2">
+                        <div
+                            v-if="item.status === 'pending_approval'"
+                            class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center"
+                        >
                             <button
                                 type="button"
-                                class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                                class="min-h-11 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
                                 @click="approve(item.id)"
                             >
                                 Approve
                             </button>
-                            <form class="flex items-center gap-2" @submit.prevent="deny(item.id)">
+                            <form
+                                class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center"
+                                @submit.prevent="deny(item.id)"
+                            >
+                                <label :for="`denial-reason-${item.id}`" class="sr-only"
+                                    >Denial reason for payment #{{ item.id }}</label
+                                >
                                 <input
+                                    :id="`denial-reason-${item.id}`"
                                     v-model="denyReasons[item.id]"
                                     type="text"
                                     placeholder="Denial reason"
-                                    class="rounded-md border-slate-300 text-sm shadow-sm"
+                                    class="min-h-11 w-full rounded-md border-slate-300 text-sm shadow-sm sm:w-56"
                                 />
                                 <button
                                     type="submit"
-                                    class="rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-500"
+                                    class="min-h-11 rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-500"
                                 >
                                     Deny
                                 </button>

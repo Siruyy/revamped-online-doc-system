@@ -32,10 +32,14 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
             A new verification link has been sent to the email address you provided during registration.
         </div>
 
-        <form @submit.prevent="submit">
+        <form :aria-busy="form.processing ? 'true' : undefined" @submit.prevent="submit">
             <div class="mt-4 flex items-center justify-between">
-                <PrimaryButton :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                    Resend Verification Email
+                <PrimaryButton
+                    :class="{ 'opacity-25': form.processing }"
+                    :disabled="form.processing"
+                    :aria-busy="form.processing ? 'true' : undefined"
+                >
+                    {{ form.processing ? 'Sending...' : 'Resend Verification Email' }}
                 </PrimaryButton>
 
                 <Link

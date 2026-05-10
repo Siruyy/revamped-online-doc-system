@@ -1,6 +1,7 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import FormField from '@/Components/UI/FormField.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import {
@@ -126,91 +127,127 @@ function formatPeso(n) {
 
                 <div v-if="showCreate" class="border-t border-slate-100 px-5 py-5">
                     <form class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" @submit.prevent="save">
-                        <div class="flex flex-col gap-1">
-                            <label class="text-xs font-medium text-slate-600"
-                                >Name <span class="text-rose-500">*</span></label
-                            >
-                            <input
-                                v-model="createForm.name"
-                                type="text"
-                                placeholder="e.g. Transcript of Records"
-                                class="rounded-md border-slate-300 text-sm shadow-sm focus:border-indigo-400 focus:ring-indigo-300"
-                            />
-                            <p v-if="createForm.errors.name" class="text-xs text-rose-600">
-                                {{ createForm.errors.name }}
-                            </p>
-                        </div>
+                        <FormField id="document-type-name" label="Name" :error="createForm.errors.name" required>
+                            <template #default="{ id, describedBy, invalid }">
+                                <input
+                                    :id="id"
+                                    v-model="createForm.name"
+                                    type="text"
+                                    placeholder="e.g. Transcript of Records"
+                                    class="rounded-md border-slate-300 text-sm shadow-sm focus:border-indigo-400 focus:ring-indigo-300"
+                                    :aria-describedby="describedBy"
+                                    :aria-invalid="invalid ? 'true' : undefined"
+                                />
+                            </template>
+                        </FormField>
 
-                        <div class="flex flex-col gap-1">
-                            <label class="text-xs font-medium text-slate-600"
-                                >Category <span class="text-rose-500">*</span></label
-                            >
-                            <input
-                                v-model="createForm.category"
-                                type="text"
-                                placeholder="e.g. Academic"
-                                class="rounded-md border-slate-300 text-sm shadow-sm focus:border-indigo-400 focus:ring-indigo-300"
-                            />
-                        </div>
+                        <FormField
+                            id="document-type-category"
+                            label="Category"
+                            :error="createForm.errors.category"
+                            required
+                        >
+                            <template #default="{ id, describedBy, invalid }">
+                                <input
+                                    :id="id"
+                                    v-model="createForm.category"
+                                    type="text"
+                                    placeholder="e.g. Academic"
+                                    class="rounded-md border-slate-300 text-sm shadow-sm focus:border-indigo-400 focus:ring-indigo-300"
+                                    :aria-describedby="describedBy"
+                                    :aria-invalid="invalid ? 'true' : undefined"
+                                />
+                            </template>
+                        </FormField>
 
-                        <div class="flex flex-col gap-1">
-                            <label class="text-xs font-medium text-slate-600"
-                                >Fee per Page (₱) <span class="text-rose-500">*</span></label
-                            >
-                            <input
-                                v-model="createForm.fee"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                placeholder="0.00"
-                                class="rounded-md border-slate-300 text-sm shadow-sm"
-                            />
-                            <p v-if="createForm.errors.fee" class="text-xs text-rose-600">
-                                {{ createForm.errors.fee }}
-                            </p>
-                        </div>
+                        <FormField
+                            id="document-type-fee"
+                            label="Fee per Page (₱)"
+                            :error="createForm.errors.fee"
+                            required
+                        >
+                            <template #default="{ id, describedBy, invalid }">
+                                <input
+                                    :id="id"
+                                    v-model="createForm.fee"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    class="rounded-md border-slate-300 text-sm shadow-sm"
+                                    :aria-describedby="describedBy"
+                                    :aria-invalid="invalid ? 'true' : undefined"
+                                />
+                            </template>
+                        </FormField>
 
-                        <div class="flex flex-col gap-1">
-                            <label class="text-xs font-medium text-slate-600"
-                                >Pages per Document <span class="text-rose-500">*</span></label
-                            >
-                            <input
-                                v-model="createForm.default_page_count"
-                                type="number"
-                                min="1"
-                                max="500"
-                                placeholder="1"
-                                class="rounded-md border-slate-300 text-sm shadow-sm"
-                            />
-                            <p class="text-xs text-slate-400">Total = fee × pages × copies.</p>
-                        </div>
+                        <FormField
+                            id="document-type-default-page-count"
+                            label="Pages per Document"
+                            :error="createForm.errors.default_page_count"
+                            help="Total = fee × pages × copies."
+                            required
+                        >
+                            <template #default="{ id, describedBy, invalid }">
+                                <input
+                                    :id="id"
+                                    v-model="createForm.default_page_count"
+                                    type="number"
+                                    min="1"
+                                    max="500"
+                                    placeholder="1"
+                                    class="rounded-md border-slate-300 text-sm shadow-sm"
+                                    :aria-describedby="describedBy"
+                                    :aria-invalid="invalid ? 'true' : undefined"
+                                />
+                            </template>
+                        </FormField>
 
-                        <div class="flex flex-col gap-1">
-                            <label class="text-xs font-medium text-slate-600"
-                                >Processing Days <span class="text-rose-500">*</span></label
-                            >
-                            <input
-                                v-model="createForm.processing_days"
-                                type="number"
-                                min="1"
-                                max="365"
-                                class="rounded-md border-slate-300 text-sm shadow-sm"
-                            />
-                        </div>
+                        <FormField
+                            id="document-type-processing-days"
+                            label="Processing Days"
+                            :error="createForm.errors.processing_days"
+                            required
+                        >
+                            <template #default="{ id, describedBy, invalid }">
+                                <input
+                                    :id="id"
+                                    v-model="createForm.processing_days"
+                                    type="number"
+                                    min="1"
+                                    max="365"
+                                    class="rounded-md border-slate-300 text-sm shadow-sm"
+                                    :aria-describedby="describedBy"
+                                    :aria-invalid="invalid ? 'true' : undefined"
+                                />
+                            </template>
+                        </FormField>
 
-                        <div class="flex flex-col gap-1">
-                            <label class="text-xs font-medium text-slate-600">Description</label>
-                            <input
-                                v-model="createForm.description"
-                                type="text"
-                                placeholder="Optional note for students"
-                                class="rounded-md border-slate-300 text-sm shadow-sm"
-                            />
-                        </div>
+                        <FormField
+                            id="document-type-description"
+                            label="Description"
+                            :error="createForm.errors.description"
+                        >
+                            <template #default="{ id, describedBy, invalid }">
+                                <input
+                                    :id="id"
+                                    v-model="createForm.description"
+                                    type="text"
+                                    placeholder="Optional note for students"
+                                    class="rounded-md border-slate-300 text-sm shadow-sm"
+                                    :aria-describedby="describedBy"
+                                    :aria-invalid="invalid ? 'true' : undefined"
+                                />
+                            </template>
+                        </FormField>
 
                         <div class="lg:col-span-3 flex items-center justify-between">
-                            <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                            <label
+                                class="inline-flex items-center gap-2 text-sm text-slate-700"
+                                for="document-type-active"
+                            >
                                 <input
+                                    id="document-type-active"
                                     v-model="createForm.is_active"
                                     type="checkbox"
                                     class="rounded border-slate-300 text-indigo-600 shadow-sm"
@@ -232,6 +269,7 @@ function formatPeso(n) {
                                     type="submit"
                                     :disabled="createForm.processing"
                                     class="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
+                                    :aria-busy="createForm.processing ? 'true' : undefined"
                                 >
                                     <PlusIcon class="h-3.5 w-3.5" />
                                     {{ createForm.processing ? 'Creating…' : 'Create' }}
@@ -254,10 +292,12 @@ function formatPeso(n) {
                     </h3>
                     <!-- Search -->
                     <div class="relative">
+                        <label for="document-type-search" class="sr-only">Search document types</label>
                         <MagnifyingGlassIcon
                             class="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
                         />
                         <input
+                            id="document-type-search"
                             v-model="search"
                             type="text"
                             placeholder="Search name or category…"
@@ -266,14 +306,22 @@ function formatPeso(n) {
                         <button
                             v-if="search"
                             type="button"
-                            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                            class="absolute right-1 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-slate-400 hover:text-slate-600"
+                            aria-label="Clear document type search"
                             @click="search = ''"
                         >
                             <XMarkIcon class="h-4 w-4" />
                         </button>
                     </div>
                     <!-- Active filter -->
-                    <select v-model="filterActive" class="rounded-md border-slate-300 text-sm shadow-sm">
+                    <label for="document-type-active-filter" class="sr-only"
+                        >Filter document types by active state</label
+                    >
+                    <select
+                        id="document-type-active-filter"
+                        v-model="filterActive"
+                        class="min-h-11 rounded-md border-slate-300 text-sm shadow-sm"
+                    >
                         <option value="all">All</option>
                         <option value="active">Active only</option>
                         <option value="inactive">Inactive only</option>
@@ -355,12 +403,15 @@ function formatPeso(n) {
                                 <button
                                     type="button"
                                     :title="expandedId === type.id ? 'Close editor' : 'Edit'"
+                                    :aria-label="
+                                        expandedId === type.id ? `Close editor for ${type.name}` : `Edit ${type.name}`
+                                    "
                                     :class="
                                         expandedId === type.id
                                             ? 'bg-indigo-100 text-indigo-700'
                                             : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'
                                     "
-                                    class="rounded-md p-1.5 transition-colors"
+                                    class="min-h-11 min-w-11 rounded-md p-1.5 transition-colors"
                                     @click="toggleExpand(type.id)"
                                 >
                                     <PencilIcon class="h-4 w-4" />
@@ -368,7 +419,8 @@ function formatPeso(n) {
                                 <button
                                     type="button"
                                     title="Delete / Disable"
-                                    class="rounded-md p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                    :aria-label="`Delete or disable ${type.name}`"
+                                    class="min-h-11 min-w-11 rounded-md p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                                     @click="destroyType(type.id, type.name)"
                                 >
                                     <TrashIcon class="h-4 w-4" />
@@ -380,24 +432,39 @@ function formatPeso(n) {
                         <div v-if="expandedId === type.id" class="border-b border-indigo-100 bg-indigo-50/30 px-4 py-5">
                             <form class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" @submit.prevent="update(type.id)">
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-xs font-medium text-slate-600">Name</label>
+                                    <label
+                                        :for="`edit-document-type-name-${type.id}`"
+                                        class="text-xs font-medium text-slate-600"
+                                        >Name</label
+                                    >
                                     <input
+                                        :id="`edit-document-type-name-${type.id}`"
                                         v-model="updateForms[type.id].name"
                                         type="text"
                                         class="rounded-md border-slate-300 text-sm shadow-sm"
                                     />
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-xs font-medium text-slate-600">Category</label>
+                                    <label
+                                        :for="`edit-document-type-category-${type.id}`"
+                                        class="text-xs font-medium text-slate-600"
+                                        >Category</label
+                                    >
                                     <input
+                                        :id="`edit-document-type-category-${type.id}`"
                                         v-model="updateForms[type.id].category"
                                         type="text"
                                         class="rounded-md border-slate-300 text-sm shadow-sm"
                                     />
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-xs font-medium text-slate-600">Fee per Page (₱)</label>
+                                    <label
+                                        :for="`edit-document-type-fee-${type.id}`"
+                                        class="text-xs font-medium text-slate-600"
+                                        >Fee per Page (₱)</label
+                                    >
                                     <input
+                                        :id="`edit-document-type-fee-${type.id}`"
                                         v-model="updateForms[type.id].fee"
                                         type="number"
                                         step="0.01"
@@ -406,8 +473,13 @@ function formatPeso(n) {
                                     />
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-xs font-medium text-slate-600">Pages per Document</label>
+                                    <label
+                                        :for="`edit-document-type-pages-${type.id}`"
+                                        class="text-xs font-medium text-slate-600"
+                                        >Pages per Document</label
+                                    >
                                     <input
+                                        :id="`edit-document-type-pages-${type.id}`"
                                         v-model="updateForms[type.id].default_page_count"
                                         type="number"
                                         min="1"
@@ -417,8 +489,13 @@ function formatPeso(n) {
                                     <p class="text-xs text-slate-400">Total = fee × pages × copies.</p>
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-xs font-medium text-slate-600">Processing Days</label>
+                                    <label
+                                        :for="`edit-document-type-processing-days-${type.id}`"
+                                        class="text-xs font-medium text-slate-600"
+                                        >Processing Days</label
+                                    >
                                     <input
+                                        :id="`edit-document-type-processing-days-${type.id}`"
                                         v-model="updateForms[type.id].processing_days"
                                         type="number"
                                         min="1"
@@ -427,8 +504,13 @@ function formatPeso(n) {
                                     />
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-xs font-medium text-slate-600">Description</label>
+                                    <label
+                                        :for="`edit-document-type-description-${type.id}`"
+                                        class="text-xs font-medium text-slate-600"
+                                        >Description</label
+                                    >
                                     <input
+                                        :id="`edit-document-type-description-${type.id}`"
                                         v-model="updateForms[type.id].description"
                                         type="text"
                                         class="rounded-md border-slate-300 text-sm shadow-sm"
@@ -437,8 +519,12 @@ function formatPeso(n) {
 
                                 <div class="lg:col-span-3 flex items-center justify-between pt-1">
                                     <div class="flex items-center gap-4">
-                                        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                                        <label
+                                            class="inline-flex items-center gap-2 text-sm text-slate-700"
+                                            :for="`edit-document-type-active-${type.id}`"
+                                        >
                                             <input
+                                                :id="`edit-document-type-active-${type.id}`"
                                                 v-model="updateForms[type.id].is_active"
                                                 type="checkbox"
                                                 class="rounded border-slate-300 text-indigo-600 shadow-sm"
@@ -461,6 +547,7 @@ function formatPeso(n) {
                                             type="submit"
                                             :disabled="updateForms[type.id].processing"
                                             class="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
+                                            :aria-busy="updateForms[type.id].processing ? 'true' : undefined"
                                         >
                                             <CheckIcon class="h-3.5 w-3.5" />
                                             {{ updateForms[type.id].processing ? 'Saving…' : 'Save Changes' }}

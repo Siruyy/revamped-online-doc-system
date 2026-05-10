@@ -1,9 +1,8 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import FormField from '@/Components/UI/FormField.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
 defineProps({
@@ -34,26 +33,30 @@ const submit = () => {
             {{ status }}
         </div>
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
-
-                <TextInput
-                    id="email"
-                    v-model="form.email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
-
-                <InputError class="mt-2" :message="form.errors.email" />
-            </div>
+        <form :aria-busy="form.processing ? 'true' : undefined" @submit.prevent="submit">
+            <FormField id="email" label="Email" :error="form.errors.email" required>
+                <template #default="{ id, describedBy, invalid }">
+                    <TextInput
+                        :id="id"
+                        v-model="form.email"
+                        type="email"
+                        class="mt-1 block w-full"
+                        required
+                        autofocus
+                        autocomplete="username"
+                        :described-by="describedBy"
+                        :invalid="invalid"
+                    />
+                </template>
+            </FormField>
 
             <div class="mt-4 flex items-center justify-end">
-                <PrimaryButton :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                    Email Password Reset Link
+                <PrimaryButton
+                    :class="{ 'opacity-25': form.processing }"
+                    :disabled="form.processing"
+                    :aria-busy="form.processing ? 'true' : undefined"
+                >
+                    {{ form.processing ? 'Sending...' : 'Email Password Reset Link' }}
                 </PrimaryButton>
             </div>
         </form>

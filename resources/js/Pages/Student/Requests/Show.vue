@@ -1,6 +1,7 @@
 <script setup>
 import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
 import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
+import FormField from '@/Components/UI/FormField.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -602,31 +603,56 @@ function paymentStatusBadge(status) {
                             v-if="activeRequirementId === req.id"
                             class="mt-3 rounded-xl border border-dashed border-brand-300 bg-brand-50/40 p-4"
                         >
-                            <label class="block text-xs font-medium text-slate-700"
-                                >File (PDF, JPG, PNG; max 5MB)</label
+                            <FormField
+                                :id="`requirement-file-${req.id}`"
+                                label="File"
+                                :error="requirementForm.errors.file"
+                                help="PDF, JPG, PNG; max 5MB."
+                                required
                             >
-                            <input
-                                type="file"
-                                accept=".pdf,image/png,image/jpeg"
-                                class="mt-1 block w-full text-sm text-slate-700"
-                                @change="requirementForm.file = $event.target.files[0]"
-                            />
-                            <label class="mt-3 block text-xs font-medium text-slate-700">Notes (optional)</label>
-                            <textarea
-                                v-model="requirementForm.notes"
-                                rows="2"
-                                maxlength="500"
-                                class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                            />
+                                <template #default="{ id, describedBy, invalid }">
+                                    <input
+                                        :id="id"
+                                        type="file"
+                                        accept=".pdf,image/png,image/jpeg"
+                                        class="mt-1 block w-full rounded-lg border border-slate-300 text-sm text-slate-700 file:mr-4 file:min-h-11 file:border-0 file:bg-brand-600 file:px-4 file:text-sm file:font-semibold file:text-white hover:file:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                                        :aria-describedby="describedBy"
+                                        :aria-invalid="invalid ? 'true' : undefined"
+                                        @change="requirementForm.file = $event.target.files[0]"
+                                    />
+                                    <p v-if="requirementForm.file" class="mt-2 text-xs text-brand-700">
+                                        Selected: {{ requirementForm.file.name }}
+                                    </p>
+                                </template>
+                            </FormField>
+                            <FormField
+                                :id="`requirement-notes-${req.id}`"
+                                class="mt-3"
+                                label="Notes (optional)"
+                                :error="requirementForm.errors.notes"
+                            >
+                                <template #default="{ id, describedBy, invalid }">
+                                    <textarea
+                                        :id="id"
+                                        v-model="requirementForm.notes"
+                                        rows="2"
+                                        maxlength="500"
+                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                                        :aria-describedby="describedBy"
+                                        :aria-invalid="invalid ? 'true' : undefined"
+                                    />
+                                </template>
+                            </FormField>
                             <div class="mt-3 flex gap-2">
                                 <button
                                     type="button"
                                     class="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-500 disabled:opacity-60"
                                     :disabled="!requirementForm.file || requirementForm.processing"
+                                    :aria-busy="requirementForm.processing ? 'true' : undefined"
                                     @click="submitRequirement(req)"
                                 >
                                     <PaperAirplaneIcon class="h-4 w-4" />
-                                    Submit
+                                    {{ requirementForm.processing ? 'Submitting...' : 'Submit' }}
                                 </button>
                                 <button
                                     type="button"

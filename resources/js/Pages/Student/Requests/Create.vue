@@ -2,6 +2,8 @@
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
+import FormField from '@/Components/UI/FormField.vue';
+import IconButton from '@/Components/UI/IconButton.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -195,7 +197,7 @@ function feeLabel(type) {
                 </li>
             </ol>
 
-            <form @submit.prevent="submit">
+            <form :aria-busy="form.processing ? 'true' : undefined" @submit.prevent="submit">
                 <!-- STEP 1: Select documents + set copies -->
                 <section v-if="step === 1" class="space-y-6">
                     <!-- Cart summary strip -->
@@ -234,13 +236,14 @@ function feeLabel(type) {
                             >
                                 <!-- Checkbox toggle -->
                                 <input
+                                    :id="`document-type-${doc.id}`"
                                     :checked="!!cart[doc.id]"
                                     type="checkbox"
                                     class="mt-1 h-4 w-4 flex-none rounded text-brand-600 focus:ring-brand-500"
                                     @change="toggleDoc(doc)"
                                 />
                                 <!-- Doc info -->
-                                <div class="flex-1" @click="toggleDoc(doc)">
+                                <label class="flex-1 cursor-pointer" :for="`document-type-${doc.id}`">
                                     <div class="flex flex-wrap items-center justify-between gap-2">
                                         <p class="font-semibold text-slate-900">{{ doc.name }}</p>
                                         <div class="flex items-center gap-3 text-xs text-slate-500">
@@ -257,17 +260,18 @@ function feeLabel(type) {
                                     <p v-if="doc.description" class="mt-0.5 text-sm text-slate-500">
                                         {{ doc.description }}
                                     </p>
-                                </div>
+                                </label>
                                 <!-- Copies stepper (only when selected) -->
                                 <div v-if="cart[doc.id]" class="flex flex-none items-center gap-2" @click.stop>
-                                    <button
-                                        type="button"
-                                        class="text-slate-400 hover:text-brand-600"
+                                    <IconButton
+                                        :label="`Decrease copies for ${doc.name}`"
                                         @click="setCopies(doc.id, (cart[doc.id]?.copies || 1) - 1)"
                                     >
-                                        <MinusCircleIcon class="h-6 w-6" />
-                                    </button>
+                                        <MinusCircleIcon class="h-6 w-6" aria-hidden="true" />
+                                    </IconButton>
+                                    <label :for="`copies-${doc.id}`" class="sr-only">Copies for {{ doc.name }}</label>
                                     <input
+                                        :id="`copies-${doc.id}`"
                                         :value="cart[doc.id]?.copies"
                                         type="number"
                                         min="1"
@@ -275,13 +279,12 @@ function feeLabel(type) {
                                         class="w-14 rounded-md border-slate-300 text-center text-sm shadow-sm"
                                         @input="setCopies(doc.id, $event.target.value)"
                                     />
-                                    <button
-                                        type="button"
-                                        class="text-slate-400 hover:text-brand-600"
+                                    <IconButton
+                                        :label="`Increase copies for ${doc.name}`"
                                         @click="setCopies(doc.id, (cart[doc.id]?.copies || 1) + 1)"
                                     >
-                                        <PlusCircleIcon class="h-6 w-6" />
-                                    </button>
+                                        <PlusCircleIcon class="h-6 w-6" aria-hidden="true" />
+                                    </IconButton>
                                 </div>
                             </div>
                         </div>
@@ -317,24 +320,29 @@ function feeLabel(type) {
                     </div>
 
                     <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                        <div class="sm:col-span-2">
-                            <label class="mb-1 block text-sm font-medium text-slate-700">
-                                Purpose <span class="text-rose-500">*</span>
-                            </label>
-                            <textarea
-                                v-model="form.purpose"
-                                rows="3"
-                                maxlength="500"
-                                required
-                                placeholder="e.g., For scholarship application, employment, board exam, transfer to another school…"
-                                class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                                :class="{ 'border-rose-400': form.errors.purpose }"
-                            ></textarea>
-                            <p class="mt-1 text-xs text-slate-500">
-                                Briefly describe why you need these documents (minimum 5 characters).
-                            </p>
-                            <InputError :message="form.errors.purpose" class="mt-1" />
-                        </div>
+                        <FormField
+                            id="request-purpose"
+                            class="sm:col-span-2"
+                            label="Purpose"
+                            :error="form.errors.purpose"
+                            help="Briefly describe why you need these documents (minimum 5 characters)."
+                            required
+                        >
+                            <template #default="{ id, describedBy, invalid }">
+                                <textarea
+                                    :id="id"
+                                    v-model="form.purpose"
+                                    rows="3"
+                                    maxlength="500"
+                                    required
+                                    placeholder="e.g., For scholarship application, employment, board exam, transfer to another school…"
+                                    class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                                    :class="{ 'border-rose-400': form.errors.purpose }"
+                                    :aria-describedby="describedBy"
+                                    :aria-invalid="invalid ? 'true' : undefined"
+                                ></textarea>
+                            </template>
+                        </FormField>
                     </div>
 
                     <!-- Special class eligibility gate -->
@@ -347,24 +355,27 @@ function feeLabel(type) {
                             You must confirm at least one eligibility criterion below.
                         </p>
                         <div class="mt-4 space-y-3 text-sm text-amber-900">
-                            <label class="flex items-start gap-3">
+                            <label class="flex items-start gap-3" for="special-graduating-this-term">
                                 <input
+                                    id="special-graduating-this-term"
                                     v-model="form.special_class_eligibility.graduating_this_term"
                                     type="checkbox"
                                     class="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
                                 />
                                 I am graduating in the immediate term.
                             </label>
-                            <label class="flex items-start gap-3">
+                            <label class="flex items-start gap-3" for="special-subject-deficiency-certified">
                                 <input
+                                    id="special-subject-deficiency-certified"
                                     v-model="form.special_class_eligibility.subject_deficiency_certified"
                                     type="checkbox"
                                     class="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
                                 />
                                 I have a subject deficiency certified by the Office of the Registrar.
                             </label>
-                            <label class="flex items-start gap-3">
+                            <label class="flex items-start gap-3" for="special-subject-conflict">
                                 <input
+                                    id="special-subject-conflict"
                                     v-model="form.special_class_eligibility.subject_conflict"
                                     type="checkbox"
                                     class="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
@@ -387,16 +398,18 @@ function feeLabel(type) {
                             official external notice.
                         </p>
                         <div class="mt-4 space-y-3 text-sm text-rose-900">
-                            <label class="flex items-start gap-3">
+                            <label class="flex items-start gap-3" for="has-cno">
                                 <input
+                                    id="has-cno"
                                     v-model="form.has_cno"
                                     type="checkbox"
                                     class="mt-0.5 rounded border-rose-400 text-rose-600 focus:ring-rose-500"
                                 />
                                 I have a Certificate of No Objection from my receiving institution.
                             </label>
-                            <label class="flex items-start gap-3">
+                            <label class="flex items-start gap-3" for="has-external-notice">
                                 <input
+                                    id="has-external-notice"
                                     v-model="form.has_external_notice"
                                     type="checkbox"
                                     class="mt-0.5 rounded border-rose-400 text-rose-600 focus:ring-rose-500"
@@ -599,9 +612,10 @@ function feeLabel(type) {
                         v-else
                         type="submit"
                         :disabled="pendingRequestExists || form.processing || !cartItems.length"
+                        :aria-busy="form.processing ? 'true' : undefined"
                     >
                         <CheckCircleIcon class="mr-1 h-5 w-5" />
-                        Submit Request
+                        {{ form.processing ? 'Submitting...' : 'Submit Request' }}
                     </PrimaryButton>
                 </div>
             </form>

@@ -1,5 +1,6 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
+import FormField from '@/Components/UI/FormField.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import {
@@ -177,6 +178,11 @@ function removeQr(profile) {
                                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                 "
                                 class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors"
+                                :aria-label="
+                                    profile.is_active
+                                        ? `Deactivate ${profile.bank_name}`
+                                        : `Activate ${profile.bank_name}`
+                                "
                                 @click="toggleActive(profile)"
                             >
                                 <CheckCircleIcon v-if="profile.is_active" class="h-3.5 w-3.5" />
@@ -191,8 +197,13 @@ function removeQr(profile) {
                                         ? 'bg-indigo-100 text-indigo-700'
                                         : 'text-slate-500 hover:bg-slate-100'
                                 "
-                                class="rounded-lg p-2 transition-colors"
+                                class="min-h-11 min-w-11 rounded-lg p-2 transition-colors"
                                 :title="editingId === profile.id ? 'Cancel edit' : 'Edit'"
+                                :aria-label="
+                                    editingId === profile.id
+                                        ? `Cancel editing ${profile.bank_name}`
+                                        : `Edit ${profile.bank_name}`
+                                "
                                 @click="editingId === profile.id ? (editingId = null) : openEdit(profile)"
                             >
                                 <PencilSquareIcon v-if="editingId !== profile.id" class="h-4 w-4" />
@@ -202,7 +213,8 @@ function removeQr(profile) {
                             <button
                                 type="button"
                                 title="Delete profile"
-                                class="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                                :aria-label="`Delete ${profile.bank_name}`"
+                                class="min-h-11 min-w-11 rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
                                 @click="deleteProfile(profile)"
                             >
                                 <TrashIcon class="h-4 w-4" />
@@ -242,8 +254,9 @@ function removeQr(profile) {
                                 />
                                 <button
                                     type="button"
-                                    class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-white shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                                    class="absolute -top-3 -right-3 flex min-h-11 min-w-11 items-center justify-center rounded-full bg-rose-600 text-white shadow opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
                                     title="Remove QR"
+                                    :aria-label="`Remove QR code for ${profile.bank_name}`"
                                     @click="removeQr(profile)"
                                 >
                                     <XMarkIcon class="h-3 w-3" />
@@ -263,85 +276,101 @@ function removeQr(profile) {
                     <div v-if="editingId === profile.id" class="px-5 py-5">
                         <form class="space-y-5" @submit.prevent="submitEdit(profile.id)">
                             <div class="grid gap-4 sm:grid-cols-2">
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700"
-                                        >Bank Name <span class="text-rose-500">*</span></label
-                                    >
-                                    <input
-                                        v-model="getEditForm(profile).bank_name"
-                                        type="text"
-                                        required
-                                        maxlength="120"
-                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
-                                    />
-                                    <p v-if="getEditForm(profile).errors.bank_name" class="mt-1 text-xs text-rose-600">
-                                        {{ getEditForm(profile).errors.bank_name }}
-                                    </p>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700"
-                                        >Account Name <span class="text-rose-500">*</span></label
-                                    >
-                                    <input
-                                        v-model="getEditForm(profile).account_name"
-                                        type="text"
-                                        required
-                                        maxlength="180"
-                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700"
-                                        >Account Number <span class="text-rose-500">*</span></label
-                                    >
-                                    <input
-                                        v-model="getEditForm(profile).account_number"
-                                        type="text"
-                                        required
-                                        maxlength="60"
-                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm font-mono tracking-wide sm:text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700">
-                                        QR Code
-                                        <span class="text-slate-400 font-normal text-xs"
-                                            >(JPG/PNG/WebP – max 4 MB)</span
-                                        >
-                                    </label>
-                                    <label
-                                        class="mt-1 flex cursor-pointer items-center justify-center w-full h-20 border-2 border-dashed border-brand-300 rounded-xl bg-brand-50 hover:bg-brand-100 transition-colors"
-                                    >
-                                        <div class="flex items-center gap-2 text-brand-700 text-sm">
-                                            <QrCodeIcon class="h-5 w-5 text-brand-500" />
-                                            <span>{{
-                                                getEditForm(profile).qr_image
-                                                    ? getEditForm(profile).qr_image.name
-                                                    : 'Upload new QR'
-                                            }}</span>
-                                        </div>
+                                <FormField
+                                    :id="`edit-bank-name-${profile.id}`"
+                                    label="Bank Name"
+                                    :error="getEditForm(profile).errors.bank_name"
+                                    required
+                                >
+                                    <template #default="{ id, describedBy, invalid }">
                                         <input
+                                            :id="id"
+                                            v-model="getEditForm(profile).bank_name"
+                                            type="text"
+                                            required
+                                            maxlength="120"
+                                            class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
+                                            :aria-describedby="describedBy"
+                                            :aria-invalid="invalid ? 'true' : undefined"
+                                        />
+                                    </template>
+                                </FormField>
+                                <FormField
+                                    :id="`edit-account-name-${profile.id}`"
+                                    label="Account Name"
+                                    :error="getEditForm(profile).errors.account_name"
+                                    required
+                                >
+                                    <template #default="{ id, describedBy, invalid }">
+                                        <input
+                                            :id="id"
+                                            v-model="getEditForm(profile).account_name"
+                                            type="text"
+                                            required
+                                            maxlength="180"
+                                            class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
+                                            :aria-describedby="describedBy"
+                                            :aria-invalid="invalid ? 'true' : undefined"
+                                        />
+                                    </template>
+                                </FormField>
+                                <FormField
+                                    :id="`edit-account-number-${profile.id}`"
+                                    label="Account Number"
+                                    :error="getEditForm(profile).errors.account_number"
+                                    required
+                                >
+                                    <template #default="{ id, describedBy, invalid }">
+                                        <input
+                                            :id="id"
+                                            v-model="getEditForm(profile).account_number"
+                                            type="text"
+                                            required
+                                            maxlength="60"
+                                            class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm font-mono tracking-wide sm:text-sm"
+                                            :aria-describedby="describedBy"
+                                            :aria-invalid="invalid ? 'true' : undefined"
+                                        />
+                                    </template>
+                                </FormField>
+                                <FormField
+                                    :id="`edit-qr-image-${profile.id}`"
+                                    label="QR Code"
+                                    :error="getEditForm(profile).errors.qr_image"
+                                    help="JPG/PNG/WebP - max 4 MB."
+                                >
+                                    <template #default="{ id, describedBy, invalid }">
+                                        <input
+                                            :id="id"
                                             type="file"
                                             accept="image/jpeg,image/png,image/gif,image/webp"
-                                            class="hidden"
+                                            class="mt-1 block w-full rounded-lg border border-slate-300 text-sm text-slate-700 file:mr-4 file:min-h-11 file:border-0 file:bg-brand-600 file:px-4 file:text-sm file:font-semibold file:text-white hover:file:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                                            :aria-describedby="describedBy"
+                                            :aria-invalid="invalid ? 'true' : undefined"
                                             @change="onEditQrChange(profile.id, $event)"
                                         />
-                                    </label>
-                                    <div v-if="editQrPreviews[profile.id]" class="mt-2 flex items-center gap-2">
-                                        <img
-                                            :src="editQrPreviews[profile.id]"
-                                            class="h-14 w-14 rounded object-contain ring-1 ring-slate-200"
-                                        />
-                                        <span class="text-xs text-slate-500">New QR preview</span>
-                                    </div>
+                                        <p v-if="getEditForm(profile).qr_image" class="mt-2 text-xs text-brand-700">
+                                            Selected: {{ getEditForm(profile).qr_image.name }}
+                                        </p>
+                                    </template>
+                                </FormField>
+                                <div v-if="editQrPreviews[profile.id]" class="mt-2 flex items-center gap-2">
+                                    <img
+                                        :src="editQrPreviews[profile.id]"
+                                        class="h-14 w-14 rounded object-contain ring-1 ring-slate-200"
+                                    />
+                                    <span class="text-xs text-slate-500">New QR preview</span>
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700"
+                                <label
+                                    :for="`edit-instructions-${profile.id}`"
+                                    class="block text-sm font-medium text-slate-700"
                                     >Payment Instructions
                                     <span class="text-slate-400 font-normal text-xs">(shown to students)</span></label
                                 >
                                 <textarea
+                                    :id="`edit-instructions-${profile.id}`"
                                     v-model="getEditForm(profile).instructions"
                                     rows="4"
                                     maxlength="2000"
@@ -352,8 +381,12 @@ function removeQr(profile) {
                                 </p>
                             </div>
                             <div class="flex items-center justify-between">
-                                <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                                <label
+                                    class="inline-flex items-center gap-2 text-sm text-slate-700"
+                                    :for="`edit-is-active-${profile.id}`"
+                                >
                                     <input
+                                        :id="`edit-is-active-${profile.id}`"
                                         v-model="getEditForm(profile).is_active"
                                         type="checkbox"
                                         class="rounded border-slate-300 text-brand-600 shadow-sm"
@@ -372,6 +405,7 @@ function removeQr(profile) {
                                         type="submit"
                                         :disabled="getEditForm(profile).processing"
                                         class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-brand-500 disabled:opacity-60"
+                                        :aria-busy="getEditForm(profile).processing ? 'true' : undefined"
                                     >
                                         <CheckCircleIcon class="h-4 w-4" />
                                         {{ getEditForm(profile).processing ? 'Saving…' : 'Save Changes' }}
@@ -407,89 +441,105 @@ function removeQr(profile) {
                 <div v-if="showCreate" class="border-t border-slate-100 px-5 py-5">
                     <form class="space-y-5" @submit.prevent="submitCreate">
                         <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700"
-                                    >Bank Name <span class="text-rose-500">*</span></label
-                                >
-                                <input
-                                    v-model="createForm.bank_name"
-                                    type="text"
-                                    required
-                                    maxlength="120"
-                                    placeholder="e.g. BDO Unibank"
-                                    class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
-                                    :class="{ 'border-rose-400': createForm.errors.bank_name }"
-                                />
-                                <p v-if="createForm.errors.bank_name" class="mt-1 text-xs text-rose-600">
-                                    {{ createForm.errors.bank_name }}
-                                </p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700"
-                                    >Account Name <span class="text-rose-500">*</span></label
-                                >
-                                <input
-                                    v-model="createForm.account_name"
-                                    type="text"
-                                    required
-                                    maxlength="180"
-                                    placeholder="e.g. St. Vincent College"
-                                    class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
-                                    :class="{ 'border-rose-400': createForm.errors.account_name }"
-                                />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700"
-                                    >Account Number <span class="text-rose-500">*</span></label
-                                >
-                                <input
-                                    v-model="createForm.account_number"
-                                    type="text"
-                                    required
-                                    maxlength="60"
-                                    placeholder="001-234-567-890"
-                                    class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm font-mono tracking-wide sm:text-sm"
-                                    :class="{ 'border-rose-400': createForm.errors.account_number }"
-                                />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700">
-                                    QR Code
-                                    <span class="text-slate-400 font-normal text-xs"
-                                        >(optional – JPG/PNG/WebP, max 4 MB)</span
-                                    >
-                                </label>
-                                <label
-                                    class="mt-1 flex cursor-pointer items-center justify-center w-full h-20 border-2 border-dashed border-brand-300 rounded-xl bg-brand-50 hover:bg-brand-100 transition-colors"
-                                >
-                                    <div class="flex items-center gap-2 text-brand-700 text-sm">
-                                        <QrCodeIcon class="h-5 w-5 text-brand-500" />
-                                        <span>{{
-                                            createForm.qr_image ? createForm.qr_image.name : 'Upload QR image'
-                                        }}</span>
-                                    </div>
+                            <FormField
+                                id="create-bank-name"
+                                label="Bank Name"
+                                :error="createForm.errors.bank_name"
+                                required
+                            >
+                                <template #default="{ id, describedBy, invalid }">
                                     <input
+                                        :id="id"
+                                        v-model="createForm.bank_name"
+                                        type="text"
+                                        required
+                                        maxlength="120"
+                                        placeholder="e.g. BDO Unibank"
+                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
+                                        :class="{ 'border-rose-400': createForm.errors.bank_name }"
+                                        :aria-describedby="describedBy"
+                                        :aria-invalid="invalid ? 'true' : undefined"
+                                    />
+                                </template>
+                            </FormField>
+                            <FormField
+                                id="create-account-name"
+                                label="Account Name"
+                                :error="createForm.errors.account_name"
+                                required
+                            >
+                                <template #default="{ id, describedBy, invalid }">
+                                    <input
+                                        :id="id"
+                                        v-model="createForm.account_name"
+                                        type="text"
+                                        required
+                                        maxlength="180"
+                                        placeholder="e.g. St. Vincent College"
+                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
+                                        :class="{ 'border-rose-400': createForm.errors.account_name }"
+                                        :aria-describedby="describedBy"
+                                        :aria-invalid="invalid ? 'true' : undefined"
+                                    />
+                                </template>
+                            </FormField>
+                            <FormField
+                                id="create-account-number"
+                                label="Account Number"
+                                :error="createForm.errors.account_number"
+                                required
+                            >
+                                <template #default="{ id, describedBy, invalid }">
+                                    <input
+                                        :id="id"
+                                        v-model="createForm.account_number"
+                                        type="text"
+                                        required
+                                        maxlength="60"
+                                        placeholder="001-234-567-890"
+                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm font-mono tracking-wide sm:text-sm"
+                                        :class="{ 'border-rose-400': createForm.errors.account_number }"
+                                        :aria-describedby="describedBy"
+                                        :aria-invalid="invalid ? 'true' : undefined"
+                                    />
+                                </template>
+                            </FormField>
+                            <FormField
+                                id="create-qr-image"
+                                label="QR Code"
+                                :error="createForm.errors.qr_image"
+                                help="Optional - JPG/PNG/WebP, max 4 MB."
+                            >
+                                <template #default="{ id, describedBy, invalid }">
+                                    <input
+                                        :id="id"
                                         type="file"
                                         accept="image/jpeg,image/png,image/gif,image/webp"
-                                        class="hidden"
+                                        class="mt-1 block w-full rounded-lg border border-slate-300 text-sm text-slate-700 file:mr-4 file:min-h-11 file:border-0 file:bg-brand-600 file:px-4 file:text-sm file:font-semibold file:text-white hover:file:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                                        :aria-describedby="describedBy"
+                                        :aria-invalid="invalid ? 'true' : undefined"
                                         @change="onCreateQrChange"
                                     />
-                                </label>
-                                <div v-if="createQrPreview" class="mt-2 flex items-center gap-2">
-                                    <img
-                                        :src="createQrPreview"
-                                        class="h-14 w-14 rounded object-contain ring-1 ring-slate-200"
-                                    />
-                                    <span class="text-xs text-slate-500">QR preview</span>
-                                </div>
+                                    <p v-if="createForm.qr_image" class="mt-2 text-xs text-brand-700">
+                                        Selected: {{ createForm.qr_image.name }}
+                                    </p>
+                                </template>
+                            </FormField>
+                            <div v-if="createQrPreview" class="mt-2 flex items-center gap-2">
+                                <img
+                                    :src="createQrPreview"
+                                    class="h-14 w-14 rounded object-contain ring-1 ring-slate-200"
+                                />
+                                <span class="text-xs text-slate-500">QR preview</span>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700"
+                            <label for="create-instructions" class="block text-sm font-medium text-slate-700"
                                 >Payment Instructions
                                 <span class="text-slate-400 font-normal text-xs">(shown to students)</span></label
                             >
                             <textarea
+                                id="create-instructions"
                                 v-model="createForm.instructions"
                                 rows="4"
                                 maxlength="2000"
@@ -501,8 +551,9 @@ function removeQr(profile) {
                             </p>
                         </div>
                         <div class="flex items-center justify-between">
-                            <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                            <label class="inline-flex items-center gap-2 text-sm text-slate-700" for="create-is-active">
                                 <input
+                                    id="create-is-active"
                                     v-model="createForm.is_active"
                                     type="checkbox"
                                     class="rounded border-slate-300 text-brand-600 shadow-sm"
@@ -524,6 +575,7 @@ function removeQr(profile) {
                                     type="submit"
                                     :disabled="createForm.processing"
                                     class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-brand-500 disabled:opacity-60"
+                                    :aria-busy="createForm.processing ? 'true' : undefined"
                                 >
                                     <PlusIcon class="h-4 w-4" />
                                     {{ createForm.processing ? 'Creating…' : 'Create Profile' }}

@@ -1,6 +1,7 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import EmptyState from '@/Components/UI/EmptyState.vue';
+import FormField from '@/Components/UI/FormField.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { reactive, ref } from 'vue';
 import {
@@ -128,10 +129,12 @@ function paginationLabel(label) {
                     </button>
                 </div>
                 <div class="relative w-full md:w-80">
+                    <label for="release-search" class="sr-only">Search claim slips</label>
                     <DocumentMagnifyingGlassIcon
                         class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
                     />
                     <input
+                        id="release-search"
                         v-model="form.search"
                         type="search"
                         placeholder="Search claim #, student, ref…"
@@ -245,31 +248,48 @@ function paginationLabel(label) {
                             </p>
                         </div>
                         <div class="grid gap-3 sm:grid-cols-2">
-                            <div>
-                                <label class="block text-xs font-medium text-slate-700">Claimant full name</label>
-                                <input
-                                    v-model="releaseForm.claimant_name"
-                                    type="text"
-                                    required
-                                    maxlength="120"
-                                    class="mt-1 block w-full rounded-md border-slate-300 text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-700"
-                                    >ID presented (type + number)</label
-                                >
-                                <input
-                                    v-model="releaseForm.claimant_id_reference"
-                                    type="text"
-                                    required
-                                    maxlength="120"
-                                    class="mt-1 block w-full rounded-md border-slate-300 text-sm"
-                                />
-                            </div>
+                            <FormField
+                                id="release-claimant-name"
+                                label="Claimant full name"
+                                :error="releaseForm.errors.claimant_name"
+                                required
+                            >
+                                <template #default="{ id, describedBy, invalid }">
+                                    <input
+                                        :id="id"
+                                        v-model="releaseForm.claimant_name"
+                                        type="text"
+                                        required
+                                        maxlength="120"
+                                        class="mt-1 block w-full rounded-md border-slate-300 text-sm"
+                                        :aria-describedby="describedBy"
+                                        :aria-invalid="invalid ? 'true' : undefined"
+                                    />
+                                </template>
+                            </FormField>
+                            <FormField
+                                id="release-claimant-id-reference"
+                                label="ID presented (type + number)"
+                                :error="releaseForm.errors.claimant_id_reference"
+                                required
+                            >
+                                <template #default="{ id, describedBy, invalid }">
+                                    <input
+                                        :id="id"
+                                        v-model="releaseForm.claimant_id_reference"
+                                        type="text"
+                                        required
+                                        maxlength="120"
+                                        class="mt-1 block w-full rounded-md border-slate-300 text-sm"
+                                        :aria-describedby="describedBy"
+                                        :aria-invalid="invalid ? 'true' : undefined"
+                                    />
+                                </template>
+                            </FormField>
                         </div>
-                        <label class="flex items-center gap-2 text-sm text-slate-700">
+                        <label class="flex items-center gap-2 text-sm text-slate-700" :for="`proxy-release-${slip.id}`">
                             <input
+                                :id="`proxy-release-${slip.id}`"
                                 v-model="releaseForm.is_proxy_release"
                                 type="checkbox"
                                 class="rounded border-slate-300"
@@ -277,8 +297,13 @@ function paginationLabel(label) {
                             Released via proxy / authorized representative
                         </label>
                         <div v-if="releaseForm.is_proxy_release">
-                            <label class="block text-xs font-medium text-slate-700">Authorization type</label>
+                            <label
+                                :for="`authorization-type-${slip.id}`"
+                                class="block text-xs font-medium text-slate-700"
+                                >Authorization type</label
+                            >
                             <select
+                                :id="`authorization-type-${slip.id}`"
                                 v-model="releaseForm.authorization_type"
                                 required
                                 class="mt-1 block w-full rounded-md border-slate-300 text-sm"
@@ -290,8 +315,11 @@ function paginationLabel(label) {
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-700">Notes (optional)</label>
+                            <label :for="`release-notes-${slip.id}`" class="block text-xs font-medium text-slate-700"
+                                >Notes (optional)</label
+                            >
                             <textarea
+                                :id="`release-notes-${slip.id}`"
                                 v-model="releaseForm.notes"
                                 rows="2"
                                 maxlength="500"
@@ -303,8 +331,9 @@ function paginationLabel(label) {
                                 type="submit"
                                 :disabled="releaseForm.processing"
                                 class="rounded-md bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+                                :aria-busy="releaseForm.processing ? 'true' : undefined"
                             >
-                                Confirm release
+                                {{ releaseForm.processing ? 'Confirming...' : 'Confirm release' }}
                             </button>
                             <button
                                 type="button"
@@ -331,20 +360,33 @@ function paginationLabel(label) {
                                 for lost slips or replacement.
                             </p>
                         </div>
-                        <label class="block text-xs font-medium text-slate-700">Reason</label>
-                        <textarea
-                            v-model="voidForm.reason"
-                            rows="2"
+                        <FormField
+                            :id="`void-reason-${slip.id}`"
+                            label="Reason"
+                            :error="voidForm.errors.reason"
                             required
-                            maxlength="200"
-                            class="block w-full rounded-md border-slate-300 text-sm"
-                        />
+                        >
+                            <template #default="{ id, describedBy, invalid }">
+                                <textarea
+                                    :id="id"
+                                    v-model="voidForm.reason"
+                                    rows="2"
+                                    required
+                                    maxlength="200"
+                                    class="block w-full rounded-md border-slate-300 text-sm"
+                                    :aria-describedby="describedBy"
+                                    :aria-invalid="invalid ? 'true' : undefined"
+                                />
+                            </template>
+                        </FormField>
                         <div class="flex gap-2">
                             <button
                                 type="submit"
+                                :disabled="voidForm.processing"
                                 class="rounded-md bg-rose-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-rose-500"
+                                :aria-busy="voidForm.processing ? 'true' : undefined"
                             >
-                                Void slip
+                                {{ voidForm.processing ? 'Voiding...' : 'Void slip' }}
                             </button>
                             <button
                                 type="button"

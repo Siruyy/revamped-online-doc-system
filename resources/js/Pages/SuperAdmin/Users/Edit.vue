@@ -1,5 +1,6 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
+import FormField from '@/Components/UI/FormField.vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
@@ -57,94 +58,135 @@ const destroyUser = () => {
                 {{ banner }}
             </div>
 
-            <form class="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm" @submit.prevent="submit">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700">Full name</label>
-                    <input
-                        v-model="form.fullname"
-                        type="text"
-                        class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
-                    />
-                    <p v-if="form.errors.fullname" class="mt-1 text-sm text-rose-600">{{ form.errors.fullname }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700">Email</label>
-                    <input
-                        v-model="form.email"
-                        type="email"
-                        class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
-                    />
-                    <p v-if="form.errors.email" class="mt-1 text-sm text-rose-600">{{ form.errors.email }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700">Role</label>
-                    <select v-model="form.role" class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm">
-                        <option value="student">Student</option>
-                        <option value="admin">Admin</option>
-                        <option value="teacher">Teacher</option>
-                        <option value="dean">Dean</option>
-                        <option value="accounting">Accounting</option>
-                        <option value="sao">SAO</option>
-                        <option value="superadmin">SuperAdmin</option>
-                    </select>
-                    <p v-if="form.errors.role" class="mt-1 text-sm text-rose-600">{{ form.errors.role }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700">Status</label>
-                    <select v-model="form.status" class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm">
-                        <option value="pending">Pending</option>
-                        <option value="active">Active</option>
-                        <option value="suspended">Suspended</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
-                    <p v-if="form.errors.status" class="mt-1 text-sm text-rose-600">{{ form.errors.status }}</p>
-                </div>
+            <form
+                class="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+                :aria-busy="form.processing ? 'true' : undefined"
+                @submit.prevent="submit"
+            >
+                <FormField id="user-fullname" label="Full name" :error="form.errors.fullname">
+                    <template #default="{ id, describedBy, invalid }">
+                        <input
+                            :id="id"
+                            v-model="form.fullname"
+                            type="text"
+                            class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
+                            :aria-describedby="describedBy"
+                            :aria-invalid="invalid ? 'true' : undefined"
+                        />
+                    </template>
+                </FormField>
+                <FormField id="user-email" label="Email" :error="form.errors.email">
+                    <template #default="{ id, describedBy, invalid }">
+                        <input
+                            :id="id"
+                            v-model="form.email"
+                            type="email"
+                            class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
+                            :aria-describedby="describedBy"
+                            :aria-invalid="invalid ? 'true' : undefined"
+                        />
+                    </template>
+                </FormField>
+                <FormField id="user-role" label="Role" :error="form.errors.role">
+                    <template #default="{ id, describedBy, invalid }">
+                        <select
+                            :id="id"
+                            v-model="form.role"
+                            class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
+                            :aria-describedby="describedBy"
+                            :aria-invalid="invalid ? 'true' : undefined"
+                        >
+                            <option value="student">Student</option>
+                            <option value="admin">Admin</option>
+                            <option value="teacher">Teacher</option>
+                            <option value="dean">Dean</option>
+                            <option value="accounting">Accounting</option>
+                            <option value="sao">SAO</option>
+                            <option value="superadmin">SuperAdmin</option>
+                        </select>
+                    </template>
+                </FormField>
+                <FormField id="user-status" label="Status" :error="form.errors.status">
+                    <template #default="{ id, describedBy, invalid }">
+                        <select
+                            :id="id"
+                            v-model="form.status"
+                            class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
+                            :aria-describedby="describedBy"
+                            :aria-invalid="invalid ? 'true' : undefined"
+                        >
+                            <option value="pending">Pending</option>
+                            <option value="active">Active</option>
+                            <option value="suspended">Suspended</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </template>
+                </FormField>
                 <div v-if="form.role === 'student'" class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700">Course</label>
+                    <FormField id="user-course" label="Course" :error="form.errors.course">
+                        <template #default="{ id, describedBy, invalid }">
+                            <input
+                                :id="id"
+                                v-model="form.course"
+                                type="text"
+                                class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
+                                :aria-describedby="describedBy"
+                                :aria-invalid="invalid ? 'true' : undefined"
+                            />
+                        </template>
+                    </FormField>
+                    <FormField id="user-year-level" label="Year level" :error="form.errors.year_level">
+                        <template #default="{ id, describedBy, invalid }">
+                            <input
+                                :id="id"
+                                v-model="form.year_level"
+                                type="number"
+                                min="1"
+                                max="4"
+                                class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
+                                :aria-describedby="describedBy"
+                                :aria-invalid="invalid ? 'true' : undefined"
+                            />
+                        </template>
+                    </FormField>
+                    <FormField
+                        id="user-student-id"
+                        class="sm:col-span-2"
+                        label="Student ID"
+                        :error="form.errors.student_id"
+                    >
+                        <template #default="{ id, describedBy, invalid }">
+                            <input
+                                :id="id"
+                                v-model="form.student_id"
+                                type="text"
+                                class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
+                                :aria-describedby="describedBy"
+                                :aria-invalid="invalid ? 'true' : undefined"
+                            />
+                        </template>
+                    </FormField>
+                </div>
+                <FormField id="user-contact-number" label="Contact number" :error="form.errors.contact_number">
+                    <template #default="{ id, describedBy, invalid }">
                         <input
-                            v-model="form.course"
+                            :id="id"
+                            v-model="form.contact_number"
                             type="text"
                             class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
+                            :aria-describedby="describedBy"
+                            :aria-invalid="invalid ? 'true' : undefined"
                         />
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700">Year level</label>
-                        <input
-                            v-model="form.year_level"
-                            type="number"
-                            min="1"
-                            max="4"
-                            class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
-                        />
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-sm font-medium text-slate-700">Student ID</label>
-                        <input
-                            v-model="form.student_id"
-                            type="text"
-                            class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
-                        />
-                        <p v-if="form.errors.student_id" class="mt-1 text-sm text-rose-600">
-                            {{ form.errors.student_id }}
-                        </p>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700">Contact number</label>
-                    <input
-                        v-model="form.contact_number"
-                        type="text"
-                        class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
-                    />
-                </div>
+                    </template>
+                </FormField>
                 <div class="flex flex-wrap gap-2">
                     <button
                         type="submit"
                         class="rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50"
                         :disabled="form.processing"
+                        :aria-busy="form.processing ? 'true' : undefined"
                     >
-                        Save changes
+                        {{ form.processing ? 'Saving...' : 'Save changes' }}
                     </button>
                     <a
                         :href="route('superadmin.users.index')"
