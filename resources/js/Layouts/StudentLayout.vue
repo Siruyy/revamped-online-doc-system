@@ -60,7 +60,7 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                         </Link>
 
                         <!-- Desktop nav links -->
-                        <div class="hidden items-center gap-1 lg:flex">
+                        <div class="hidden items-center gap-1 md:flex">
                             <Link
                                 v-for="link in studentLinks"
                                 :key="link.route"
@@ -84,10 +84,10 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
 
                     <!-- Right side: icons + avatar -->
                     <div class="flex items-center gap-1">
-                        <MessageBell class="hidden lg:inline-flex" />
+                        <MessageBell class="hidden md:inline-flex" />
                         <NotificationBell />
-                        <div class="mx-1 hidden h-5 w-px bg-slate-200 lg:block"></div>
-                        <div class="hidden lg:block">
+                        <div class="mx-1 hidden h-5 w-px bg-slate-200 md:block"></div>
+                        <div class="hidden md:block">
                             <UserAvatar />
                         </div>
                         <!-- Logout (desktop) -->
@@ -95,7 +95,7 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                             :href="route('logout')"
                             method="post"
                             as="button"
-                            class="ml-1 hidden min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 lg:inline-flex"
+                            class="ml-1 hidden min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 md:inline-flex"
                         >
                             <ArrowLeftOnRectangleIcon class="w-4 h-4" aria-hidden="true" />
                             <span class="hidden lg:inline">Log Out</span>
@@ -103,7 +103,7 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                         <!-- Mobile hamburger -->
                         <button
                             type="button"
-                            class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 lg:hidden"
+                            class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 md:hidden"
                             :aria-label="showMobileMenu ? 'Close navigation menu' : 'Open navigation menu'"
                             :aria-expanded="showMobileMenu"
                             aria-controls="student-mobile-navigation"
@@ -121,7 +121,7 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                 <div
                     v-if="showMobileMenu"
                     id="student-mobile-navigation"
-                    class="absolute w-full border-t border-slate-200 bg-white shadow-lg lg:hidden"
+                    class="absolute w-full border-t border-slate-200 bg-white shadow-lg md:hidden"
                 >
                     <div class="px-4 py-3 space-y-1">
                         <Link
