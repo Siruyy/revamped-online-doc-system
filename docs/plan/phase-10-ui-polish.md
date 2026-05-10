@@ -4,7 +4,7 @@
 
 **Status:** Partial.
 
-**Phase Notes:** Responsive/accessibility hardening added shared UI primitives and Playwright coverage in `docs/superpowers/plans/2026-05-10-responsive-ui-accessibility-hardening.md`; remaining Phase 10 tasks still need a full design drift audit and acceptance review before this phase can be marked finished.
+**Phase Notes:** Responsive/accessibility hardening added shared UI primitives and Playwright coverage; remaining Phase 10 tasks still need a full design drift audit and acceptance review before this phase can be marked finished.
 
 **Depends on:** Stable feature pages from Phases 03-09.
 
