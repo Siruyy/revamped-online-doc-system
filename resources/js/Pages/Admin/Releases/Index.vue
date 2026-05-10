@@ -296,24 +296,29 @@ function paginationLabel(label) {
                             />
                             Released via proxy / authorized representative
                         </label>
-                        <div v-if="releaseForm.is_proxy_release">
-                            <label
-                                :for="`authorization-type-${slip.id}`"
-                                class="block text-xs font-medium text-slate-700"
-                                >Authorization type</label
-                            >
-                            <select
-                                :id="`authorization-type-${slip.id}`"
-                                v-model="releaseForm.authorization_type"
-                                required
-                                class="mt-1 block w-full rounded-md border-slate-300 text-sm"
-                            >
-                                <option value="">Select…</option>
-                                <option value="spa">Special Power of Attorney (SPA)</option>
-                                <option value="authorization_letter">Notarized Authorization Letter</option>
-                                <option value="parent">Parent / Guardian (with proof)</option>
-                            </select>
-                        </div>
+                        <FormField
+                            v-if="releaseForm.is_proxy_release"
+                            :id="`authorization-type-${slip.id}`"
+                            label="Authorization type"
+                            :error="releaseForm.errors.authorization_type"
+                            required
+                        >
+                            <template #default="{ id, describedBy, invalid }">
+                                <select
+                                    :id="id"
+                                    v-model="releaseForm.authorization_type"
+                                    required
+                                    class="mt-1 block w-full rounded-md border-slate-300 text-sm"
+                                    :aria-describedby="describedBy"
+                                    :aria-invalid="invalid ? 'true' : undefined"
+                                >
+                                    <option value="">Select…</option>
+                                    <option value="spa">Special Power of Attorney (SPA)</option>
+                                    <option value="authorization_letter">Notarized Authorization Letter</option>
+                                    <option value="parent">Parent / Guardian (with proof)</option>
+                                </select>
+                            </template>
+                        </FormField>
                         <div>
                             <label :for="`release-notes-${slip.id}`" class="block text-xs font-medium text-slate-700"
                                 >Notes (optional)</label

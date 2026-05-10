@@ -362,24 +362,27 @@ function removeQr(profile) {
                                     <span class="text-xs text-slate-500">New QR preview</span>
                                 </div>
                             </div>
-                            <div>
-                                <label
-                                    :for="`edit-instructions-${profile.id}`"
-                                    class="block text-sm font-medium text-slate-700"
-                                    >Payment Instructions
-                                    <span class="text-slate-400 font-normal text-xs">(shown to students)</span></label
-                                >
-                                <textarea
-                                    :id="`edit-instructions-${profile.id}`"
-                                    v-model="getEditForm(profile).instructions"
-                                    rows="4"
-                                    maxlength="2000"
-                                    class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
-                                ></textarea>
-                                <p class="mt-1 text-xs text-slate-400">
-                                    {{ (getEditForm(profile).instructions || '').length }} / 2000
-                                </p>
-                            </div>
+                            <FormField
+                                :id="`edit-instructions-${profile.id}`"
+                                label="Payment Instructions"
+                                :error="getEditForm(profile).errors.instructions"
+                                help="Shown to students."
+                            >
+                                <template #default="{ id, describedBy, invalid }">
+                                    <textarea
+                                        :id="id"
+                                        v-model="getEditForm(profile).instructions"
+                                        rows="4"
+                                        maxlength="2000"
+                                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
+                                        :aria-describedby="describedBy"
+                                        :aria-invalid="invalid ? 'true' : undefined"
+                                    ></textarea>
+                                    <p class="mt-1 text-xs text-slate-400">
+                                        {{ (getEditForm(profile).instructions || '').length }} / 2000
+                                    </p>
+                                </template>
+                            </FormField>
                             <div class="flex items-center justify-between">
                                 <label
                                     class="inline-flex items-center gap-2 text-sm text-slate-700"
@@ -533,23 +536,28 @@ function removeQr(profile) {
                                 <span class="text-xs text-slate-500">QR preview</span>
                             </div>
                         </div>
-                        <div>
-                            <label for="create-instructions" class="block text-sm font-medium text-slate-700"
-                                >Payment Instructions
-                                <span class="text-slate-400 font-normal text-xs">(shown to students)</span></label
-                            >
-                            <textarea
-                                id="create-instructions"
-                                v-model="createForm.instructions"
-                                rows="4"
-                                maxlength="2000"
-                                placeholder="Step-by-step instructions on how students should pay and upload their receipt…"
-                                class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
-                            ></textarea>
-                            <p class="mt-1 text-xs text-slate-400">
-                                {{ (createForm.instructions || '').length }} / 2000
-                            </p>
-                        </div>
+                        <FormField
+                            id="create-instructions"
+                            label="Payment Instructions"
+                            :error="createForm.errors.instructions"
+                            help="Shown to students."
+                        >
+                            <template #default="{ id, describedBy, invalid }">
+                                <textarea
+                                    :id="id"
+                                    v-model="createForm.instructions"
+                                    rows="4"
+                                    maxlength="2000"
+                                    placeholder="Step-by-step instructions on how students should pay and upload their receipt…"
+                                    class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
+                                    :aria-describedby="describedBy"
+                                    :aria-invalid="invalid ? 'true' : undefined"
+                                ></textarea>
+                                <p class="mt-1 text-xs text-slate-400">
+                                    {{ (createForm.instructions || '').length }} / 2000
+                                </p>
+                            </template>
+                        </FormField>
                         <div class="flex items-center justify-between">
                             <label class="inline-flex items-center gap-2 text-sm text-slate-700" for="create-is-active">
                                 <input
