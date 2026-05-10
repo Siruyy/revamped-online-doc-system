@@ -7,6 +7,7 @@ defineProps({
     label: { type: String, required: true },
     variant: { type: String, default: 'subtle' },
     type: { type: String, default: 'button' },
+    disabled: { type: Boolean, default: false },
 });
 
 const variantClasses = {
@@ -33,6 +34,7 @@ const variantClasses = {
         v-else
         :type="type"
         :aria-label="label"
+        :disabled="disabled"
         :class="[
             'inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
             variantClasses[variant] ?? variantClasses.subtle,
