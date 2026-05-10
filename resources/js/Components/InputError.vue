@@ -1,15 +1,12 @@
 <script setup>
 defineProps({
-    message: {
-        type: String,
-    },
+    message: { type: String, default: '' },
+    id: { type: String, default: undefined },
 });
 </script>
 
 <template>
-    <div v-show="message">
-        <p class="text-sm text-red-600">
-            {{ message }}
-        </p>
-    </div>
+    <p v-show="message" :id="id" class="text-sm text-rose-600" role="alert" aria-live="polite">
+        {{ message }}
+    </p>
 </template>
