@@ -23,12 +23,17 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
     <GuestLayout>
         <Head title="Email Verification" />
 
-        <div class="mb-4 text-sm text-gray-600">
-            Thanks for signing up! Before getting started, could you verify your email address by clicking on the link
-            we just emailed to you? If you didn't receive the email, we will gladly send you another.
+        <div class="mb-6">
+            <h1 class="font-display text-2xl font-bold text-slate-950">Verify your email</h1>
+            <p class="mt-1 text-sm text-slate-600">
+                Use the verification link we emailed to activate your SVCI Docs account.
+            </p>
         </div>
 
-        <div v-if="verificationLinkSent" class="mb-4 text-sm font-medium text-green-600">
+        <div
+            v-if="verificationLinkSent"
+            class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-700"
+        >
             A new verification link has been sent to the email address you provided during registration.
         </div>
 

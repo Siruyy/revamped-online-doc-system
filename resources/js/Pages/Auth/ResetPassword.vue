@@ -34,6 +34,11 @@ const submit = () => {
     <GuestLayout>
         <Head title="Reset Password" />
 
+        <div class="mb-6">
+            <h1 class="font-display text-2xl font-bold text-slate-950">Set a new password</h1>
+            <p class="mt-1 text-sm text-slate-600">Choose a new password for your SVCI Docs account.</p>
+        </div>
+
         <form :aria-busy="form.processing ? 'true' : undefined" @submit.prevent="submit">
             <FormField id="email" label="Email" :error="form.errors.email" required>
                 <template #default="{ id, describedBy, invalid }">

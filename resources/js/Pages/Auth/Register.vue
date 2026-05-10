@@ -27,6 +27,11 @@ const submit = () => {
     <GuestLayout>
         <Head title="Register" />
 
+        <div class="mb-6">
+            <h1 class="font-display text-2xl font-bold text-slate-950">Create an account</h1>
+            <p class="mt-1 text-sm text-slate-600">Submit your student details for SuperAdmin approval.</p>
+        </div>
+
         <form :aria-busy="form.processing ? 'true' : undefined" @submit.prevent="submit">
             <FormField id="name" label="Full Name" :error="form.errors.name" required>
                 <template #default="{ id, describedBy, invalid }">

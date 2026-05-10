@@ -20,8 +20,9 @@ const submit = () => {
     <GuestLayout>
         <Head title="Confirm Password" />
 
-        <div class="mb-4 text-sm text-gray-600">
-            This is a secure area of the application. Please confirm your password before continuing.
+        <div class="mb-6">
+            <h1 class="font-display text-2xl font-bold text-slate-950">Confirm password</h1>
+            <p class="mt-1 text-sm text-slate-600">This is a secure area. Confirm your password before continuing.</p>
         </div>
 
         <form :aria-busy="form.processing ? 'true' : undefined" @submit.prevent="submit">

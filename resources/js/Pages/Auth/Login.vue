@@ -32,6 +32,11 @@ const submit = () => {
     <GuestLayout>
         <Head title="Log in" />
 
+        <div class="mb-6">
+            <h1 class="font-display text-2xl font-bold text-slate-950">Log in</h1>
+            <p class="mt-1 text-sm text-slate-600">Use your approved SVCI account to continue.</p>
+        </div>
+
         <div
             v-if="status"
             class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-700"
