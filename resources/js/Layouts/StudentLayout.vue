@@ -45,7 +45,10 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                 <div class="flex h-14 items-center justify-between gap-4">
                     <!-- Logo + nav links -->
                     <div class="flex items-center gap-6">
-                        <Link :href="route('student.dashboard')" class="flex items-center gap-2.5 group shrink-0">
+                        <Link
+                            :href="route('student.dashboard')"
+                            class="group flex min-h-11 min-w-11 shrink-0 items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                        >
                             <div
                                 class="bg-brand-600 p-1.5 rounded-lg shadow-sm group-hover:bg-brand-500 transition-colors"
                             >
@@ -57,7 +60,7 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                         </Link>
 
                         <!-- Desktop nav links -->
-                        <div class="hidden md:flex items-center gap-1">
+                        <div class="hidden items-center gap-1 lg:flex">
                             <Link
                                 v-for="link in studentLinks"
                                 :key="link.route"
@@ -81,10 +84,10 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
 
                     <!-- Right side: icons + avatar -->
                     <div class="flex items-center gap-1">
-                        <MessageBell class="hidden md:inline-flex" />
+                        <MessageBell class="hidden lg:inline-flex" />
                         <NotificationBell />
-                        <div class="h-5 w-px bg-slate-200 mx-1 hidden md:block"></div>
-                        <div class="hidden md:block">
+                        <div class="mx-1 hidden h-5 w-px bg-slate-200 lg:block"></div>
+                        <div class="hidden lg:block">
                             <UserAvatar />
                         </div>
                         <!-- Logout (desktop) -->
@@ -92,15 +95,15 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                             :href="route('logout')"
                             method="post"
                             as="button"
-                            class="hidden md:inline-flex items-center gap-1.5 ml-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                            class="ml-1 hidden min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 lg:inline-flex"
                         >
-                            <ArrowLeftOnRectangleIcon class="w-4 h-4" />
+                            <ArrowLeftOnRectangleIcon class="w-4 h-4" aria-hidden="true" />
                             <span class="hidden lg:inline">Log Out</span>
                         </Link>
                         <!-- Mobile hamburger -->
                         <button
                             type="button"
-                            class="md:hidden inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                            class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 lg:hidden"
                             :aria-label="showMobileMenu ? 'Close navigation menu' : 'Open navigation menu'"
                             :aria-expanded="showMobileMenu"
                             aria-controls="student-mobile-navigation"
@@ -118,7 +121,7 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                 <div
                     v-if="showMobileMenu"
                     id="student-mobile-navigation"
-                    class="md:hidden bg-white border-t border-slate-200 shadow-lg absolute w-full"
+                    class="absolute w-full border-t border-slate-200 bg-white shadow-lg lg:hidden"
                 >
                     <div class="px-4 py-3 space-y-1">
                         <Link
@@ -153,9 +156,9 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                             :href="route('logout')"
                             method="post"
                             as="button"
-                            class="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                            class="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
                         >
-                            <ArrowLeftOnRectangleIcon class="w-4 h-4" />
+                            <ArrowLeftOnRectangleIcon class="w-4 h-4" aria-hidden="true" />
                             Log Out
                         </Link>
                     </div>

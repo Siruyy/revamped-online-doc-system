@@ -235,13 +235,18 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                 <!-- Collapse toggle -->
                 <button
                     type="button"
-                    class="flex w-full items-center rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                    :class="sidebarCollapsed ? 'justify-center py-2.5 h-10' : 'gap-3 px-3 py-2.5'"
+                    class="flex min-h-11 w-full items-center rounded-lg text-sm font-medium text-slate-400 transition-colors hover:bg-slate-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+                    :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'"
+                    :aria-label="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
                     :title="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
                     @click="sidebarCollapsed = !sidebarCollapsed"
                 >
-                    <ChevronRightIcon v-if="sidebarCollapsed" class="w-5 h-5 shrink-0 text-slate-500" />
-                    <ChevronLeftIcon v-else class="w-5 h-5 shrink-0 text-slate-500" />
+                    <ChevronRightIcon
+                        v-if="sidebarCollapsed"
+                        class="w-5 h-5 shrink-0 text-slate-500"
+                        aria-hidden="true"
+                    />
+                    <ChevronLeftIcon v-else class="w-5 h-5 shrink-0 text-slate-500" aria-hidden="true" />
                     <span v-if="!sidebarCollapsed" class="text-xs">Collapse</span>
                 </button>
                 <!-- Log out -->
@@ -249,11 +254,12 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                     :href="route('logout')"
                     method="post"
                     as="button"
-                    class="flex w-full items-center rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                    :class="sidebarCollapsed ? 'justify-center py-2.5 h-10' : 'gap-3 px-3 py-2.5'"
+                    class="flex min-h-11 w-full items-center rounded-lg text-sm font-medium text-slate-400 transition-colors hover:bg-slate-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+                    :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'"
+                    :aria-label="sidebarCollapsed ? 'Log Out' : undefined"
                     :title="sidebarCollapsed ? 'Log Out' : undefined"
                 >
-                    <ArrowLeftOnRectangleIcon class="w-5 h-5 shrink-0 text-slate-500" />
+                    <ArrowLeftOnRectangleIcon class="w-5 h-5 shrink-0 text-slate-500" aria-hidden="true" />
                     <span v-if="!sidebarCollapsed">Log Out</span>
                 </Link>
             </div>
@@ -317,10 +323,12 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                         <div class="h-14 flex items-center justify-between px-5 bg-slate-950 border-b border-slate-800">
                             <span class="font-display font-bold text-base text-white">SVCI Staff</span>
                             <button
-                                class="p-1.5 text-slate-400 hover:text-white rounded-lg"
+                                type="button"
+                                class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+                                aria-label="Close navigation menu"
                                 @click="showSidebar = false"
                             >
-                                <XMarkIcon class="w-5 h-5" />
+                                <XMarkIcon class="w-5 h-5" aria-hidden="true" />
                             </button>
                         </div>
                         <nav class="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
@@ -349,9 +357,9 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                                 :href="route('logout')"
                                 method="post"
                                 as="button"
-                                class="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                                class="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
                             >
-                                <ArrowLeftOnRectangleIcon class="w-5 h-5 text-slate-500" />
+                                <ArrowLeftOnRectangleIcon class="w-5 h-5 text-slate-500" aria-hidden="true" />
                                 Log Out
                             </Link>
                         </div>

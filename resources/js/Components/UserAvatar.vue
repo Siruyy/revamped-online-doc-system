@@ -23,7 +23,8 @@ const initials = computed(() => {
         <template #trigger>
             <button
                 type="button"
-                class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-sm font-semibold text-white"
+                class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-slate-800 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                aria-label="Open user menu"
             >
                 {{ initials }}
             </button>
