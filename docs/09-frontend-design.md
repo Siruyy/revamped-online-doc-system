@@ -118,23 +118,27 @@ theme: {
 
 ```vue
 <script setup>
-const props = defineProps({ status: String });
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 
-const variants = {
-    pending: 'bg-amber-100 text-amber-700 ring-amber-600/20',
-    approved: 'bg-emerald-100 text-emerald-700 ring-emerald-600/20',
-    denied: 'bg-rose-100 text-rose-700 ring-rose-600/20',
-    completed: 'bg-sky-100 text-sky-700 ring-sky-600/20',
-    cancelled: 'bg-slate-100 text-slate-600 ring-slate-500/20',
+const statusBadge = {
+    pending: { label: 'Pending', tone: 'warning' },
+    approved: { label: 'Approved', tone: 'success' },
+    denied: { label: 'Denied', tone: 'danger' },
+    completed: { label: 'Completed', tone: 'info' },
+    cancelled: { label: 'Cancelled', tone: 'neutral' },
 };
-
-const classes = computed(() => variants[props.status] ?? variants.pending);
 </script>
 
 <template>
-    <span :class="['inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset capitalize', classes]">
-        {{ status }}
-    </span>
+    <StatusBadge
+        :label="statusBadge.pending.label"
+        :tone="statusBadge.pending.tone"
+        size="sm"
+    />
+
+    <StatusBadge label="Custom label" tone="brand" size="md">
+        Slotted label
+    </StatusBadge>
 </template>
 ```
 

@@ -33,7 +33,7 @@ const filterByReadState = (value) => {
 };
 
 const markAllAsRead = () => {
-    markAllReadForm.post(route(`${routePrefix}.notifications.mark-all-read`));
+    markAllReadForm.post(route(`${routePrefix}.notifications.mark-all-read`), { preserveScroll: true });
 };
 
 const markAsRead = (notification) => {
@@ -43,6 +43,7 @@ const markAsRead = (notification) => {
         route(`${routePrefix}.notifications.mark-read`, notification.id),
         {},
         {
+            preserveScroll: true,
             onFinish: () => {
                 const next = new Set(markingReadIds.value);
                 next.delete(notification.id);

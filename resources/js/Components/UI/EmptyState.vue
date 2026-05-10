@@ -20,10 +20,12 @@ const variantClasses = {
     table: 'p-8 text-center',
 };
 
-const containerClass = computed(() => {
-    const variantClass = variantClasses[props.variant] ?? variantClasses.panel;
+const resolvedVariant = computed(() => (variantClasses[props.variant] ? props.variant : 'panel'));
 
-    if (variantClass === variantClasses.panel) {
+const containerClass = computed(() => {
+    const variantClass = variantClasses[resolvedVariant.value];
+
+    if (resolvedVariant.value === 'panel') {
         return [variantClass, props.compact ? 'p-6' : 'p-10'];
     }
 

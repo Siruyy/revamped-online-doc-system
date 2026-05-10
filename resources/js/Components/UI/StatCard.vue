@@ -1,4 +1,5 @@
 <script setup>
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const props = defineProps({
@@ -24,7 +25,7 @@ const tone = computed(() => tones[props.tone] ?? tones.brand);
 
 <template>
     <component
-        :is="href ? 'a' : 'div'"
+        :is="href ? Link : 'div'"
         :href="href || undefined"
         class="block rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition"
         :class="

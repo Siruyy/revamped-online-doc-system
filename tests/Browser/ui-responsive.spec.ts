@@ -123,4 +123,23 @@ test.describe('mobile interaction guardrails', () => {
         await visitReady(page, '/student/dashboard');
         await expectPrimaryTouchTargets(page);
     });
+
+    test('student message control is disabled while messaging is unavailable', async ({ page }) => {
+        await loginAs(page, 'student');
+        await visitReady(page, '/student/dashboard');
+
+        await page.getByRole('button', { name: /navigation menu/i }).click();
+
+        const messageControl = page.getByRole('button', { name: /messages are not available yet/i });
+        await expect(messageControl).toBeDisabled();
+        await expect(messageControl).not.toHaveAttribute('href', '#');
+    });
+
+    test('required field markers stay hidden from exact label names', async ({ page }) => {
+        await visitReady(page, '/login');
+
+        await expect(page.getByLabel('Email', { exact: true })).toBeVisible();
+        await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
+        await expect(page.locator('label[for="email"] + span[aria-hidden="true"]')).toHaveText('*');
+    });
 });
