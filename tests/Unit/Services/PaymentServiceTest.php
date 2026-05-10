@@ -14,6 +14,7 @@ use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -24,6 +25,7 @@ class PaymentServiceTest extends TestCase
     public function test_it_uploads_receipt_after_request_approval(): void
     {
         Event::fake([PaymentSubmitted::class]);
+        Notification::fake();
         Storage::fake('local');
 
         $student = User::factory()->student()->create();
@@ -73,6 +75,7 @@ class PaymentServiceTest extends TestCase
     public function test_it_approves_payment_and_creates_clearance_when_required(): void
     {
         Event::fake([PaymentApproved::class, ClearanceCreated::class]);
+        Notification::fake();
 
         $admin = User::factory()->admin()->create();
         $student = User::factory()->student()->create();
@@ -97,6 +100,7 @@ class PaymentServiceTest extends TestCase
     public function test_it_denies_payment_with_reason(): void
     {
         Event::fake([PaymentDenied::class]);
+        Notification::fake();
 
         $admin = User::factory()->admin()->create();
         $student = User::factory()->student()->create();

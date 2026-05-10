@@ -63,6 +63,7 @@ class ClearanceServiceTest extends TestCase
     public function test_it_signs_department_and_recomputes_in_progress_status(): void
     {
         Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
 
         $teacher = User::factory()->teacher()->create();
         $student = User::factory()->student()->create();
@@ -86,6 +87,7 @@ class ClearanceServiceTest extends TestCase
     public function test_it_denies_department_and_recomputes_denied_status(): void
     {
         Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
 
         $dean = User::factory()->dean()->create();
         $student = User::factory()->student()->create();

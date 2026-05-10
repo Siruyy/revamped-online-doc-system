@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PaymentProfileController;
 use App\Http\Controllers\Admin\ReleaseController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\ReportExportController;
 use App\Http\Controllers\Admin\RequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
@@ -72,6 +73,8 @@ Route::middleware('throttle:sensitive-actions')->group(function () {
 });
 
 Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+Route::get('/reports/exports/requests', [ReportExportController::class, 'requests'])->name('reports.exports.requests');
+Route::get('/reports/exports/payments', [ReportExportController::class, 'payments'])->name('reports.exports.payments');
 
 Route::get('/settings/payment-profile', [PaymentProfileController::class, 'index'])->name('settings.payment-profile.index');
 Route::middleware('throttle:sensitive-actions')->group(function () {

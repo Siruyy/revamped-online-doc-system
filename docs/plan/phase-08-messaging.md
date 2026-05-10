@@ -2,7 +2,9 @@
 
 > **Goal:** Add authorized real-time messaging between allowed roles with unread counts, conversation views, and broadcast delivery.
 
-**Status:** Not started. `Message` model exists, but controller, service, routes, pages, events, and unread flow are missing.
+**Status:** Deferred. `Message` model and bell placeholder exist, but v1 messaging implementation is intentionally deferred while Phase 07 notifications and Phase 09 PDF/export work are prioritized.
+
+**Phase notes (2026-05-10):** Client confirmed messaging should be deferred for now. Do not expose new messaging UI or routes until this phase is explicitly reactivated.
 
 **Depends on:** Phase 07.
 
@@ -15,12 +17,12 @@
 **Delegate to:** architect
 
 **Steps:**
-- [ ] Confirm v1 includes messaging. If not, mark Phase 08 deferred in `docs/plan/README.md` and hide all message UI affordances.
+- [x] Confirm v1 includes messaging. If not, mark Phase 08 deferred in `docs/plan/README.md` and hide all message UI affordances.
 - [ ] Confirm allowed conversations: student↔admin/superadmin, admin↔student/superadmin/department, department↔admin/superadmin, superadmin↔anyone.
 - [ ] Confirm attachments are out of v1 unless client explicitly asks.
 
 **Acceptance:**
-- [ ] Messaging is either explicitly in scope or explicitly deferred.
+- [x] Messaging is explicitly deferred.
 
 ## Agent Task 8.2 — Message Service And Authorization Rules
 

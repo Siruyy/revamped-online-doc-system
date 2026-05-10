@@ -13,8 +13,8 @@ Core MVP exists for setup, schema, auth, student, and admin flows. Remaining wor
 | 05 | Department Clearance Closeout | [`phase-05-department-clearance.md`](./phase-05-department-clearance.md) | Active closeout | backend + tests |
 | 06 | SuperAdmin Closeout | [`phase-06-superadmin-features.md`](./phase-06-superadmin-features.md) | Active closeout | backend + security |
 | 07 | Real-Time & Notifications | [`phase-07-realtime-and-notifications.md`](./phase-07-realtime-and-notifications.md) | Partial | backend + realtime |
-| 08 | Messaging | [`phase-08-messaging.md`](./phase-08-messaging.md) | Not started | backend + frontend |
-| 09 | PDF Generation & Exports | [`phase-09-pdf-and-exports.md`](./phase-09-pdf-and-exports.md) | Not started | backend + reporting |
+| 08 | Messaging | [`phase-08-messaging.md`](./phase-08-messaging.md) | Deferred | backend + frontend |
+| 09 | PDF Generation & Exports | [`phase-09-pdf-and-exports.md`](./phase-09-pdf-and-exports.md) | Partial | backend + reporting |
 | 10 | UI/UX Polish | [`phase-10-ui-polish.md`](./phase-10-ui-polish.md) | Not started | frontend + accessibility |
 | 11 | Testing & Hardening | [`phase-11-testing-and-hardening.md`](./phase-11-testing-and-hardening.md) | Not started | verification + security |
 | 12 | Deployment | [`phase-12-deployment.md`](./phase-12-deployment.md) | Not started | deployment |
@@ -36,9 +36,9 @@ Completed phases are archived in [`finished/`](./finished/). Do not edit archive
 ## Recommended Execution Order
 
 1. Phase 11 Task 11.1: fix CI blockers first (`phpstan.neon`, Pint, ESLint, coverage driver/CI DB parity).
-2. Phase 07: finish queued/broadcast notifications and verify Reverb manually.
-3. Phase 09: replace stub clearance PDF and add exports.
-4. Phase 08: implement messaging or explicitly defer it from v1.
+2. Phase 07: manually verify Reverb, queue worker, and browser notification bell behavior.
+3. Phase 09: add UI links and XLSX only if the client asks; CSV exports and clearance PDF generation now exist.
+4. Phase 08: messaging is explicitly deferred from v1.
 5. Phase 05 and 06: close out department and SuperAdmin gaps.
 6. Phase 10: UI/accessibility polish.
 7. Phase 12: production deployment artifacts and Dokploy setup.

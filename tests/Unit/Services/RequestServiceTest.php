@@ -16,6 +16,7 @@ use App\Services\RequestService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class RequestServiceTest extends TestCase
@@ -70,6 +71,7 @@ class RequestServiceTest extends TestCase
     public function test_it_approves_pending_request_and_starts_sla_when_allowed(): void
     {
         Event::fake([RequestApproved::class]);
+        Notification::fake();
 
         $admin = User::factory()->admin()->create();
         $student = User::factory()->student()->create();
@@ -96,6 +98,7 @@ class RequestServiceTest extends TestCase
     public function test_it_denies_pending_or_approved_request_with_reason(): void
     {
         Event::fake([RequestDenied::class]);
+        Notification::fake();
 
         $admin = User::factory()->admin()->create();
         $student = User::factory()->student()->create();
@@ -165,6 +168,7 @@ class RequestServiceTest extends TestCase
     public function test_it_updates_stage_and_issues_claim_slip_when_ready_for_pickup(): void
     {
         Event::fake([RequestStageUpdated::class]);
+        Notification::fake();
 
         $admin = User::factory()->admin()->create();
         $student = User::factory()->student()->create();

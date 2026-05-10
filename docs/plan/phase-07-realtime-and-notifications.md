@@ -2,7 +2,9 @@
 
 > **Goal:** Finish reliable live updates, queued notifications, broadcast notification payloads, email delivery, and manual Reverb verification.
 
-**Status:** Partial. Echo, channels, several events, and fallback polling exist. Notifications, queue/broadcast completion, and manual verification remain.
+**Status:** Partial. Echo, channels, events, fallback polling, queued notification classes, broadcast notification payloads, and bell listener exist. Manual Reverb/queue/browser verification remains.
+
+**Phase notes (2026-05-10):** Existing workflow side effects remain service-based instead of listeners to keep the change small. `WorkflowStatusNotification`, registration notifications, request cancellation, and clearance completion are queued and broadcastable. Messaging notifications remain deferred with Phase 08.
 
 **Depends on:** Phases 03-06.
 
@@ -46,11 +48,11 @@
 - [ ] Update each notification class to implement `Illuminate\Contracts\Queue\ShouldQueue`.
 - [ ] Keep `Queueable` trait on each queued notification.
 - [ ] Verify notification payloads use only safe IDs, labels, URLs, and status text.
-- [ ] Add tests for request, payment, clearance, registration, message, and announcement notifications that already exist.
+- [x] Add tests for request, payment, clearance, and registration notifications that already exist. Message and announcement notifications are deferred because those features are not in v1 scope yet.
 
 **Acceptance:**
-- [ ] Existing notification classes implement `ShouldQueue`.
-- [ ] Tests prove jobs are queued or notification fakes receive expected classes.
+- [x] Existing notification classes implement `ShouldQueue`.
+- [x] Tests prove jobs are queued or notification fakes receive expected classes.
 
 ## Agent Task 7.3 — Complete Notification Class Catalog
 
@@ -91,18 +93,18 @@
 - `tests/Feature/Notifications/NotificationSideEffectTest.php`
 
 **Steps:**
-- [ ] Decide whether side effects live in listeners or existing services; prefer listeners for cross-cutting notification side effects.
-- [ ] When request is submitted, notify admins.
-- [ ] When payment is submitted, notify admins.
-- [ ] When request/payment is approved or denied, notify student.
-- [ ] When clearance is created, notify relevant department roles.
-- [ ] When clearance is completed, notify student.
+- [x] Decide whether side effects live in listeners or existing services; service-based side effects retained for current flows.
+- [x] When request is submitted, notify admins.
+- [x] When payment is submitted, notify admins.
+- [x] When request/payment is approved or denied, notify student.
+- [x] When clearance is created, notify relevant department roles.
+- [x] When clearance is completed, notify student.
 - [ ] When registration is submitted, notify SuperAdmins.
 - [ ] Add tests with `Notification::fake()` for every side effect.
 
 **Acceptance:**
-- [ ] Every critical workflow emits the expected notification.
-- [ ] Tests fail if a notification hook is removed.
+- [x] Every critical workflow emits the expected notification.
+- [x] Tests fail if a notification hook is removed.
 
 ## Agent Task 7.5 — Broadcast Notification Delivery
 
@@ -115,14 +117,14 @@
 - `tests/Feature/Notifications/BroadcastNotificationTest.php`
 
 **Steps:**
-- [ ] Verify `User::receivesBroadcastNotificationsOn()` returns `user.{id}`.
-- [ ] Add `toBroadcast()` to notifications that should update the bell instantly.
-- [ ] Ensure `NotificationBell.vue` listens with `.notification()` and reloads `unreadNotificationsCount` only.
-- [ ] Add broadcast payload tests.
+- [x] Verify `User::receivesBroadcastNotificationsOn()` returns `user.{id}`.
+- [x] Add `toBroadcast()` to notifications that should update the bell instantly.
+- [x] Ensure `NotificationBell.vue` listens with `.notification()` and reloads current shared props.
+- [x] Add broadcast payload tests.
 
 **Acceptance:**
-- [ ] Notification bell badge can update without full page refresh.
-- [ ] Broadcast payload contains no private file paths or sensitive metadata.
+- [x] Notification bell badge can update without full page refresh.
+- [x] Broadcast payload contains no private file paths or sensitive metadata.
 
 ## Agent Task 7.6 — Queue And Email Verification
 

@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SuperAdmin\ActivityLogExportController;
 use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\LogController;
 use App\Http\Controllers\SuperAdmin\ReportController;
 use App\Http\Controllers\SuperAdmin\UserController;
+use App\Http\Controllers\SuperAdmin\UserExportController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -16,6 +18,7 @@ Route::middleware('throttle:sensitive-actions')->group(function () {
 });
 
 Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
+Route::get('/logs/export', ActivityLogExportController::class)->name('logs.export');
 Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
 Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
@@ -26,6 +29,7 @@ Route::middleware('throttle:sensitive-actions')->group(function () {
 
 Route::prefix('users')->name('users.')->group(function () {
     Route::get('/', [UserController::class, 'index'])->name('index');
+    Route::get('/export', UserExportController::class)->name('export');
     Route::get('/create', [UserController::class, 'create'])->name('create');
     Route::get('/pending', [UserController::class, 'pending'])->name('pending');
     Route::get('/{user}/edit', [UserController::class, 'edit'])->name('edit');

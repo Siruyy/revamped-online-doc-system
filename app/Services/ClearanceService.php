@@ -15,6 +15,8 @@ use Illuminate\Support\Str;
 
 class ClearanceService
 {
+    public function __construct(private PdfService $pdfService) {}
+
     /**
      * @return array{status: string, remarks: string, signed_by: string, signed_at: string}
      */
@@ -127,7 +129,7 @@ class ClearanceService
             $locked->refresh();
 
             if ($locked->overall_status === 'completed' && $beforeOverall !== 'completed') {
-                $this->ensureStubClearancePdf($locked);
+                $this->pdfService->generateClearancePdf($locked);
                 $locked->refresh();
                 ClearanceCompleted::dispatch($locked->id, $locked->user_id);
                 $locked->user->notify(new ClearanceCompletedNotification($locked));
@@ -183,20 +185,5 @@ class ClearanceService
 
             return $locked->refresh();
         });
-    }
-
-    /**
-     * Phase 09 replaces this with real PDF generation; for now we persist a minimal file so downloads work.
-     */
-    private function ensureStubClearancePdf(Clearance $clearance): void
-    {
-        if ($clearance->pdf_path && Storage::disk('local')->exists($clearance->pdf_path)) {
-            return;
-        }
-
-        $relativePath = 'pdfs/clearance/'.$clearance->user_id.'/clearance-'.$clearance->id.'.pdf';
-        Storage::disk('local')->put($relativePath, "%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n");
-
-        $clearance->update(['pdf_path' => $relativePath]);
     }
 }

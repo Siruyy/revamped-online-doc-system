@@ -18,6 +18,10 @@ use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\ClearanceCompletedNotification;
+use App\Notifications\RegistrationApprovedNotification;
+use App\Notifications\RegistrationRejectedNotification;
+use App\Notifications\RegistrationSubmittedNotification;
+use App\Notifications\RequestCancelledNotification;
 use App\Notifications\WorkflowStatusNotification;
 use App\Services\ClearanceService;
 use App\Services\PaymentService;
@@ -245,9 +249,30 @@ class BroadcastNotificationRegressionTest extends TestCase
         );
     }
 
-    public function test_workflow_status_notification_is_queued(): void
+    public function test_workflow_notifications_are_queued(): void
     {
-        $this->assertContains(ShouldQueue::class, class_implements(WorkflowStatusNotification::class));
+        foreach ([
+            WorkflowStatusNotification::class,
+            ClearanceCompletedNotification::class,
+            RequestCancelledNotification::class,
+            RegistrationSubmittedNotification::class,
+            RegistrationApprovedNotification::class,
+            RegistrationRejectedNotification::class,
+        ] as $notificationClass) {
+            $this->assertContains(ShouldQueue::class, class_implements($notificationClass));
+        }
+    }
+
+    public function test_workflow_status_notification_broadcasts_database_payload(): void
+    {
+        $student = $this->activeUser('student');
+        $notification = new WorkflowStatusNotification([
+            'type' => 'request_approved',
+            'message' => 'Your request was approved.',
+        ]);
+
+        $this->assertSame(['database', 'broadcast'], $notification->via($student));
+        $this->assertSame($notification->toArray($student), $notification->toBroadcast($student)->data);
     }
 
     private function activeUser(string $role): User

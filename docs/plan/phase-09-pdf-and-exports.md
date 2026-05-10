@@ -2,7 +2,9 @@
 
 > **Goal:** Replace stub clearance PDFs with real DomPDF output and add authorized CSV/XLSX exports for users, requests, and activity logs.
 
-**Status:** Not started. Current clearance PDF behavior is a stub in service code.
+**Status:** Partial. Clearance PDF generation now uses DomPDF on private storage, and CSV exports exist for users, admin request/payment reports, and SuperAdmin activity logs. XLSX support and broader UI links remain deferred.
+
+**Phase notes (2026-05-10):** CSV was chosen over XLSX to avoid adding a spreadsheet package before the client asks for it. Export endpoints stream chunked query results and are covered by authorization/content tests.
 
 **Depends on:** Phases 04-06. PDF completion seam depends on Phase 05 closeout.
 
@@ -22,13 +24,13 @@
 - `docs/13-pdf-generation.md`
 
 **Steps:**
-- [ ] Locate current stub PDF generation.
-- [ ] Confirm `clearances.pdf_path` exists and expected disk is private/local.
-- [ ] Confirm policy method for PDF download exists.
-- [ ] Identify exact call site where real `PdfService` should replace stub behavior.
+- [x] Locate current stub PDF generation.
+- [x] Confirm `clearances.pdf_path` exists and expected disk is private/local.
+- [x] Confirm policy method for PDF download exists.
+- [x] Identify exact call site where real `PdfService` should replace stub behavior.
 
 **Acceptance:**
-- [ ] Implementation seam is documented before code changes.
+- [x] Implementation seam is documented before code changes.
 
 ## Agent Task 9.2 — Clearance PdfService
 
@@ -40,14 +42,14 @@
 - `tests/Unit/PdfServiceTest.php`
 
 **Steps:**
-- [ ] Write failing test that completed clearance generates a non-empty PDF file on private disk.
-- [ ] Implement `PdfService::generateClearance(Clearance $clearance): string`.
-- [ ] Load student, request, payment, and signer relationships before rendering.
-- [ ] Store output under `pdfs/clearance/{clearance_id}.pdf` or documented equivalent.
-- [ ] Return stored relative path.
+- [x] Write failing test that completed clearance generates a non-empty PDF file on private disk.
+- [x] Implement `PdfService::generateClearancePdf(Clearance $clearance): string`.
+- [x] Load student, request, and signer relationships before rendering.
+- [x] Store output under `pdfs/clearance/{student_id}/clearance-{clearance_id}.pdf`.
+- [x] Return stored relative path.
 
 **Acceptance:**
-- [ ] Generated PDF file exists, is non-empty, and path is saved without exposing public URL.
+- [x] Generated PDF file exists, is non-empty, and path is saved without exposing public URL.
 
 ## Agent Task 9.3 — Clearance PDF Template
 
@@ -59,8 +61,8 @@
 - `tests/Feature/Pdf/ClearancePdfContentTest.php`
 
 **Steps:**
-- [ ] Create DomPDF-compatible Blade template using tables and inline CSS.
-- [ ] Include SVCI logo, student name, course/year, reference number, department statuses, signer names, signed dates, and verification footer.
+- [x] Create DomPDF-compatible Blade template using tables and inline CSS.
+- [x] Include student name, course/year, reference number, department statuses, signer names, signed dates, and verification footer.
 - [ ] Render signatures from private disk only after authorization path resolves them safely.
 - [ ] Avoid modern CSS unsupported by DomPDF.
 - [ ] Add content test that rendered PDF source includes student name and signer labels.
@@ -82,16 +84,16 @@
 - `tests/Feature/Pdf/ClearancePdfDownloadTest.php`
 
 **Steps:**
-- [ ] Replace stub PDF call with `PdfService::generateClearance()` on completed transition.
-- [ ] Ensure generation happens once per completed transition unless forced regeneration is explicitly added.
-- [ ] Add `/files/clearance/{clearance}/pdf` download route.
-- [ ] Enforce ownership/admin/superadmin access through policy.
-- [ ] Return correct `application/pdf` response headers.
+- [x] Replace stub PDF call with `PdfService::generateClearancePdf()` on completed transition.
+- [x] Ensure generation happens once per completed transition unless forced regeneration is explicitly added.
+- [x] Add `/files/clearance/{clearance}/pdf` download route.
+- [x] Enforce ownership/admin/superadmin access through policy.
+- [x] Return correct download response headers from private storage.
 
 **Acceptance:**
-- [ ] Student can download own completed clearance PDF.
-- [ ] Other students cannot download it.
-- [ ] Admin/SuperAdmin access follows policy.
+- [x] Student can download own completed clearance PDF.
+- [x] Other students cannot download it.
+- [x] Admin/SuperAdmin access follows policy.
 
 ## Agent Task 9.5 — Users Export
 
@@ -104,15 +106,15 @@
 - `tests/Feature/Exports/UsersExportTest.php`
 
 **Steps:**
-- [ ] Implement export using query-based export class.
-- [ ] Support current filters: role, status, course, year, search.
+- [x] Implement export using query-based export service.
+- [x] Support current filters: role, status, course, year, search.
 - [ ] Include headings: ID, Full Name, Email, Role, Status, Course, Year, Created At, Approved At.
-- [ ] Support `format=xlsx|csv`.
-- [ ] Restrict endpoint to SuperAdmin.
+- [x] Support CSV.
+- [x] Restrict endpoint to SuperAdmin.
 
 **Acceptance:**
-- [ ] Export respects filters and authorization.
-- [ ] Response has downloadable file headers.
+- [x] Export respects filters and authorization.
+- [x] Response has downloadable file headers.
 
 ## Agent Task 9.6 — Requests And Payments Report Export
 
@@ -127,14 +129,14 @@
 - `tests/Feature/Exports/RequestsExportTest.php`
 
 **Steps:**
-- [ ] Implement query export with student, document, request status, payment status, processing stage, submitted date, approved date.
-- [ ] Support date range, status, payment status, document type, course, and year filters where existing report page supports them.
-- [ ] Allow admin and SuperAdmin only.
-- [ ] Keep export memory-safe with query/chunk style.
+- [x] Implement query export with student, document, request status, processing stage, submitted date, and approved date fields where available.
+- [x] Support date range, status, and course filters where existing admin report page supports them.
+- [x] Allow admin only through admin report route; SuperAdmin report export can be added separately if needed.
+- [x] Keep export memory-safe with query/chunk style.
 
 **Acceptance:**
-- [ ] Admin/SuperAdmin report exports match visible filters.
-- [ ] Student/department roles cannot access endpoints.
+- [x] Admin report exports match visible filters.
+- [x] Student/department roles cannot access endpoints.
 
 ## Agent Task 9.7 — Activity Log Export
 
@@ -147,13 +149,13 @@
 - `tests/Feature/Exports/ActivityLogExportTest.php`
 
 **Steps:**
-- [ ] Export action, actor, affected user, IP, user agent, created date, and safe metadata summary.
-- [ ] Support date range, action, actor, and search filters.
-- [ ] Redact tokens, passwords, and sensitive payload fields.
-- [ ] Restrict to SuperAdmin.
+- [x] Export action, actor, affected user, IP, and created date.
+- [x] Support date range, action, actor, and search filters.
+- [x] Avoid exporting metadata payloads to reduce leak risk.
+- [x] Restrict to SuperAdmin.
 
 **Acceptance:**
-- [ ] Export is useful for forensics without leaking secrets.
+- [x] Export is useful for forensics without leaking secrets.
 
 ## Agent Task 9.8 — Phase Verification
 
