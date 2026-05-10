@@ -1,6 +1,5 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
-import DataTableShell from '@/Components/UI/DataTableShell.vue';
 import EmptyState from '@/Components/UI/EmptyState.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import {
@@ -271,41 +270,49 @@ function relativeAge(value) {
                 />
                 <template v-else>
                     <p class="px-6 pt-4 text-xs text-slate-500 md:hidden">Swipe horizontally to view all columns.</p>
-                    <DataTableShell label="Overdue requests table" min-width="min-w-[64rem]">
-                        <table class="min-w-full text-sm">
-                            <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                                <tr>
-                                    <th class="px-6 py-3 text-left">Reference</th>
-                                    <th class="px-6 py-3 text-left">Student</th>
-                                    <th class="px-6 py-3 text-left">Document</th>
-                                    <th class="px-6 py-3 text-left">Expected</th>
-                                    <th class="px-6 py-3"></th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                <tr v-for="item in overdueRequests" :key="item.id" class="hover:bg-rose-50/40">
-                                    <td class="px-6 py-3 font-mono text-xs text-slate-700">{{ item.reference_no }}</td>
-                                    <td class="px-6 py-3 text-slate-900">{{ item.user?.fullname }}</td>
-                                    <td class="px-6 py-3 text-slate-700">{{ item.document_type?.name }}</td>
-                                    <td class="px-6 py-3 text-rose-700 font-semibold">
-                                        {{
-                                            new Date(item.expected_release_on).toLocaleDateString('en-US', {
-                                                month: 'short',
-                                                day: 'numeric',
-                                            })
-                                        }}
-                                    </td>
-                                    <td class="px-6 py-3 text-right">
-                                        <Link
-                                            :href="route('admin.requests.show', item.id)"
-                                            class="text-brand-700 font-semibold hover:underline"
-                                            >Open</Link
-                                        >
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </DataTableShell>
+                    <div
+                        class="overflow-x-auto"
+                        tabindex="0"
+                        aria-label="Overdue requests table. Scroll horizontally if needed."
+                    >
+                        <div class="min-w-[64rem]">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left">Reference</th>
+                                        <th class="px-6 py-3 text-left">Student</th>
+                                        <th class="px-6 py-3 text-left">Document</th>
+                                        <th class="px-6 py-3 text-left">Expected</th>
+                                        <th class="px-6 py-3"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr v-for="item in overdueRequests" :key="item.id" class="hover:bg-rose-50/40">
+                                        <td class="px-6 py-3 font-mono text-xs text-slate-700">
+                                            {{ item.reference_no }}
+                                        </td>
+                                        <td class="px-6 py-3 text-slate-900">{{ item.user?.fullname }}</td>
+                                        <td class="px-6 py-3 text-slate-700">{{ item.document_type?.name }}</td>
+                                        <td class="px-6 py-3 text-rose-700 font-semibold">
+                                            {{
+                                                new Date(item.expected_release_on).toLocaleDateString('en-US', {
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                })
+                                            }}
+                                        </td>
+                                        <td class="px-6 py-3 text-right">
+                                            <Link
+                                                :href="route('admin.requests.show', item.id)"
+                                                class="text-brand-700 font-semibold hover:underline"
+                                                >Open</Link
+                                            >
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </template>
             </section>
         </div>
