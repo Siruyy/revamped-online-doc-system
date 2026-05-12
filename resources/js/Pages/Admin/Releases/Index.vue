@@ -2,6 +2,7 @@
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import EmptyState from '@/Components/UI/EmptyState.vue';
 import FormField from '@/Components/UI/FormField.vue';
+import Pagination from '@/Components/UI/Pagination.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { reactive, ref } from 'vue';
 import {
@@ -80,10 +81,6 @@ function badge(state) {
             void: 'bg-slate-200 text-slate-600',
         }[state] ?? 'bg-slate-100 text-slate-600'
     );
-}
-
-function paginationLabel(label) {
-    return label.replace('&laquo;', '‹').replace('&raquo;', '›');
 }
 </script>
 
@@ -412,25 +409,7 @@ function paginationLabel(label) {
                 />
             </div>
 
-            <nav
-                v-if="slips.last_page > 1"
-                class="flex items-center justify-between rounded-xl bg-white px-5 py-3 text-xs text-slate-600 shadow-sm ring-1 ring-slate-200"
-            >
-                <span>Showing {{ slips.from || 0 }}–{{ slips.to || 0 }} of {{ slips.total }}</span>
-                <div class="flex flex-wrap gap-1">
-                    <Link
-                        v-for="link in slips.links"
-                        :key="link.label"
-                        :href="link.url || ''"
-                        :class="[
-                            'rounded-lg px-3 py-1.5 transition',
-                            link.active ? 'bg-brand-600 text-white' : 'border border-slate-200 hover:bg-slate-50',
-                            !link.url ? 'opacity-40 pointer-events-none' : '',
-                        ]"
-                        >{{ paginationLabel(link.label) }}</Link
-                    >
-                </div>
-            </nav>
+            <Pagination :meta="slips" label="Release slips pagination" />
         </div>
     </StaffLayout>
 </template>

@@ -51,7 +51,9 @@ class RegistrationApprovedNotification extends Notification implements ShouldQue
     {
         return [
             'type' => 'registration_approved',
+            'title' => 'Registration approved',
             'message' => 'Your account has been approved. You can now sign in.',
+            'url' => route('login'),
         ];
     }
 }

@@ -44,7 +44,7 @@ class ClearanceViewTest extends TestCase
 
         $student = $this->createActiveStudent();
         $clearance = Clearance::factory()->for($student)->completed()->create([
-            'pdf_path' => 'pdfs/clearance/'.$student->id.'.pdf',
+            'pdf_path' => 'pdfs/clearance/'.$student->id.'/clearance-1.pdf',
         ]);
 
         Storage::disk('local')->put($clearance->pdf_path, 'pdf-content');
@@ -59,7 +59,7 @@ class ClearanceViewTest extends TestCase
         $owner = $this->createActiveStudent();
         $otherStudent = $this->createActiveStudent('other@student.local');
         $clearance = Clearance::factory()->for($owner)->completed()->create([
-            'pdf_path' => 'pdfs/clearance/'.$owner->id.'.pdf',
+            'pdf_path' => 'pdfs/clearance/'.$owner->id.'/clearance-1.pdf',
         ]);
         Storage::disk('local')->put($clearance->pdf_path, 'pdf-content');
 

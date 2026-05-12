@@ -55,6 +55,9 @@ class RegistrationRejectedNotification extends Notification implements ShouldQue
     {
         return [
             'type' => 'registration_rejected',
+            'title' => 'Registration not approved',
+            'message' => 'We are unable to approve your registration at this time.',
+            'url' => null,
             'reason' => $this->reason,
         ];
     }

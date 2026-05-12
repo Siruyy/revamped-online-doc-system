@@ -1,6 +1,7 @@
 <script setup>
 import EmptyState from '@/Components/UI/EmptyState.vue';
 import DataTableShell from '@/Components/UI/DataTableShell.vue';
+import Pagination from '@/Components/UI/Pagination.vue';
 import ResponsiveRecordList from '@/Components/UI/ResponsiveRecordList.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
@@ -299,22 +300,7 @@ const bulkDelete = () => {
                 </template>
             </ResponsiveRecordList>
 
-            <div v-if="users.links?.length > 3" class="flex flex-wrap gap-2">
-                <Link
-                    v-for="link in users.links"
-                    :key="link.label"
-                    :href="link.url || '#'"
-                    class="rounded border px-3 py-1 text-sm"
-                    :class="
-                        link.active
-                            ? 'border-violet-600 bg-violet-50 text-violet-800'
-                            : 'border-slate-300 text-slate-600'
-                    "
-                    preserve-scroll
-                >
-                    {{ link.label.replace('&laquo;', '«').replace('&raquo;', '»') }}
-                </Link>
-            </div>
+            <Pagination :meta="users" label="Users pagination" />
         </div>
 
         <div

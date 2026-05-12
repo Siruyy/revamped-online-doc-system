@@ -24,6 +24,29 @@ class CsvExportTest extends TestCase
         $this->assertStringContainsString('Export Student', $response->streamedContent());
     }
 
+    public function test_superadmin_users_export_has_exact_phase_nine_headings_and_approved_at(): void
+    {
+        $superadmin = User::factory()->superadmin()->create();
+        $approvedAt = now()->setDate(2026, 5, 13)->setTime(9, 30);
+        User::factory()->student()->create([
+            'fullname' => 'Approved Export Student',
+            'email' => 'approved-export@example.test',
+            'approved_at' => $approvedAt,
+        ]);
+
+        $response = $this->actingAs($superadmin)->get(route('superadmin.users.export', [
+            'search' => 'approved-export@example.test',
+        ]));
+
+        $response->assertOk();
+        $rows = array_map('str_getcsv', explode("\n", trim($response->streamedContent())));
+
+        $this->assertSame([
+            'ID', 'Full Name', 'Email', 'Role', 'Status', 'Course', 'Year', 'Created At', 'Approved At',
+        ], $rows[0]);
+        $this->assertSame($approvedAt->toDateTimeString(), $rows[1][8]);
+    }
+
     public function test_superadmin_users_export_preserves_filters(): void
     {
         $superadmin = User::factory()->superadmin()->create();
@@ -159,6 +182,15 @@ class CsvExportTest extends TestCase
 
         $response->assertOk();
         $this->assertStringContainsString('Export log row', $response->streamedContent());
+    }
+
+    public function test_non_superadmin_cannot_export_activity_logs_csv(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('superadmin.logs.export'))
+            ->assertForbidden();
     }
 
     public function test_superadmin_activity_logs_export_preserves_filters(): void

@@ -2,6 +2,7 @@
 import EmptyState from '@/Components/UI/EmptyState.vue';
 import DataTableShell from '@/Components/UI/DataTableShell.vue';
 import PageHeader from '@/Components/UI/PageHeader.vue';
+import Pagination from '@/Components/UI/Pagination.vue';
 import ResponsiveRecordList from '@/Components/UI/ResponsiveRecordList.vue';
 import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
@@ -30,8 +31,6 @@ const filterForm = reactive({
 const applyFilters = () => {
     router.get(route('student.requests.index'), filterForm, { preserveState: true, replace: true });
 };
-
-const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '').trim();
 
 function requestStatusTone(status) {
     return (
@@ -190,19 +189,7 @@ function requestStatusTone(status) {
                 </template>
             </ResponsiveRecordList>
 
-            <div v-if="requests.links?.length > 3" class="flex flex-wrap gap-2">
-                <Link
-                    v-for="link in requests.links"
-                    :key="link.label"
-                    :href="link.url || '#'"
-                    class="rounded border px-3 py-1 text-sm"
-                    :class="
-                        link.active ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-slate-300 text-slate-600'
-                    "
-                >
-                    {{ decodeLabel(link.label) }}
-                </Link>
-            </div>
+            <Pagination :meta="requests" label="Student requests pagination" />
         </div>
     </StudentLayout>
 </template>

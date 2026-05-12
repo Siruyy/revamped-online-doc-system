@@ -52,7 +52,9 @@ class RequestCancelledNotification extends Notification implements ShouldQueue
     {
         return [
             'type' => 'request_cancelled',
+            'title' => 'Request cancelled',
             'message' => "{$this->student->fullname} cancelled request {$this->documentRequest->reference_no}.",
+            'url' => route('admin.requests.show', $this->documentRequest),
             'document_request_id' => $this->documentRequest->id,
             'student_id' => $this->student->id,
         ];

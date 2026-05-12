@@ -18,6 +18,8 @@
     </style>
 </head>
 <body>
+    @php($signatureImages = $signatureImages ?? [])
+
     <h1>Saint Vincent's College Incorporated</h1>
     <p class="center muted">Online Document Request and Management System</p>
     <h2 class="center">Department Clearance Certificate</h2>
@@ -58,30 +60,50 @@
         </thead>
         <tbody>
             <tr>
-                <td>Teacher</td>
+                <td>Teacher Signer</td>
                 <td>{{ ucfirst($clearance->teacher_status) }}</td>
-                <td>{{ $clearance->teacherSigner->fullname ?? 'N/A' }}</td>
+                <td>
+                    @if (! empty($signatureImages['teacher']))
+                        <img src="{{ $signatureImages['teacher'] }}" alt="Teacher signature" height="40"><br>
+                    @endif
+                    {{ $clearance->teacherSigner->fullname ?? 'N/A' }}
+                </td>
                 <td>{{ $clearance->teacher_signed_at?->format('M d, Y h:i A') ?? 'N/A' }}</td>
                 <td>{{ $clearance->teacher_remarks ?? '' }}</td>
             </tr>
             <tr>
-                <td>Dean</td>
+                <td>Dean Signer</td>
                 <td>{{ ucfirst($clearance->dean_status) }}</td>
-                <td>{{ $clearance->deanSigner->fullname ?? 'N/A' }}</td>
+                <td>
+                    @if (! empty($signatureImages['dean']))
+                        <img src="{{ $signatureImages['dean'] }}" alt="Dean signature" height="40"><br>
+                    @endif
+                    {{ $clearance->deanSigner->fullname ?? 'N/A' }}
+                </td>
                 <td>{{ $clearance->dean_signed_at?->format('M d, Y h:i A') ?? 'N/A' }}</td>
                 <td>{{ $clearance->dean_remarks ?? '' }}</td>
             </tr>
             <tr>
-                <td>Accounting</td>
+                <td>Accounting Signer</td>
                 <td>{{ ucfirst($clearance->accounting_status) }}</td>
-                <td>{{ $clearance->accountingSigner->fullname ?? 'N/A' }}</td>
+                <td>
+                    @if (! empty($signatureImages['accounting']))
+                        <img src="{{ $signatureImages['accounting'] }}" alt="Accounting signature" height="40"><br>
+                    @endif
+                    {{ $clearance->accountingSigner->fullname ?? 'N/A' }}
+                </td>
                 <td>{{ $clearance->accounting_signed_at?->format('M d, Y h:i A') ?? 'N/A' }}</td>
                 <td>{{ $clearance->accounting_remarks ?? '' }}</td>
             </tr>
             <tr>
-                <td>SAO</td>
+                <td>SAO Signer</td>
                 <td>{{ ucfirst($clearance->sao_status) }}</td>
-                <td>{{ $clearance->saoSigner->fullname ?? 'N/A' }}</td>
+                <td>
+                    @if (! empty($signatureImages['sao']))
+                        <img src="{{ $signatureImages['sao'] }}" alt="SAO signature" height="40"><br>
+                    @endif
+                    {{ $clearance->saoSigner->fullname ?? 'N/A' }}
+                </td>
                 <td>{{ $clearance->sao_signed_at?->format('M d, Y h:i A') ?? 'N/A' }}</td>
                 <td>{{ $clearance->sao_remarks ?? '' }}</td>
             </tr>

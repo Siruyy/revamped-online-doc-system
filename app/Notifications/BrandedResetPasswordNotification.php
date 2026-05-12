@@ -3,11 +3,12 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Lang;
 
-class BrandedResetPasswordNotification extends Notification
+class BrandedResetPasswordNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -59,7 +60,10 @@ class BrandedResetPasswordNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            //
+            'type' => 'password_reset',
+            'title' => 'Password reset requested',
+            'message' => 'A password reset email was sent.',
+            'url' => null,
         ];
     }
 }

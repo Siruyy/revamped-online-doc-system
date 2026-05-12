@@ -29,7 +29,7 @@ class UserExportController extends Controller
             ->orderBy('id');
 
         return $exports->stream('users-export.csv', $query, [
-            'ID', 'Full Name', 'Email', 'Role', 'Status', 'Course', 'Year Level', 'Student ID', 'Created At',
+            'ID', 'Full Name', 'Email', 'Role', 'Status', 'Course', 'Year', 'Created At', 'Approved At',
         ], fn (User $user): array => [
             $user->id,
             $user->fullname,
@@ -38,8 +38,8 @@ class UserExportController extends Controller
             $user->status,
             $user->course,
             $user->year_level,
-            $user->student_id,
             $user->created_at?->toDateTimeString(),
+            $user->approved_at?->toDateTimeString(),
         ]);
     }
 }

@@ -2,9 +2,11 @@
 
 > **Goal:** Replace stub clearance PDFs with real DomPDF output and add authorized CSV/XLSX exports for users, requests, and activity logs.
 
-**Status:** Partial. Clearance PDF generation now uses DomPDF on private storage, and CSV exports exist for users, admin request/payment reports, and SuperAdmin activity logs. XLSX support and broader UI links remain deferred.
+**Status:** Finished for CSV/PDF MVP. Clearance PDF generation uses DomPDF on private storage, CSV exports exist for users, admin request/payment reports, and SuperAdmin activity logs, and remaining XLSX/broader UI links are explicitly deferred until requested.
 
 **Phase notes (2026-05-10):** CSV was chosen over XLSX to avoid adding a spreadsheet package before the client asks for it. Export endpoints stream chunked query results and are covered by authorization/content tests.
+
+**Closeout notes (2026-05-13):** SuperAdmin users CSV now matches the Phase 09 heading contract and includes `approved_at`. Clearance PDF rendering includes student/signer content tests, uses DomPDF-compatible table markup, and embeds private signatures as data URIs so local storage paths are not rendered. Clearance PDF downloads now require completed clearances and owner-scoped private paths under `pdfs/clearance/{student_id}/`.
 
 **Depends on:** Phases 04-06. PDF completion seam depends on Phase 05 closeout.
 
@@ -63,13 +65,13 @@
 **Steps:**
 - [x] Create DomPDF-compatible Blade template using tables and inline CSS.
 - [x] Include student name, course/year, reference number, department statuses, signer names, signed dates, and verification footer.
-- [ ] Render signatures from private disk only after authorization path resolves them safely.
-- [ ] Avoid modern CSS unsupported by DomPDF.
-- [ ] Add content test that rendered PDF source includes student name and signer labels.
+- [x] Render signatures from private disk only after authorization path resolves them safely.
+- [x] Avoid modern CSS unsupported by DomPDF.
+- [x] Add content test that rendered PDF source includes student name and signer labels.
 
 **Acceptance:**
-- [ ] Template matches `docs/13-pdf-generation.md` constraints.
-- [ ] No private storage path leaks into rendered text.
+- [x] Template matches `docs/13-pdf-generation.md` constraints.
+- [x] No private storage path leaks into rendered text.
 
 ## Agent Task 9.4 — PDF Generation Trigger And Download
 
@@ -108,7 +110,7 @@
 **Steps:**
 - [x] Implement export using query-based export service.
 - [x] Support current filters: role, status, course, year, search.
-- [ ] Include headings: ID, Full Name, Email, Role, Status, Course, Year, Created At, Approved At.
+- [x] Include headings: ID, Full Name, Email, Role, Status, Course, Year, Created At, Approved At.
 - [x] Support CSV.
 - [x] Restrict endpoint to SuperAdmin.
 
@@ -167,10 +169,10 @@
 php artisan test --filter=Pdf
 php artisan test --filter=Export
 php artisan test --filter=Clearance
-./vendor/bin/pint --test app/Services app/Exports tests/Feature/Exports tests/Feature/Pdf
+./vendor/bin/pint --test app/Services app/Http/Controllers/SuperAdmin tests/Feature/Exports tests/Feature/Pdf
 ```
 
 **Acceptance:**
-- [ ] Real clearance PDFs are generated and downloadable.
-- [ ] Export endpoints are authorized and tested.
-- [ ] Stub PDF behavior is removed or no longer reachable.
+- [x] Real clearance PDFs are generated and downloadable.
+- [x] Export endpoints are authorized and tested.
+- [x] Stub PDF behavior is removed or no longer reachable.

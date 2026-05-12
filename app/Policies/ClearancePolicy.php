@@ -100,6 +100,10 @@ class ClearancePolicy
 
     public function downloadPdf(User $user, Clearance $clearance): bool
     {
+        if ($clearance->overall_status !== 'completed') {
+            return false;
+        }
+
         if (in_array($user->role, ['admin', 'superadmin'], true)) {
             return true;
         }

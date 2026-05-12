@@ -17,6 +17,7 @@ use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\User;
+use App\Notifications\BrandedResetPasswordNotification;
 use App\Notifications\ClearanceCompletedNotification;
 use App\Notifications\RegistrationApprovedNotification;
 use App\Notifications\RegistrationRejectedNotification;
@@ -258,9 +259,55 @@ class BroadcastNotificationRegressionTest extends TestCase
             RegistrationSubmittedNotification::class,
             RegistrationApprovedNotification::class,
             RegistrationRejectedNotification::class,
+            BrandedResetPasswordNotification::class,
         ] as $notificationClass) {
             $this->assertContains(ShouldQueue::class, class_implements($notificationClass));
         }
+    }
+
+    public function test_current_notification_payloads_have_safe_bell_shape(): void
+    {
+        $student = $this->activeUser('student');
+        $admin = $this->activeUser('admin');
+        $documentRequest = DocumentRequest::factory()->for($student)->create();
+        $clearance = Clearance::factory()->for($student)->for($documentRequest)->create();
+
+        $cases = [
+            [new ClearanceCompletedNotification($clearance), $student],
+            [new RegistrationSubmittedNotification($student), $admin],
+            [new RegistrationApprovedNotification, $student],
+            [new RegistrationRejectedNotification('Invalid school email'), $student],
+            [new RequestCancelledNotification($documentRequest, $student), $admin],
+            [new WorkflowStatusNotification([
+                'type' => 'payment_approved',
+                'message' => 'Your payment receipt was approved.',
+                'payment_id' => 10,
+            ]), $student],
+        ];
+
+        foreach ($cases as [$notification, $notifiable]) {
+            $payload = $notification->toArray($notifiable);
+
+            $this->assertIsString($payload['type'] ?? null);
+            $this->assertNotSame('', $payload['type']);
+            $this->assertIsString($payload['title'] ?? null);
+            $this->assertNotSame('', $payload['title']);
+            $this->assertIsString($payload['message'] ?? null);
+            $this->assertNotSame('', $payload['message']);
+            $this->assertArrayHasKey('url', $payload);
+            $this->assertTrue(is_string($payload['url']) || $payload['url'] === null);
+            $this->assertSame($payload, $notification->toBroadcast($notifiable)->data);
+        }
+    }
+
+    public function test_reset_password_notification_is_queued_and_keeps_token_out_of_array_payload(): void
+    {
+        $student = $this->activeUser('student');
+        $notification = new BrandedResetPasswordNotification('secret-token');
+
+        $this->assertContains(ShouldQueue::class, class_implements($notification));
+        $this->assertSame(['mail'], $notification->via($student));
+        $this->assertNotContains('secret-token', $notification->toArray($student));
     }
 
     public function test_workflow_status_notification_broadcasts_database_payload(): void
@@ -273,6 +320,27 @@ class BroadcastNotificationRegressionTest extends TestCase
 
         $this->assertSame(['database', 'broadcast'], $notification->via($student));
         $this->assertSame($notification->toArray($student), $notification->toBroadcast($student)->data);
+    }
+
+    public function test_workflow_status_notification_normalizes_required_bell_keys(): void
+    {
+        $student = $this->activeUser('student');
+        $notification = new WorkflowStatusNotification([
+            'type' => 123,
+            'title' => ['unsafe'],
+            'message' => null,
+            'url' => ['not-a-url'],
+            'payment_id' => 10,
+            'receipt_path' => 'receipts/private.png',
+        ]);
+
+        $this->assertSame([
+            'type' => '123',
+            'title' => 'Workflow update',
+            'message' => 'Your workflow status was updated.',
+            'url' => null,
+            'payment_id' => 10,
+        ], $notification->toArray($student));
     }
 
     private function activeUser(string $role): User

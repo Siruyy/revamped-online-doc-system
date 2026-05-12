@@ -12,10 +12,10 @@ Core MVP exists for setup, schema, auth, student, and admin flows. Remaining wor
 |---|-------|------|:------:|--------------------|
 | 05 | Department Clearance Closeout | [`phase-05-department-clearance.md`](./phase-05-department-clearance.md) | Active closeout | backend + tests |
 | 06 | SuperAdmin Closeout | [`phase-06-superadmin-features.md`](./phase-06-superadmin-features.md) | Active closeout | backend + security |
-| 07 | Real-Time & Notifications | [`phase-07-realtime-and-notifications.md`](./phase-07-realtime-and-notifications.md) | Partial | backend + realtime |
+| 07 | Real-Time & Notifications | [`phase-07-realtime-and-notifications.md`](./phase-07-realtime-and-notifications.md) | Partial, manual Reverb blocked | backend + realtime |
 | 08 | Messaging | [`phase-08-messaging.md`](./phase-08-messaging.md) | Deferred | backend + frontend |
-| 09 | PDF Generation & Exports | [`phase-09-pdf-and-exports.md`](./phase-09-pdf-and-exports.md) | Partial | backend + reporting |
-| 10 | UI/UX Polish | [`phase-10-ui-polish.md`](./phase-10-ui-polish.md) | Not started | frontend + accessibility |
+| 09 | PDF Generation & Exports | [`phase-09-pdf-and-exports.md`](./phase-09-pdf-and-exports.md) | Finished CSV/PDF MVP | backend + reporting |
+| 10 | UI/UX Polish | [`phase-10-ui-polish.md`](./phase-10-ui-polish.md) | Partial | frontend + accessibility |
 | 11 | Testing & Hardening | [`phase-11-testing-and-hardening.md`](./phase-11-testing-and-hardening.md) | Not started | verification + security |
 | 12 | Deployment | [`phase-12-deployment.md`](./phase-12-deployment.md) | Not started | deployment |
 | 13 | Legacy Data Migration | [`phase-13-legacy-data-migration.md`](./phase-13-legacy-data-migration.md) | Not started | database + migration |

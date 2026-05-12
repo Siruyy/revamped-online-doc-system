@@ -2,7 +2,7 @@
 
 > **Goal:** Verify and close gaps in SuperAdmin user management, reports, logs, route coverage, and sensitive-action security.
 
-**Status:** Active closeout. Core MVP is implemented and covered for current user, log, report, and CSV export workflows. Remaining gaps are explicit SuperAdmin aliases for some admin-managed resources from older route docs.
+**Status:** Active closeout. Core MVP is implemented and covered for current user, log, report, and CSV export workflows. Task 6.5 security closeout passed. Remaining gaps are explicit SuperAdmin aliases for some admin-managed resources from older route docs.
 
 **Depends on:** Phase 02, Phase 04.
 
@@ -45,7 +45,7 @@
 
 **Steps:**
 - [x] Add tests for approve, reject, suspend, reactivate, soft delete, bulk approve, and bulk delete.
-- [ ] Add tests for empty bulk selection and mixed-status selections.
+- [x] Add tests for empty bulk selection and mixed-status selections.
 - [x] Add tests for self-delete blocked and self-suspend blocked.
 - [x] Verify filters: role, status, course, year, and search.
 - [x] Verify staff creation sends reset/setup email and never exposes generated password in logs.
@@ -110,14 +110,14 @@ php artisan route:list --path=superadmin
 ```
 
 **Checklist:**
-- [ ] Only SuperAdmin can access `/superadmin/*`.
-- [ ] SuperAdmin `Gate::before` exists and is tested, or policy behavior is explicitly tested.
-- [ ] Mass actions are CSRF-protected and use non-GET verbs.
-- [ ] No hardcoded passwords or reset links are logged.
-- [ ] Activity logs avoid storing sensitive tokens.
+- [x] Only SuperAdmin can access `/superadmin/*`.
+- [x] SuperAdmin `Gate::before` exists and is tested, or policy behavior is explicitly tested.
+- [x] Mass actions are CSRF-protected and use non-GET verbs.
+- [x] No hardcoded passwords or reset links are logged.
+- [x] Activity logs avoid storing sensitive tokens.
 
 **Acceptance:**
-- [ ] No CRITICAL/HIGH SuperAdmin security finding remains.
+- [x] No CRITICAL/HIGH SuperAdmin security finding remains.
 
 ## Phase Notes
 
@@ -125,4 +125,5 @@ php artisan route:list --path=superadmin
 - Current SuperAdmin routes cover dashboard, users, pending users, logs, reports, notifications, and profile. Older docs-required aliases for `/superadmin/requests`, `/superadmin/reports/export`, `/superadmin/announcements`, `/superadmin/faqs`, and `/superadmin/document-types` remain deferred until shared admin-resource access is designed.
 - Broadcast announcements are stretch unless client explicitly asks.
 - Session revoke is stretch unless security requirements change.
+- Task 6.5 closeout (2026-05-13): added coverage for empty bulk selections, mixed-status bulk approve, student denial, unverified SuperAdmin redirect, and non-SuperAdmin activity log export denial. Focused SuperAdmin security review found no CRITICAL/HIGH issue.
 - Do not move this phase to `finished/` until SuperAdmin route coverage and final security review pass.

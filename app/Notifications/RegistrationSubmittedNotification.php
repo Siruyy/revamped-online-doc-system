@@ -53,6 +53,9 @@ class RegistrationSubmittedNotification extends Notification implements ShouldQu
     {
         return [
             'type' => 'registration_submitted',
+            'title' => 'New registration submitted',
+            'message' => "{$this->registeredUser->fullname} is waiting for account approval.",
+            'url' => route('superadmin.users.pending'),
             'user_id' => $this->registeredUser->id,
             'fullname' => $this->registeredUser->fullname,
             'email' => $this->registeredUser->email,

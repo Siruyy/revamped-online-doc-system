@@ -1,10 +1,11 @@
 <script setup>
 import EmptyState from '@/Components/UI/EmptyState.vue';
 import PageHeader from '@/Components/UI/PageHeader.vue';
+import Pagination from '@/Components/UI/Pagination.vue';
 import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { BellIcon } from '@heroicons/vue/24/outline';
 import { computed, ref } from 'vue';
 
@@ -23,7 +24,6 @@ const { notifications, filters, routePrefix } = defineProps({
     },
 });
 
-const decodeLabel = (label) => label.replace('&laquo;', '').replace('&raquo;', '').trim();
 const activeLayout = computed(() => (routePrefix === 'student' ? StudentLayout : StaffLayout));
 const markAllReadForm = useForm({});
 const markingReadIds = ref(new Set());
@@ -157,21 +157,7 @@ const markAsRead = (notification) => {
                 </div>
             </div>
 
-            <div v-if="notifications.links?.length > 3" class="flex flex-wrap gap-2">
-                <Link
-                    v-for="link in notifications.links"
-                    :key="link.label"
-                    :href="link.url || '#'"
-                    class="rounded border px-3 py-1 text-sm"
-                    :class="
-                        link.active
-                            ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                            : 'border-slate-300 text-slate-600'
-                    "
-                >
-                    {{ decodeLabel(link.label) }}
-                </Link>
-            </div>
+            <Pagination :meta="notifications" label="Notifications pagination" />
         </div>
     </component>
 </template>

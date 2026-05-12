@@ -45,6 +45,7 @@ class ClearanceCompletedNotification extends Notification implements ShouldQueue
             'type' => 'clearance_completed',
             'title' => 'Clearance complete',
             'message' => 'Your clearance has been completed. You may download your PDF from the clearance page.',
+            'url' => route('student.clearance.show'),
             'clearance_id' => $this->clearance->id,
         ];
     }

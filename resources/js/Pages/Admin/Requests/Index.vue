@@ -2,6 +2,7 @@
 import EmptyState from '@/Components/UI/EmptyState.vue';
 import DataTableShell from '@/Components/UI/DataTableShell.vue';
 import PageHeader from '@/Components/UI/PageHeader.vue';
+import Pagination from '@/Components/UI/Pagination.vue';
 import ResponsiveRecordList from '@/Components/UI/ResponsiveRecordList.vue';
 import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
@@ -93,10 +94,6 @@ function relativeAge(value) {
     if (diff === 1) return '1d';
     if (diff < 7) return `${diff}d`;
     return `${Math.round(diff / 7)}w`;
-}
-
-function paginationLabel(label) {
-    return label.replace('&laquo;', '‹').replace('&raquo;', '›');
 }
 </script>
 
@@ -355,26 +352,7 @@ function paginationLabel(label) {
                 </template>
             </ResponsiveRecordList>
 
-            <!-- Pagination -->
-            <nav
-                v-if="requests.last_page > 1"
-                class="flex items-center justify-between rounded-xl bg-white px-5 py-3 text-xs text-slate-600 shadow-sm ring-1 ring-slate-200"
-            >
-                <span>Showing {{ requests.from || 0 }}–{{ requests.to || 0 }} of {{ requests.total }}</span>
-                <div class="flex flex-wrap gap-1">
-                    <Link
-                        v-for="link in requests.links"
-                        :key="link.label"
-                        :href="link.url || ''"
-                        :class="[
-                            'rounded-lg px-3 py-1.5 transition',
-                            link.active ? 'bg-brand-600 text-white' : 'border border-slate-200 hover:bg-slate-50',
-                            !link.url ? 'opacity-40 pointer-events-none' : '',
-                        ]"
-                        >{{ paginationLabel(link.label) }}</Link
-                    >
-                </div>
-            </nav>
+            <Pagination :meta="requests" label="Requests pagination" />
         </div>
     </StaffLayout>
 </template>

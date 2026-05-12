@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\SuperAdmin;
 
+use App\Events\RegistrationApproved;
 use App\Models\ActivityLog;
 use App\Models\User;
+use App\Notifications\RegistrationApprovedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
@@ -26,6 +28,24 @@ class SuperAdminManagementTest extends TestCase
                 ->has('recentActivity'));
     }
 
+    public function test_student_cannot_access_superadmin_dashboard(): void
+    {
+        $student = User::factory()->student()->create();
+
+        $this->actingAs($student)
+            ->get(route('superadmin.dashboard'))
+            ->assertForbidden();
+    }
+
+    public function test_unverified_superadmin_cannot_access_superadmin_dashboard(): void
+    {
+        $superAdmin = User::factory()->superadmin()->unverified()->create();
+
+        $this->actingAs($superAdmin)
+            ->get(route('superadmin.dashboard'))
+            ->assertRedirect(route('verification.notice'));
+    }
+
     public function test_superadmin_can_list_users_and_filter(): void
     {
         $superAdmin = User::factory()->superadmin()->create();
@@ -37,7 +57,7 @@ class SuperAdminManagementTest extends TestCase
             ->assertInertia(fn ($page) => $page->component('SuperAdmin/Users/Index'));
     }
 
-    public function test_superadmin_can_create_staff_and_reset_email_is_sent(): void
+    public function test_superadmin_can_create_staff(): void
     {
         $superAdmin = User::factory()->superadmin()->create();
 
@@ -222,6 +242,18 @@ class SuperAdminManagementTest extends TestCase
         ]);
     }
 
+    public function test_bulk_destroy_requires_at_least_one_selected_user(): void
+    {
+        $superAdmin = User::factory()->superadmin()->create();
+
+        $this->actingAs($superAdmin)
+            ->post(route('superadmin.users.bulk-destroy'), [
+                'user_ids' => [],
+                'confirmation' => 'DELETE',
+            ])
+            ->assertSessionHasErrors('user_ids');
+    }
+
     public function test_bulk_approve_approves_pending_students(): void
     {
         Event::fake();
@@ -239,5 +271,43 @@ class SuperAdminManagementTest extends TestCase
 
         $this->assertDatabaseHas('users', ['id' => $p1->id, 'status' => 'active']);
         $this->assertDatabaseHas('users', ['id' => $p2->id, 'status' => 'active']);
+        Notification::assertSentTo([$p1, $p2], RegistrationApprovedNotification::class);
+        Event::assertDispatched(RegistrationApproved::class, 2);
+    }
+
+    public function test_bulk_approve_requires_at_least_one_selected_user(): void
+    {
+        $superAdmin = User::factory()->superadmin()->create();
+
+        $this->actingAs($superAdmin)
+            ->post(route('superadmin.users.bulk-approve'), [
+                'user_ids' => [],
+            ])
+            ->assertSessionHasErrors('user_ids');
+    }
+
+    public function test_bulk_approve_skips_non_pending_users(): void
+    {
+        Event::fake();
+        Notification::fake();
+
+        $superAdmin = User::factory()->superadmin()->create();
+        $pending = User::factory()->pending()->create(['email' => 'pending-bulk@example.test']);
+        $active = User::factory()->student()->create(['email' => 'active-bulk@example.test', 'status' => 'active']);
+        $rejected = User::factory()->student()->create(['email' => 'rejected-bulk@example.test', 'status' => 'rejected']);
+
+        $this->actingAs($superAdmin)
+            ->post(route('superadmin.users.bulk-approve'), [
+                'user_ids' => [$pending->id, $active->id, $rejected->id],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', ['id' => $pending->id, 'status' => 'active']);
+        $this->assertDatabaseHas('users', ['id' => $active->id, 'status' => 'active', 'approved_by' => null]);
+        $this->assertDatabaseHas('users', ['id' => $rejected->id, 'status' => 'rejected', 'approved_by' => null]);
+        Notification::assertSentTo($pending, RegistrationApprovedNotification::class);
+        Notification::assertNotSentTo([$active, $rejected], RegistrationApprovedNotification::class);
+        Event::assertDispatched(RegistrationApproved::class, 1);
+        $this->assertSame(1, ActivityLog::query()->where('action', 'registration_approved')->count());
     }
 }

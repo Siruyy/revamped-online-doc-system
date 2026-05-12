@@ -13,6 +13,8 @@ class ClearanceUpdated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public bool $afterCommit = true;
+
     public function __construct(
         public int $clearanceId,
         public int $studentId,
@@ -29,6 +31,7 @@ class ClearanceUpdated implements ShouldBroadcast
         return [
             new PrivateChannel('user.'.$this->studentId),
             new PrivateChannel('role.admin'),
+            new PrivateChannel('role.department.'.$this->department),
         ];
     }
 

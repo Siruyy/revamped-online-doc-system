@@ -30,7 +30,7 @@ class FileController extends Controller
 
         abort_if(
             empty($clearance->pdf_path)
-                || ! str_starts_with($clearance->pdf_path, 'pdfs/clearance/')
+                || ! str_starts_with($clearance->pdf_path, "pdfs/clearance/{$clearance->user_id}/")
                 || ! Storage::disk('local')->exists($clearance->pdf_path),
             404
         );
