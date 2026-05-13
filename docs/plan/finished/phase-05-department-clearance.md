@@ -2,11 +2,11 @@
 
 > **Goal:** Verify and finish department clearance behavior after the MVP implementation. Keep scope limited to department dashboard, clearance signing/denial, FAQ/profile access, tests, and documented deferrals.
 
-**Status:** Active closeout. Core behavior is implemented and focused sign/deny tests were reconciled; remaining gaps are named deferrals below.
+**Status:** Finished. Core behavior is implemented and focused sign/deny tests were reconciled; remaining non-MVP work is deferred to Phase 07, 08, 09, 10, or 11 as named below.
 
 **Depends on:** Phase 02, Phase 04.
 
-**Primary docs:** [`03-roles-and-permissions.md`](../03-roles-and-permissions.md), [`07-routes-and-controllers.md`](../07-routes-and-controllers.md), [`10-security.md`](../10-security.md).
+**Primary docs:** [`03-roles-and-permissions.md`](../../03-roles-and-permissions.md), [`07-routes-and-controllers.md`](../../07-routes-and-controllers.md), [`10-security.md`](../../10-security.md).
 
 ---
 
@@ -123,4 +123,4 @@ php artisan test --filter=Clearance
 - Messaging belongs to Phase 08.
 - Clearance completion stores a generated PDF path through `PdfService`; richer printable/export templates remain Phase 09.
 - Browser-level department UI and manual Reverb checks remain deferred to Phase 07/10/11 as applicable.
-- Do not move this phase to `finished/` until reconciliation and focused tests pass.
+- Phase 05 is finished for MVP closeout; browser-level UI, manual Reverb, messaging, and broader polish remain tracked in later phases or deferred notes.

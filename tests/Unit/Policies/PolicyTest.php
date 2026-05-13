@@ -67,7 +67,10 @@ class PolicyTest extends TestCase
         $this->assertTrue($policy->signFor($teacher, $clearance, 'teacher'));
         $this->assertFalse($policy->signFor($teacher, $clearance, 'dean'));
         $this->assertTrue($policy->sign($dean, $clearance));
-        $this->assertTrue($policy->downloadPdf($student, $clearance));
+        $this->assertFalse($policy->downloadPdf($student, $clearance));
+
+        $completedClearance = Clearance::factory()->completed()->for($student)->create();
+        $this->assertTrue($policy->downloadPdf($student, $completedClearance));
 
         $clearedTeacher = Clearance::factory()->for($student)->create([
             'teacher_status' => 'cleared',

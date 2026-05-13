@@ -1,6 +1,6 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import {
     ArrowDownTrayIcon,
@@ -29,6 +29,8 @@ const denyForm = useForm({ denial_reason: '' });
 const stageForm = useForm({ processing_stage: props.request.processing_stage || 'processing' });
 const pauseForm = useForm({ reason: '' });
 const rejectForm = useForm({ notes: '' });
+const page = usePage();
+const routeBase = computed(() => (page.props.auth?.user?.role === 'superadmin' ? 'superadmin' : 'admin'));
 
 const docType = computed(() => props.request.document_type);
 const payment = computed(() => props.request.payments?.[0]);
@@ -52,11 +54,11 @@ const showPause = ref(false);
 const rejectReqId = ref(null);
 
 function approve() {
-    router.post(route('admin.requests.approve', props.request.id));
+    router.post(route(`${routeBase.value}.requests.approve`, props.request.id));
 }
 
 function deny() {
-    denyForm.post(route('admin.requests.deny', props.request.id), {
+    denyForm.post(route(`${routeBase.value}.requests.deny`, props.request.id), {
         onSuccess: () => {
             showDeny.value = false;
             denyForm.reset();
@@ -65,17 +67,17 @@ function deny() {
 }
 
 function updateStage() {
-    stageForm.post(route('admin.requests.stage', props.request.id));
+    stageForm.post(route(`${routeBase.value}.requests.stage`, props.request.id));
 }
 
 function release() {
     if (!window.confirm('Mark this request as released? This will close out the request.')) return;
-    router.post(route('admin.requests.release', props.request.id));
+    router.post(route(`${routeBase.value}.requests.release`, props.request.id));
 }
 
 function validateReq(req) {
     router.post(
-        route('admin.requests.requirements.validate', [props.request.id, req.id]),
+        route(`${routeBase.value}.requests.requirements.validate`, [props.request.id, req.id]),
         {},
         { preserveScroll: true },
     );
@@ -88,7 +90,7 @@ function startReject(reqId) {
 
 function rejectReq(req) {
     if (!rejectForm.notes.trim()) return;
-    rejectForm.post(route('admin.requests.requirements.reject', [props.request.id, req.id]), {
+    rejectForm.post(route(`${routeBase.value}.requests.requirements.reject`, [props.request.id, req.id]), {
         preserveScroll: true,
         onSuccess: () => {
             rejectReqId.value = null;
@@ -98,7 +100,7 @@ function rejectReq(req) {
 }
 
 function pauseSla() {
-    pauseForm.post(route('admin.requests.sla.pause', props.request.id), {
+    pauseForm.post(route(`${routeBase.value}.requests.sla.pause`, props.request.id), {
         onSuccess: () => {
             showPause.value = false;
             pauseForm.reset();
@@ -107,12 +109,12 @@ function pauseSla() {
 }
 
 function resumeSla() {
-    router.post(route('admin.requests.sla.resume', props.request.id), {}, { preserveScroll: true });
+    router.post(route(`${routeBase.value}.requests.sla.resume`, props.request.id), {}, { preserveScroll: true });
 }
 
 function markHd() {
     if (!window.confirm('Confirm receipt of Honorable Dismissal? This starts the 14-day SLA.')) return;
-    router.post(route('admin.requests.hd', props.request.id), {}, { preserveScroll: true });
+    router.post(route(`${routeBase.value}.requests.hd`, props.request.id), {}, { preserveScroll: true });
 }
 
 function statusTone(status) {
@@ -157,7 +159,7 @@ function fmtDateOnly(value) {
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <Link
-                        :href="route('admin.requests.index')"
+                        :href="route(`${routeBase}.requests.index`)"
                         class="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
                     >
                         <ArrowUturnLeftIcon class="h-3 w-3" /> Back to queue
@@ -382,7 +384,7 @@ function fmtDateOnly(value) {
                                 <p class="font-medium text-slate-800">{{ item.document_type?.name }}</p>
                             </div>
                             <Link
-                                :href="route('admin.requests.show', item.id)"
+                                :href="route(`${routeBase}.requests.show`, item.id)"
                                 class="text-xs font-semibold text-brand-700 hover:underline"
                                 >Open →</Link
                             >
@@ -601,7 +603,7 @@ function fmtDateOnly(value) {
                         </div>
                     </dl>
                     <Link
-                        v-if="payment.id"
+                        v-if="payment.id && routeBase === 'admin'"
                         :href="route('admin.payments.index')"
                         class="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
                     >

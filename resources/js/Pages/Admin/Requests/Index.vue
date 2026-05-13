@@ -27,6 +27,7 @@ const props = defineProps({
 
 const page = usePage();
 const isAdmin = computed(() => ['admin', 'superadmin'].includes(page.props.auth?.user?.role ?? ''));
+const routeBase = computed(() => (page.props.auth?.user?.role === 'superadmin' ? 'superadmin' : 'admin'));
 
 const form = reactive({
     status: props.filters.status || '',
@@ -39,7 +40,7 @@ const form = reactive({
 });
 
 const applyFilters = () => {
-    router.get(route('admin.requests.index'), form, { preserveState: true, replace: true });
+    router.get(route(`${routeBase.value}.requests.index`), form, { preserveState: true, replace: true });
 };
 
 const clearFilters = () => {
@@ -108,7 +109,7 @@ function relativeAge(value) {
             >
                 <template #actions>
                     <Link
-                        :href="route('admin.dashboard')"
+                        :href="route(`${routeBase}.dashboard`)"
                         class="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-semibold text-brand-700 hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
                     >
                         Back to dashboard →
@@ -267,7 +268,7 @@ function relativeAge(value) {
 
                         <div class="mt-4">
                             <Link
-                                :href="route('admin.requests.show', item.id)"
+                                :href="route(`${routeBase}.requests.show`, item.id)"
                                 class="inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-lg bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
                             >
                                 Review <ArrowRightIcon class="h-3.5 w-3.5" />
@@ -339,7 +340,7 @@ function relativeAge(value) {
                                     </td>
                                     <td class="px-5 py-3 text-right">
                                         <Link
-                                            :href="route('admin.requests.show', item.id)"
+                                            :href="route(`${routeBase}.requests.show`, item.id)"
                                             class="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
                                         >
                                             Open <ArrowRightIcon class="h-3.5 w-3.5" />

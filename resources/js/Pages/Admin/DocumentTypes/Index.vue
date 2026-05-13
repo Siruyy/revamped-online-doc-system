@@ -4,7 +4,7 @@ import EmptyState from '@/Components/UI/EmptyState.vue';
 import FormField from '@/Components/UI/FormField.vue';
 import PageHeader from '@/Components/UI/PageHeader.vue';
 import StatusBadge from '@/Components/UI/StatusBadge.vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import {
     CheckIcon,
@@ -22,6 +22,9 @@ const props = defineProps({
     documentTypes: { type: Array, required: true },
 });
 
+const page = usePage();
+const routeBase = computed(() => (page.props.auth?.user?.role === 'superadmin' ? 'superadmin' : 'admin'));
+
 // ─── Create ──────────────────────────────────────────────────────────────────
 const showCreate = ref(false);
 
@@ -36,7 +39,7 @@ const createForm = useForm({
 });
 
 const save = () =>
-    createForm.post(route('admin.document-types.store'), {
+    createForm.post(route(`${routeBase.value}.document-types.store`), {
         onSuccess: () => {
             showCreate.value = false;
             createForm.reset();
@@ -67,7 +70,7 @@ function toggleExpand(id) {
 const update = (typeId) => {
     const form = updateForms[typeId];
     form.processing = true;
-    router.patch(route('admin.document-types.update', typeId), form, {
+    router.patch(route(`${routeBase.value}.document-types.update`, typeId), form, {
         onFinish: () => {
             form.processing = false;
         },
@@ -79,7 +82,7 @@ const update = (typeId) => {
 
 const destroyType = (typeId, name) => {
     if (!window.confirm(`Delete or disable "${name}"?`)) return;
-    router.delete(route('admin.document-types.destroy', typeId));
+    router.delete(route(`${routeBase.value}.document-types.destroy`, typeId));
 };
 
 // ─── Search / filter ─────────────────────────────────────────────────────────

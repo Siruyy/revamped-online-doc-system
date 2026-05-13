@@ -10,7 +10,7 @@
 
 **Depends on:** Phases 04-06. PDF completion seam depends on Phase 05 closeout.
 
-**Primary docs:** [`13-pdf-generation.md`](../13-pdf-generation.md), [`11-file-storage.md`](../11-file-storage.md), [`10-security.md`](../10-security.md), [`04-database-schema.md`](../04-database-schema.md).
+**Primary docs:** [`13-pdf-generation.md`](../../13-pdf-generation.md), [`11-file-storage.md`](../../11-file-storage.md), [`10-security.md`](../../10-security.md), [`04-database-schema.md`](../../04-database-schema.md).
 
 ---
 

@@ -1,11 +1,14 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
-import { reactive } from 'vue';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
+import { computed, reactive } from 'vue';
 
 const props = defineProps({
     announcements: { type: Array, required: true },
 });
+
+const page = usePage();
+const routeBase = computed(() => (page.props.auth?.user?.role === 'superadmin' ? 'superadmin' : 'admin'));
 
 const createForm = useForm({
     title: '',
@@ -26,9 +29,9 @@ props.announcements.forEach((item) => {
     };
 });
 
-const createAnnouncement = () => createForm.post(route('admin.announcements.store'));
-const updateAnnouncement = (id) => router.patch(route('admin.announcements.update', id), forms[id]);
-const deleteAnnouncement = (id) => router.delete(route('admin.announcements.destroy', id));
+const createAnnouncement = () => createForm.post(route(`${routeBase.value}.announcements.store`));
+const updateAnnouncement = (id) => router.patch(route(`${routeBase.value}.announcements.update`, id), forms[id]);
+const deleteAnnouncement = (id) => router.delete(route(`${routeBase.value}.announcements.destroy`, id));
 </script>
 
 <template>

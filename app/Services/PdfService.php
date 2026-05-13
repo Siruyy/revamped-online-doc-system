@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Clearance;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 
@@ -47,7 +48,12 @@ class PdfService
 
         foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
             $signer = $clearance->{$role.'Signer'};
-            $path = $signer?->signature_path;
+
+            if (! $signer instanceof User) {
+                continue;
+            }
+
+            $path = $signer->signature_path;
 
             if (! $path || ! str_starts_with($path, "signatures/{$signer->id}/") || str_contains($path, '..') || ! Storage::disk('local')->exists($path)) {
                 continue;

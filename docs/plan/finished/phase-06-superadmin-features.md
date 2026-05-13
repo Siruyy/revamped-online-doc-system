@@ -2,11 +2,11 @@
 
 > **Goal:** Verify and close gaps in SuperAdmin user management, reports, logs, route coverage, and sensitive-action security.
 
-**Status:** Active closeout. Core MVP is implemented and covered for current user, log, report, and CSV export workflows. Task 6.5 security closeout passed. Remaining gaps are explicit SuperAdmin aliases for some admin-managed resources from older route docs.
+**Status:** Finished. Core MVP is implemented and covered for current user, log, report, CSV export, and shared admin-resource workflows. Task 6.5 security closeout passed, and Task 6.3 route coverage added explicit SuperAdmin aliases for older route docs.
 
 **Depends on:** Phase 02, Phase 04.
 
-**Primary docs:** [`03-roles-and-permissions.md`](../03-roles-and-permissions.md), [`07-routes-and-controllers.md`](../07-routes-and-controllers.md), [`10-security.md`](../10-security.md).
+**Primary docs:** [`03-roles-and-permissions.md`](../../03-roles-and-permissions.md), [`07-routes-and-controllers.md`](../../07-routes-and-controllers.md), [`10-security.md`](../../10-security.md).
 
 ---
 
@@ -67,15 +67,15 @@
 - `app/Http/Controllers/Admin/FaqController.php`
 
 **Steps:**
-- [ ] Add or verify SuperAdmin request overview route if docs require it.
-- [ ] Add or verify SuperAdmin can access document type, announcement, and FAQ CRUD using shared admin controllers or explicit SuperAdmin controllers.
-- [ ] Ensure route names do not collide with admin route names.
-- [ ] Ensure menus expose only implemented routes.
-- [ ] Add route authorization tests for each added route.
+- [x] Add or verify SuperAdmin request overview route if docs require it.
+- [x] Add or verify SuperAdmin can access document type, announcement, and FAQ CRUD using shared admin controllers or explicit SuperAdmin controllers.
+- [x] Ensure route names do not collide with admin route names.
+- [x] Ensure menus expose only implemented routes.
+- [x] Add route authorization tests for each added route.
 
 **Acceptance:**
-- [ ] SuperAdmin has documented system-wide visibility and management access.
-- [ ] Admin-only middleware does not accidentally block SuperAdmin where docs require access.
+- [x] SuperAdmin has documented system-wide visibility and management access.
+- [x] Admin-only middleware does not accidentally block SuperAdmin where docs require access.
 
 ## Agent Task 6.4 — Logs And Reports Closeout
 
@@ -122,8 +122,8 @@ php artisan route:list --path=superadmin
 ## Phase Notes
 
 - CSV exports for SuperAdmin users and activity logs exist; XLSX exports remain deferred to Phase 09.
-- Current SuperAdmin routes cover dashboard, users, pending users, logs, reports, notifications, and profile. Older docs-required aliases for `/superadmin/requests`, `/superadmin/reports/export`, `/superadmin/announcements`, `/superadmin/faqs`, and `/superadmin/document-types` remain deferred until shared admin-resource access is designed.
+- Current SuperAdmin routes cover dashboard, users, pending users, logs, reports, notifications, profile, requests, document types, announcements, FAQs, and CSV report exports. Shared admin-resource pages now use role-aware route prefixes so SuperAdmin interactions stay under `superadmin.*` routes.
 - Broadcast announcements are stretch unless client explicitly asks.
 - Session revoke is stretch unless security requirements change.
 - Task 6.5 closeout (2026-05-13): added coverage for empty bulk selections, mixed-status bulk approve, student denial, unverified SuperAdmin redirect, and non-SuperAdmin activity log export denial. Focused SuperAdmin security review found no CRITICAL/HIGH issue.
-- Do not move this phase to `finished/` until SuperAdmin route coverage and final security review pass.
+- Task 6.3 closeout (2026-05-14): added SuperAdmin aliases for request overview/detail/actions, document type CRUD, announcement CRUD, FAQ CRUD, and report CSV exports. `php artisan test --filter=SuperAdminRouteCoverageTest` passes.

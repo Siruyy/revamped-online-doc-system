@@ -110,7 +110,11 @@ const links = computed(() => {
             { route: 'superadmin.users.pending', label: 'Pending registrations' },
             { route: 'superadmin.users.create', label: 'Create staff' },
             { route: 'superadmin.logs.index', label: 'Activity logs' },
+            { route: 'superadmin.requests.index', label: 'Requests' },
             { route: 'superadmin.reports.index', label: 'Reports' },
+            { route: 'superadmin.document-types.index', label: 'Document Types' },
+            { route: 'superadmin.announcements.index', label: 'Announcements' },
+            { route: 'superadmin.faqs.index', label: 'FAQs' },
             { route: 'superadmin.notifications.index', label: 'Notifications' },
             { route: 'superadmin.profile.edit', label: 'Profile' },
         ].map((link) => ({ ...link, icon: getIconForRoute(link.route) }));

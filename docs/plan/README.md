@@ -4,21 +4,15 @@ This folder tracks remaining work for the Laravel 13 + Inertia + Vue rewrite.
 
 ## Current State
 
-Core MVP exists for setup, schema, auth, student, and admin flows. Remaining work is mostly closeout, realtime/notifications, messaging, PDF/export, hardening, deployment, and legacy migration.
+Core MVP exists for setup, schema, auth, student, admin, department, SuperAdmin, realtime/notifications, PDF/export, UI polish, and hardening flows. Remaining active work is messaging and post-launch handoff; deployment and legacy migration are not needed for the current requested scope.
 
 ## Active Phases
 
 | # | Phase | File | Status | Suggested Delegate |
 |---|-------|------|:------:|--------------------|
-| 05 | Department Clearance Closeout | [`phase-05-department-clearance.md`](./phase-05-department-clearance.md) | Active closeout | backend + tests |
-| 06 | SuperAdmin Closeout | [`phase-06-superadmin-features.md`](./phase-06-superadmin-features.md) | Active closeout | backend + security |
-| 07 | Real-Time & Notifications | [`phase-07-realtime-and-notifications.md`](./phase-07-realtime-and-notifications.md) | Partial, manual Reverb blocked | backend + realtime |
 | 08 | Messaging | [`phase-08-messaging.md`](./phase-08-messaging.md) | Deferred | backend + frontend |
-| 09 | PDF Generation & Exports | [`phase-09-pdf-and-exports.md`](./phase-09-pdf-and-exports.md) | Finished CSV/PDF MVP | backend + reporting |
-| 10 | UI/UX Polish | [`phase-10-ui-polish.md`](./phase-10-ui-polish.md) | Partial | frontend + accessibility |
-| 11 | Testing & Hardening | [`phase-11-testing-and-hardening.md`](./phase-11-testing-and-hardening.md) | Not started | verification + security |
-| 12 | Deployment | [`phase-12-deployment.md`](./phase-12-deployment.md) | Not started | deployment |
-| 13 | Legacy Data Migration | [`phase-13-legacy-data-migration.md`](./phase-13-legacy-data-migration.md) | Not started | database + migration |
+| 12 | Deployment | [`phase-12-deployment.md`](./phase-12-deployment.md) | Skipped for current scope | deployment |
+| 13 | Legacy Data Migration | [`phase-13-legacy-data-migration.md`](./phase-13-legacy-data-migration.md) | Skipped for current scope | database + migration |
 | 14 | Post-Launch | [`phase-14-post-launch.md`](./phase-14-post-launch.md) | Not started | support + docs |
 
 ## Finished Phases
@@ -32,18 +26,19 @@ Completed phases are archived in [`finished/`](./finished/). Do not edit archive
 | 02 | Auth, Roles & Approval Workflow | [`finished/phase-02-auth-and-roles.md`](./finished/phase-02-auth-and-roles.md) |
 | 03 | Student Features | [`finished/phase-03-student-features.md`](./finished/phase-03-student-features.md) |
 | 04 | Admin Features | [`finished/phase-04-admin-features.md`](./finished/phase-04-admin-features.md) |
+| 05 | Department Clearance Closeout | [`finished/phase-05-department-clearance.md`](./finished/phase-05-department-clearance.md) |
+| 06 | SuperAdmin Closeout | [`finished/phase-06-superadmin-features.md`](./finished/phase-06-superadmin-features.md) |
+| 07 | Real-Time & Notifications | [`finished/phase-07-realtime-and-notifications.md`](./finished/phase-07-realtime-and-notifications.md) |
+| 09 | PDF Generation & Exports | [`finished/phase-09-pdf-and-exports.md`](./finished/phase-09-pdf-and-exports.md) |
+| 10 | UI/UX Polish | [`finished/phase-10-ui-polish.md`](./finished/phase-10-ui-polish.md) |
+| 11 | Testing & Hardening | [`finished/phase-11-testing-and-hardening.md`](./finished/phase-11-testing-and-hardening.md) |
 
 ## Recommended Execution Order
 
-1. Phase 11 Task 11.1: fix CI blockers first (`phpstan.neon`, Pint, ESLint, coverage driver/CI DB parity).
-2. Phase 07: manually verify Reverb, queue worker, and browser notification bell behavior.
-3. Phase 09: add UI links and XLSX only if the client asks; CSV exports and clearance PDF generation now exist.
-4. Phase 08: messaging is explicitly deferred from v1.
-5. Phase 05 and 06: close out department and SuperAdmin gaps.
-6. Phase 10: UI/accessibility polish.
-7. Phase 12: production deployment artifacts and Dokploy setup.
-8. Phase 13: legacy migration only after client confirms import is required.
-9. Phase 14: post-launch handoff and operations.
+1. Phase 08: messaging remains explicitly deferred from v1.
+2. Phase 14: post-launch handoff and operations if needed.
+3. Manual operational checks: Reverb/browser notification flow, `queue:work`, Mailpit/Mailhog capture, and authenticated mobile/accessibility lab testing.
+4. Phase 12 and Phase 13 are skipped for the current requested scope.
 
 ## How To Use These Plans
 

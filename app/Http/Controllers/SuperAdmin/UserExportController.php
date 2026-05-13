@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\CsvExportService;
+use DateTimeInterface;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -39,7 +40,20 @@ class UserExportController extends Controller
             $user->course,
             $user->year_level,
             $user->created_at?->toDateTimeString(),
-            $user->approved_at?->toDateTimeString(),
+            $this->formatDateTime($user->approved_at),
         ]);
+    }
+
+    private function formatDateTime(mixed $value): ?string
+    {
+        if ($value instanceof DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+
+        if (is_string($value) && $value !== '') {
+            return $value;
+        }
+
+        return null;
     }
 }

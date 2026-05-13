@@ -1,11 +1,14 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
-import { reactive } from 'vue';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
+import { computed, reactive } from 'vue';
 
 const props = defineProps({
     faqs: { type: Array, required: true },
 });
+
+const page = usePage();
+const routeBase = computed(() => (page.props.auth?.user?.role === 'superadmin' ? 'superadmin' : 'admin'));
 
 const createForm = useForm({
     role: 'all',
@@ -24,9 +27,9 @@ props.faqs.forEach((item) => {
     };
 });
 
-const createFaq = () => createForm.post(route('admin.faqs.store'));
-const updateFaq = (id) => router.patch(route('admin.faqs.update', id), forms[id]);
-const deleteFaq = (id) => router.delete(route('admin.faqs.destroy', id));
+const createFaq = () => createForm.post(route(`${routeBase.value}.faqs.store`));
+const updateFaq = (id) => router.patch(route(`${routeBase.value}.faqs.update`, id), forms[id]);
+const deleteFaq = (id) => router.delete(route(`${routeBase.value}.faqs.destroy`, id));
 </script>
 
 <template>
