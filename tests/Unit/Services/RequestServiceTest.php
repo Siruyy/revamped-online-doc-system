@@ -12,6 +12,7 @@ use App\Models\DocumentRequest;
 use App\Models\DocumentRequestItem;
 use App\Models\DocumentType;
 use App\Models\Payment;
+use App\Models\RequestRequirement;
 use App\Models\User;
 use App\Notifications\RequestCancelledNotification;
 use App\Services\RequestService;
@@ -378,6 +379,44 @@ class RequestServiceTest extends TestCase
         $this->assertSame('completed', $updated->status);
         $this->assertNotNull($updated->released_at);
         Event::assertDispatched(RequestStageUpdated::class);
+    }
+
+    public function test_it_rejects_requirement_validation_when_requirement_belongs_to_another_request(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->student()->create();
+        $request = DocumentRequest::factory()->for($student)->pending()->create();
+        $otherRequest = DocumentRequest::factory()->for($student)->pending()->create();
+        $requirement = RequestRequirement::query()->create([
+            'document_request_id' => $otherRequest->id,
+            'requirement_key' => 'valid_id_photocopy_claimant',
+            'label' => 'Valid ID Photocopy',
+            'status' => 'submitted',
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Requirement does not belong to this document request.');
+
+        $this->service()->validateRequirement($request, $requirement, $admin);
+    }
+
+    public function test_it_rejects_requirement_rejection_when_requirement_belongs_to_another_request(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->student()->create();
+        $request = DocumentRequest::factory()->for($student)->pending()->create();
+        $otherRequest = DocumentRequest::factory()->for($student)->pending()->create();
+        $requirement = RequestRequirement::query()->create([
+            'document_request_id' => $otherRequest->id,
+            'requirement_key' => 'valid_id_photocopy_claimant',
+            'label' => 'Valid ID Photocopy',
+            'status' => 'submitted',
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Requirement does not belong to this document request.');
+
+        $this->service()->rejectRequirement($request, $requirement, $admin, 'Wrong document.');
     }
 
     private function service(): RequestService

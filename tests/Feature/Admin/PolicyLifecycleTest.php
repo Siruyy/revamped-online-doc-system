@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\ActivityLog;
 use App\Models\ClaimSlip;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
+use App\Models\Payment;
 use App\Models\RequestRequirement;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,6 +32,7 @@ class PolicyLifecycleTest extends TestCase
             'label' => 'Affidavit of Loss',
             'file_path' => 'fake.pdf',
             'status' => 'submitted',
+            'notes' => 'Old rejection reason',
         ]);
 
         $this->actingAs($admin)
@@ -40,7 +43,27 @@ class PolicyLifecycleTest extends TestCase
             'id' => $requirement->id,
             'status' => 'validated',
             'validated_by' => $admin->id,
+            'notes' => null,
         ]);
+
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'requirement_validated',
+            'user_id' => $admin->id,
+            'affected_user_id' => $student->id,
+        ]);
+        $activity = ActivityLog::query()->where('action', 'requirement_validated')->firstOrFail();
+        $this->assertSame($request->id, $activity->metadata['document_request_id']);
+        $this->assertSame($requirement->id, $activity->metadata['requirement_id']);
+        $this->assertSame('affidavit_of_loss', $activity->metadata['requirement_key']);
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_type' => User::class,
+            'notifiable_id' => $student->id,
+        ]);
+        $notification = $student->notifications()->firstOrFail();
+        $this->assertSame('requirement_validated', $notification->data['type']);
+        $this->assertSame($request->id, $notification->data['document_request_id']);
+        $this->assertSame('validated', $notification->data['status']);
     }
 
     /** §13.2 — admin can reject a requirement with notes */
@@ -67,7 +90,28 @@ class PolicyLifecycleTest extends TestCase
             'id' => $requirement->id,
             'status' => 'rejected',
             'notes' => 'Image is blurred, please resubmit.',
+            'validated_by' => $admin->id,
         ]);
+
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'requirement_rejected',
+            'user_id' => $admin->id,
+            'affected_user_id' => $student->id,
+        ]);
+        $activity = ActivityLog::query()->where('action', 'requirement_rejected')->firstOrFail();
+        $this->assertSame($request->id, $activity->metadata['document_request_id']);
+        $this->assertSame($requirement->id, $activity->metadata['requirement_id']);
+        $this->assertSame('valid_id_photocopy_claimant', $activity->metadata['requirement_key']);
+        $this->assertSame('Image is blurred, please resubmit.', $activity->metadata['notes']);
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_type' => User::class,
+            'notifiable_id' => $student->id,
+        ]);
+        $notification = $student->notifications()->firstOrFail();
+        $this->assertSame('requirement_rejected', $notification->data['type']);
+        $this->assertSame($request->id, $notification->data['document_request_id']);
+        $this->assertSame('rejected', $notification->data['status']);
     }
 
     /** §13.1 — approving a non-HD request starts the SLA clock (policy-initial: no payment gate) */
@@ -182,8 +226,12 @@ class PolicyLifecycleTest extends TestCase
     {
         $admin = $this->admin();
         $student = $this->student();
-        $type = DocumentType::factory()->create(['release_channel' => 'registrar_window_9']);
+        $type = DocumentType::factory()->create([
+            'flags' => ['no_clearance_needed'],
+            'release_channel' => 'registrar_window_9',
+        ]);
         $request = DocumentRequest::factory()->for($student)->for($type)->approved()->create();
+        Payment::factory()->for($student)->for($request)->approved()->create();
 
         $this->actingAs($admin)
             ->post(route('admin.requests.stage', $request), [
@@ -236,6 +284,27 @@ class PolicyLifecycleTest extends TestCase
             'id' => $request->id,
             'status' => 'completed',
             'processing_stage' => 'released',
+        ]);
+    }
+
+    public function test_direct_request_release_shows_gate_errors(): void
+    {
+        $admin = $this->admin();
+        $student = $this->student();
+        $request = DocumentRequest::factory()->for($student)->approved()->create([
+            'processing_stage' => 'ready_for_pickup',
+        ]);
+
+        $this->actingAs($admin)
+            ->from(route('admin.requests.show', $request))
+            ->post(route('admin.requests.release', $request))
+            ->assertRedirect(route('admin.requests.show', $request))
+            ->assertSessionHasErrors('processing_stage');
+
+        $this->assertDatabaseHas('document_requests', [
+            'id' => $request->id,
+            'status' => 'approved',
+            'processing_stage' => 'ready_for_pickup',
         ]);
     }
 

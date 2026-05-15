@@ -389,6 +389,77 @@ class RequestService
         return $documentRequest->refresh();
     }
 
+    public function validateRequirement(DocumentRequest $documentRequest, RequestRequirement $requirement, User $admin): RequestRequirement
+    {
+        $this->ensureRequirementBelongsToRequest($documentRequest, $requirement);
+
+        $requirement->update([
+            'status' => 'validated',
+            'notes' => null,
+            'validated_by' => $admin->id,
+            'validated_at' => now(),
+        ]);
+
+        ActivityLogger::log(
+            'requirement_validated',
+            "Admin {$admin->email} validated requirement {$requirement->requirement_key} for {$documentRequest->reference_no}.",
+            $admin,
+            $documentRequest->user,
+            [
+                'document_request_id' => $documentRequest->id,
+                'requirement_id' => $requirement->id,
+                'requirement_key' => $requirement->requirement_key,
+            ]
+        );
+
+        User::query()->findOrFail($documentRequest->user_id)->notify(new WorkflowStatusNotification([
+            'type' => 'requirement_validated',
+            'title' => 'Requirement validated',
+            'message' => "Your {$requirement->label} requirement was validated.",
+            'document_request_id' => $documentRequest->id,
+            'status' => 'validated',
+            'url' => route('student.requests.show', $documentRequest),
+        ]));
+
+        return $requirement->refresh();
+    }
+
+    public function rejectRequirement(DocumentRequest $documentRequest, RequestRequirement $requirement, User $admin, string $notes): RequestRequirement
+    {
+        $this->ensureRequirementBelongsToRequest($documentRequest, $requirement);
+
+        $requirement->update([
+            'status' => 'rejected',
+            'notes' => $notes,
+            'validated_by' => $admin->id,
+            'validated_at' => now(),
+        ]);
+
+        ActivityLogger::log(
+            'requirement_rejected',
+            "Admin {$admin->email} rejected requirement {$requirement->requirement_key} for {$documentRequest->reference_no}.",
+            $admin,
+            $documentRequest->user,
+            [
+                'document_request_id' => $documentRequest->id,
+                'requirement_id' => $requirement->id,
+                'requirement_key' => $requirement->requirement_key,
+                'notes' => $notes,
+            ]
+        );
+
+        User::query()->findOrFail($documentRequest->user_id)->notify(new WorkflowStatusNotification([
+            'type' => 'requirement_rejected',
+            'title' => 'Requirement needs revision',
+            'message' => "Your {$requirement->label} requirement needs revision.",
+            'document_request_id' => $documentRequest->id,
+            'status' => 'rejected',
+            'url' => route('student.requests.show', $documentRequest),
+        ]));
+
+        return $requirement->refresh();
+    }
+
     public function cancelRequest(DocumentRequest $documentRequest, User $student): DocumentRequest
     {
         if ($documentRequest->user_id !== $student->id) {
@@ -497,6 +568,13 @@ class RequestService
         if ($this->requestRequiresClearance($documentRequest)
             && ! $documentRequest->clearances()->where('overall_status', 'completed')->exists()) {
             throw new \RuntimeException("Complete clearance before moving this request to {$stageLabel}.");
+        }
+    }
+
+    private function ensureRequirementBelongsToRequest(DocumentRequest $documentRequest, RequestRequirement $requirement): void
+    {
+        if ($requirement->document_request_id !== $documentRequest->id) {
+            throw new \RuntimeException('Requirement does not belong to this document request.');
         }
     }
 

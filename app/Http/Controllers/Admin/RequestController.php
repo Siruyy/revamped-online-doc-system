@@ -8,7 +8,6 @@ use App\Models\RequestRequirement;
 use App\Services\RequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -136,21 +135,21 @@ class RequestController extends Controller
         return back()->with('status', 'Request stage updated successfully.');
     }
 
-    public function validateRequirement(DocumentRequest $documentRequest, RequestRequirement $requirement): RedirectResponse
+    public function validateRequirement(DocumentRequest $documentRequest, RequestRequirement $requirement, RequestService $requestService): RedirectResponse
     {
         $this->authorize('updateStage', $documentRequest);
         abort_unless($requirement->document_request_id === $documentRequest->id, 404);
 
-        $requirement->update([
-            'status' => 'validated',
-            'validated_by' => Auth::id(),
-            'validated_at' => now(),
-        ]);
+        try {
+            $requestService->validateRequirement($documentRequest, $requirement, request()->user());
+        } catch (\Throwable $exception) {
+            return back()->withErrors(['requirement' => $exception->getMessage()]);
+        }
 
         return back()->with('status', 'Requirement validated.');
     }
 
-    public function rejectRequirement(Request $request, DocumentRequest $documentRequest, RequestRequirement $requirement): RedirectResponse
+    public function rejectRequirement(Request $request, DocumentRequest $documentRequest, RequestRequirement $requirement, RequestService $requestService): RedirectResponse
     {
         $this->authorize('updateStage', $documentRequest);
         abort_unless($requirement->document_request_id === $documentRequest->id, 404);
@@ -159,12 +158,11 @@ class RequestController extends Controller
             'notes' => ['required', 'string', 'max:500'],
         ]);
 
-        $requirement->update([
-            'status' => 'rejected',
-            'notes' => $validated['notes'],
-            'validated_by' => Auth::id(),
-            'validated_at' => now(),
-        ]);
+        try {
+            $requestService->rejectRequirement($documentRequest, $requirement, $request->user(), $validated['notes']);
+        } catch (\Throwable $exception) {
+            return back()->withErrors(['notes' => $exception->getMessage()]);
+        }
 
         return back()->with('status', 'Requirement marked for revision.');
     }
@@ -196,7 +194,12 @@ class RequestController extends Controller
     public function release(Request $request, DocumentRequest $documentRequest, RequestService $service): RedirectResponse
     {
         $this->authorize('updateStage', $documentRequest);
-        $service->updateStage($documentRequest, $request->user(), 'released');
+
+        try {
+            $service->updateStage($documentRequest, $request->user(), 'released');
+        } catch (\Throwable $exception) {
+            return back()->withErrors(['processing_stage' => $exception->getMessage()]);
+        }
 
         return back()->with('status', 'Request marked as released.');
     }
