@@ -22,9 +22,11 @@ class ClearancePolicy
             return $clearance->user_id === $user->id;
         }
 
-        // Department officers may view any clearance (sign actions remain scoped per column).
-        if (in_array($user->role, ['teacher', 'dean', 'accounting', 'sao'], true)) {
-            return true;
+        $statusColumn = $this->departmentStatusColumn($user);
+
+        if ($statusColumn) {
+            return in_array($clearance->overall_status, ['in_progress', 'completed', 'denied'], true)
+                && $clearance->{$statusColumn} !== null;
         }
 
         return false;
@@ -42,6 +44,10 @@ class ClearancePolicy
 
     public function sign(User $user, Clearance $clearance): bool
     {
+        if ($clearance->overall_status !== 'in_progress') {
+            return false;
+        }
+
         return match ($user->role) {
             'teacher' => $clearance->teacher_status === 'pending',
             'dean' => $clearance->dean_status === 'pending',
@@ -53,13 +59,7 @@ class ClearancePolicy
 
     public function signFor(User $user, Clearance $clearance, string $column): bool
     {
-        $allowedColumn = match ($user->role) {
-            'teacher' => 'teacher',
-            'dean' => 'dean',
-            'accounting' => 'accounting',
-            'sao' => 'sao',
-            default => null,
-        };
+        $allowedColumn = $this->departmentColumn($user);
 
         if (! $allowedColumn) {
             return false;
@@ -74,13 +74,7 @@ class ClearancePolicy
      */
     public function signOwnDepartment(User $user, Clearance $clearance): bool
     {
-        $column = match ($user->role) {
-            'teacher' => 'teacher',
-            'dean' => 'dean',
-            'accounting' => 'accounting',
-            'sao' => 'sao',
-            default => null,
-        };
+        $column = $this->departmentColumn($user);
 
         if (! $column) {
             return false;
@@ -109,5 +103,23 @@ class ClearancePolicy
         }
 
         return $user->role === 'student' && $clearance->user_id === $user->id;
+    }
+
+    private function departmentColumn(User $user): ?string
+    {
+        return match ($user->role) {
+            'teacher' => 'teacher',
+            'dean' => 'dean',
+            'accounting' => 'accounting',
+            'sao' => 'sao',
+            default => null,
+        };
+    }
+
+    private function departmentStatusColumn(User $user): ?string
+    {
+        $column = $this->departmentColumn($user);
+
+        return $column ? "{$column}_status" : null;
     }
 }

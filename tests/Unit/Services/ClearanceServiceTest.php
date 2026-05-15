@@ -72,6 +72,7 @@ class ClearanceServiceTest extends TestCase
             'dean_status' => 'pending',
             'accounting_status' => 'pending',
             'sao_status' => 'pending',
+            'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
         ]);
 
         $updated = $this->service()->signFor($clearance, $teacher, 'teacher', 'Verified');
@@ -107,6 +108,7 @@ class ClearanceServiceTest extends TestCase
                 'dean_status' => 'pending',
                 'accounting_status' => 'pending',
                 'sao_status' => 'pending',
+                'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
             ]);
 
             $updated = $this->service()->signFor($clearance, $officer, $role, "{$role} clear");
@@ -121,6 +123,79 @@ class ClearanceServiceTest extends TestCase
                 $this->assertNull($updated->getAttribute("{$otherRole}_signed_by"));
             }
         }
+    }
+
+    public function test_it_prevents_signing_when_clearance_is_not_in_progress(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
+
+        $student = User::factory()->student()->create();
+        $clearance = Clearance::factory()->for($student)->create([
+            'teacher_status' => 'pending',
+            'overall_status' => 'denied',
+            'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Clearance can only be signed while it is in progress.');
+
+        $this->service()->signFor($clearance, User::factory()->teacher()->create(), 'teacher');
+    }
+
+    public function test_it_prevents_signing_when_department_status_is_not_pending(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
+
+        $student = User::factory()->student()->create();
+        $clearance = Clearance::factory()->for($student)->create([
+            'teacher_status' => 'cleared',
+            'overall_status' => 'in_progress',
+            'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('This department clearance is no longer pending.');
+
+        $this->service()->signFor($clearance, User::factory()->teacher()->create(), 'teacher');
+    }
+
+    public function test_it_prevents_signing_without_uploaded_supporting_file(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
+
+        $student = User::factory()->student()->create();
+        $clearance = Clearance::factory()->for($student)->create([
+            'teacher_status' => 'pending',
+            'overall_status' => 'in_progress',
+            'uploaded_file_path' => null,
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Student must upload the clearance supporting file before department signing.');
+
+        $this->service()->signFor($clearance, User::factory()->teacher()->create(), 'teacher');
+    }
+
+    public function test_it_prevents_signing_for_a_different_department_than_the_officer_role(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
+
+        $student = User::factory()->student()->create();
+        $clearance = Clearance::factory()->for($student)->create([
+            'teacher_status' => 'pending',
+            'dean_status' => 'pending',
+            'overall_status' => 'in_progress',
+            'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Officer role does not match the clearance department.');
+
+        $this->service()->signFor($clearance, User::factory()->teacher()->create(), 'dean');
     }
 
     public function test_it_denies_department_and_recomputes_denied_status(): void
@@ -187,6 +262,58 @@ class ClearanceServiceTest extends TestCase
         }
     }
 
+    public function test_it_prevents_denial_when_clearance_is_not_in_progress(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
+
+        $student = User::factory()->student()->create();
+        $clearance = Clearance::factory()->for($student)->create([
+            'dean_status' => 'pending',
+            'overall_status' => 'completed',
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Clearance can only be denied while it is in progress.');
+
+        $this->service()->denyFor($clearance, User::factory()->dean()->create(), 'dean', 'Missing paperwork');
+    }
+
+    public function test_it_prevents_denial_when_department_status_is_not_pending(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
+
+        $student = User::factory()->student()->create();
+        $clearance = Clearance::factory()->for($student)->create([
+            'dean_status' => 'cleared',
+            'overall_status' => 'in_progress',
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('This department clearance is no longer pending.');
+
+        $this->service()->denyFor($clearance, User::factory()->dean()->create(), 'dean', 'Missing paperwork');
+    }
+
+    public function test_it_prevents_denial_for_a_different_department_than_the_officer_role(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
+
+        $student = User::factory()->student()->create();
+        $clearance = Clearance::factory()->for($student)->create([
+            'teacher_status' => 'pending',
+            'dean_status' => 'pending',
+            'overall_status' => 'in_progress',
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Officer role does not match the clearance department.');
+
+        $this->service()->denyFor($clearance, User::factory()->teacher()->create(), 'dean', 'Missing paperwork');
+    }
+
     public function test_it_completes_clearance_once_all_departments_sign(): void
     {
         Event::fake([ClearanceUpdated::class, ClearanceCompleted::class]);
@@ -201,6 +328,7 @@ class ClearanceServiceTest extends TestCase
             'accounting_status' => 'cleared',
             'sao_status' => 'pending',
             'overall_status' => 'in_progress',
+            'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
         ]);
 
         $updated = $this->service()->signFor($clearance, User::factory()->sao()->create(), 'sao');

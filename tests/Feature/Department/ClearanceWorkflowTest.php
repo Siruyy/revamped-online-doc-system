@@ -49,6 +49,7 @@ class ClearanceWorkflowTest extends TestCase
             'dean_status' => 'pending',
             'accounting_status' => 'pending',
             'sao_status' => 'pending',
+            'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
         ]);
 
         $this->actingAs($teacher)->post(route('department.clearances.sign', $clearance), [
@@ -89,6 +90,7 @@ class ClearanceWorkflowTest extends TestCase
                 'dean_status' => 'pending',
                 'accounting_status' => 'pending',
                 'sao_status' => 'pending',
+                'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
             ]);
 
             $this->actingAs($officer)->post(route('department.clearances.sign', $clearance), [
@@ -125,6 +127,30 @@ class ClearanceWorkflowTest extends TestCase
         $this->actingAs($teacher)->post(route('department.clearances.sign', $clearance), [
             'remarks' => 'Again',
         ])->assertForbidden();
+    }
+
+    public function test_teacher_cannot_sign_without_uploaded_supporting_file(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+
+        $teacher = $this->makeOfficer('teacher');
+        $student = $this->makeStudent();
+        $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
+        $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
+            'teacher_status' => 'pending',
+            'dean_status' => 'pending',
+            'accounting_status' => 'pending',
+            'sao_status' => 'pending',
+            'uploaded_file_path' => null,
+        ]);
+
+        $this->actingAs($teacher)->post(route('department.clearances.sign', $clearance), [
+            'remarks' => 'Verified',
+        ])->assertRedirect()->assertSessionHasErrors([
+            'sign' => 'Student must upload the clearance supporting file before department signing.',
+        ]);
+
+        $this->assertSame('pending', $clearance->refresh()->teacher_status);
     }
 
     public function test_dean_can_deny_with_remarks(): void
@@ -213,6 +239,42 @@ class ClearanceWorkflowTest extends TestCase
         ])->assertSessionHasErrors('remarks');
     }
 
+    public function test_department_cannot_deny_when_clearance_is_not_in_progress(): void
+    {
+        $dean = $this->makeOfficer('dean');
+        $student = $this->makeStudent();
+        $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
+        $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
+            'dean_status' => 'pending',
+            'overall_status' => 'completed',
+        ]);
+
+        $this->actingAs($dean)->post(route('department.clearances.deny', $clearance), [
+            'remarks' => 'Missing library clearance paperwork',
+        ])->assertForbidden();
+
+        $this->assertSame('pending', $clearance->refresh()->dean_status);
+    }
+
+    public function test_department_cannot_deny_when_department_column_not_pending(): void
+    {
+        $dean = $this->makeOfficer('dean');
+        $student = $this->makeStudent();
+        $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
+        $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
+            'dean_status' => 'cleared',
+            'dean_signed_by' => $dean->id,
+            'dean_signed_at' => now(),
+            'overall_status' => 'in_progress',
+        ]);
+
+        $this->actingAs($dean)->post(route('department.clearances.deny', $clearance), [
+            'remarks' => 'Missing library clearance paperwork',
+        ])->assertForbidden();
+
+        $this->assertSame('cleared', $clearance->refresh()->dean_status);
+    }
+
     public function test_all_departments_clearing_completes_clearance_and_generates_pdf_record(): void
     {
         Event::fake();
@@ -225,6 +287,7 @@ class ClearanceWorkflowTest extends TestCase
             'dean_status' => 'pending',
             'accounting_status' => 'pending',
             'sao_status' => 'pending',
+            'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
         ]);
 
         $this->actingAs($this->makeOfficer('teacher'))->post(route('department.clearances.sign', $clearance), [])->assertRedirect();

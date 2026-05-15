@@ -83,10 +83,23 @@ class ClearanceService
     public function signFor(Clearance $clearance, User $officer, string $department, ?string $remarks = null): Clearance
     {
         $columns = $this->departmentColumns($department);
+        $this->ensureOfficerMatchesDepartment($officer, $department);
 
         return DB::transaction(function () use ($clearance, $officer, $columns, $remarks, $department): Clearance {
             /** @var Clearance $locked */
             $locked = Clearance::query()->whereKey($clearance->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->overall_status !== 'in_progress') {
+                throw new \RuntimeException('Clearance can only be signed while it is in progress.');
+            }
+
+            if ($locked->{$columns['status']} !== 'pending') {
+                throw new \RuntimeException('This department clearance is no longer pending.');
+            }
+
+            if (! $locked->uploaded_file_path) {
+                throw new \RuntimeException('Student must upload the clearance supporting file before department signing.');
+            }
 
             $beforeOverall = $locked->overall_status;
 
@@ -142,10 +155,19 @@ class ClearanceService
     public function denyFor(Clearance $clearance, User $officer, string $department, string $remarks): Clearance
     {
         $columns = $this->departmentColumns($department);
+        $this->ensureOfficerMatchesDepartment($officer, $department);
 
         return DB::transaction(function () use ($clearance, $officer, $columns, $remarks, $department): Clearance {
             /** @var Clearance $locked */
             $locked = Clearance::query()->whereKey($clearance->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->overall_status !== 'in_progress') {
+                throw new \RuntimeException('Clearance can only be denied while it is in progress.');
+            }
+
+            if ($locked->{$columns['status']} !== 'pending') {
+                throw new \RuntimeException('This department clearance is no longer pending.');
+            }
 
             $locked->update([
                 $columns['status'] => 'denied',
@@ -185,5 +207,12 @@ class ClearanceService
 
             return $locked->refresh();
         });
+    }
+
+    private function ensureOfficerMatchesDepartment(User $officer, string $department): void
+    {
+        if ($officer->role !== $department) {
+            throw new \InvalidArgumentException('Officer role does not match the clearance department.');
+        }
     }
 }

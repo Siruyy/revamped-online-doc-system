@@ -87,6 +87,39 @@ class PolicyTest extends TestCase
             'sao_status' => 'pending',
         ]);
         $this->assertFalse($policy->sign($teacher, $deniedTeacher));
+
+        $completedTeacher = Clearance::factory()->for($student)->create([
+            'teacher_status' => 'pending',
+            'overall_status' => 'completed',
+        ]);
+        $this->assertFalse($policy->sign($teacher, $completedTeacher));
+        $this->assertTrue($policy->rejectDepartment($dean, $clearance));
+        $this->assertFalse($policy->rejectDepartment($teacher, $completedTeacher));
+    }
+
+    public function test_clearance_policy_department_view_requires_relevant_workflow_record(): void
+    {
+        $teacher = User::factory()->teacher()->create();
+        $student = User::factory()->student()->create();
+        $policy = new ClearancePolicy;
+
+        $relevantClearance = Clearance::factory()->for($student)->make([
+            'teacher_status' => 'pending',
+            'overall_status' => 'in_progress',
+        ]);
+        $this->assertTrue($policy->view($teacher, $relevantClearance));
+
+        $missingTeacherStatus = Clearance::factory()->for($student)->make([
+            'teacher_status' => null,
+            'overall_status' => 'in_progress',
+        ]);
+        $this->assertFalse($policy->view($teacher, $missingTeacherStatus));
+
+        $outsideWorkflow = Clearance::factory()->for($student)->make([
+            'teacher_status' => 'pending',
+            'overall_status' => 'not_started',
+        ]);
+        $this->assertFalse($policy->view($teacher, $outsideWorkflow));
     }
 
     public function test_user_policy_superadmin_controls(): void
