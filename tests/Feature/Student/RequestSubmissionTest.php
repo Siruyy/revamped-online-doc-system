@@ -33,11 +33,22 @@ class RequestSubmissionTest extends TestCase
 
         $response->assertRedirect();
         $this->assertDatabaseCount('document_requests', 2);
-        $this->assertDatabaseHas('payments', [
-            'user_id' => $student->id,
-            'total_amount' => '350.00',
-            'status' => 'pending',
-        ]);
+        $this->assertDatabaseCount('payments', 2);
+
+        DocumentRequest::query()
+            ->where('user_id', $student->id)
+            ->get()
+            ->each(function (DocumentRequest $request) use ($docA, $docB, $student): void {
+                $expectedAmount = $request->document_type_id === $docA->id ? '100.00' : '250.00';
+
+                $this->assertSame($request->document_type_id === $docA->id ? $docA->id : $docB->id, $request->document_type_id);
+                $this->assertDatabaseHas('payments', [
+                    'user_id' => $student->id,
+                    'document_request_id' => $request->id,
+                    'total_amount' => $expectedAmount,
+                    'status' => 'pending',
+                ]);
+            });
     }
 
     public function test_student_cannot_submit_inactive_document_type(): void

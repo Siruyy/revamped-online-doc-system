@@ -179,7 +179,7 @@ class RequestService
      * Legacy batch entry-point. Kept so earlier pages and tests keep working.
      *
      * @param  array<int, int|string>  $documentIds
-     * @return array{requests: Collection<int, DocumentRequest>, payment: Payment}
+     * @return array{requests: Collection<int, DocumentRequest>, payment: Payment, payments: Collection<int, Payment>}
      */
     public function createRequestBatch(User $user, array $documentIds, ?string $purpose = null): array
     {
@@ -200,7 +200,7 @@ class RequestService
             }
 
             $createdRequests = collect();
-            $totalFee = 0.0;
+            $createdPayments = collect();
 
             foreach ($documentTypes as $documentType) {
                 $errors = $this->rules->validateEligibility($user, $documentType);
@@ -210,7 +210,6 @@ class RequestService
                 }
 
                 $fee = $this->rules->computeFee($documentType);
-                $totalFee += $fee;
 
                 $request = DocumentRequest::query()->create([
                     'user_id' => $user->id,
@@ -227,41 +226,50 @@ class RequestService
                 $this->seedRequirements($request, $documentType);
 
                 $createdRequests->push($request);
+
+                $createdPayments->push(Payment::query()->create([
+                    'user_id' => $user->id,
+                    'document_request_id' => $request->id,
+                    'total_amount' => $fee,
+                    'status' => 'pending',
+                    'submitted_at' => now(),
+                ]));
             }
 
-            /** @var DocumentRequest $firstRequest */
-            $firstRequest = $createdRequests->first();
+            $firstPayment = $createdPayments->first();
 
-            $payment = Payment::query()->create([
-                'user_id' => $user->id,
-                'document_request_id' => $firstRequest->id,
-                'total_amount' => $totalFee,
-                'status' => 'pending',
-                'submitted_at' => now(),
-            ]);
+            if (! $firstPayment instanceof Payment) {
+                throw new \RuntimeException('Payment creation failed unexpectedly for the submitted document requests.');
+            }
 
             ActivityLogger::log(
                 'request_submitted',
                 "User {$user->email} submitted ".count($documentIds).' document request(s).',
                 $user,
                 $user,
-                ['document_request_ids' => $createdRequests->pluck('id')->all(), 'payment_id' => $payment->id]
+                [
+                    'document_request_ids' => $createdRequests->pluck('id')->all(),
+                    'payment_id' => $firstPayment->id,
+                    'payment_ids' => $createdPayments->pluck('id')->all(),
+                ]
             );
 
-            RequestSubmitted::dispatch($createdRequests->pluck('id')->all(), $payment->id, $user->id);
+            RequestSubmitted::dispatch($createdRequests->pluck('id')->all(), $firstPayment->id, $user->id);
 
             $this->notifyActiveRoles(['admin', 'superadmin'], [
                 'type' => 'request_submitted',
                 'title' => 'New document request',
                 'message' => "{$user->fullname} submitted document requests.",
                 'document_request_ids' => $createdRequests->pluck('id')->all(),
-                'payment_id' => $payment->id,
+                'payment_id' => $firstPayment->id,
+                'payment_ids' => $createdPayments->pluck('id')->all(),
                 'student_id' => $user->id,
             ]);
 
             return [
                 'requests' => $createdRequests,
-                'payment' => $payment,
+                'payment' => $firstPayment,
+                'payments' => $createdPayments,
             ];
         });
     }
