@@ -102,7 +102,7 @@ class ProfileController extends Controller
         }
 
         $validated = $request->validate([
-            'signature' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:5120', 'dimensions:max_width=4096,max_height=4096'],
+            'signature' => ['required', 'image', 'mimes:png', 'mimetypes:image/png', 'max:1024', 'dimensions:max_width=4096,max_height=4096'],
         ]);
 
         $signatureFile = $validated['signature'];

@@ -49,6 +49,15 @@ class RegistrationTest extends TestCase
         ]);
 
         Notification::assertSentTo($superAdmin, RegistrationSubmittedNotification::class);
-        Event::assertDispatched(RegistrationSubmittedBroadcast::class);
+        Event::assertDispatched(RegistrationSubmittedBroadcast::class, function (RegistrationSubmittedBroadcast $event): bool {
+            $payload = $event->broadcastWith();
+
+            $this->assertArrayHasKey('user_id', $payload);
+            $this->assertArrayNotHasKey('email', $payload);
+            $this->assertArrayNotHasKey('student_id', $payload);
+            $this->assertArrayNotHasKey('fullname', $payload);
+
+            return true;
+        });
     }
 }

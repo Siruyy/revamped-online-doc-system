@@ -63,9 +63,6 @@ class RegisteredUserController extends Controller
 
         RegistrationSubmittedEvent::dispatch(
             $user->id,
-            $user->fullname,
-            $user->email,
-            (string) $user->student_id,
         );
 
         ActivityLogger::log(

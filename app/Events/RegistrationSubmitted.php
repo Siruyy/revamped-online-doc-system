@@ -15,9 +15,6 @@ class RegistrationSubmitted implements ShouldBroadcast
 
     public function __construct(
         public int $userId,
-        public string $fullname,
-        public string $email,
-        public string $studentId,
     ) {}
 
     /**
@@ -35,9 +32,6 @@ class RegistrationSubmitted implements ShouldBroadcast
     {
         return [
             'user_id' => $this->userId,
-            'fullname' => $this->fullname,
-            'email' => $this->email,
-            'student_id' => $this->studentId,
         ];
     }
 }

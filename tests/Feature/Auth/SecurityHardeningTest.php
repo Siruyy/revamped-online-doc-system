@@ -10,6 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class SecurityHardeningTest extends TestCase
@@ -20,6 +21,28 @@ class SecurityHardeningTest extends TestCase
     {
         $this->assertFalse(Route::has('storage.local'));
         $this->assertFalse(Route::has('storage.local.upload'));
+    }
+
+    public function test_reverb_allowed_origins_default_to_configured_origin_without_wildcard(): void
+    {
+        $origins = config('reverb.apps.apps.0.allowed_origins');
+
+        $this->assertIsArray($origins);
+        $this->assertNotContains('*', $origins);
+        $this->assertNotContains('', $origins);
+        $this->assertContains(config('app.url', 'http://localhost'), $origins);
+    }
+
+    public function test_reverb_allowed_origins_support_comma_separated_env_values(): void
+    {
+        $config = $this->loadReverbConfigWithEnv([
+            'REVERB_ALLOWED_ORIGINS' => 'https://example.test, https://admin.example.test, ,*',
+        ]);
+
+        $this->assertSame([
+            'https://example.test',
+            'https://admin.example.test',
+        ], $config['apps']['apps'][0]['allowed_origins']);
     }
 
     public function test_requirement_upload_rejects_pdf_extension_with_invalid_mime_type(): void
@@ -43,6 +66,58 @@ class SecurityHardeningTest extends TestCase
             ]);
 
         $response->assertSessionHasErrors('file');
+    }
+
+    public function test_department_signature_upload_rejects_jpeg(): void
+    {
+        Storage::fake('local');
+
+        $teacher = User::factory()->teacher()->create();
+
+        $response = $this->actingAs($teacher)
+            ->from(route('department.profile.edit'))
+            ->post(route('department.profile.signature'), [
+                'signature' => UploadedFile::fake()->image('signature.jpg', 100, 50)->size(100),
+            ]);
+
+        $response->assertSessionHasErrors('signature');
+        $this->assertNull($teacher->fresh()->signature_path);
+    }
+
+    public function test_department_signature_upload_rejects_oversized_png(): void
+    {
+        Storage::fake('local');
+
+        $teacher = User::factory()->teacher()->create();
+
+        $response = $this->actingAs($teacher)
+            ->from(route('department.profile.edit'))
+            ->post(route('department.profile.signature'), [
+                'signature' => UploadedFile::fake()->image('signature.png', 100, 50)->size(1025),
+            ]);
+
+        $response->assertSessionHasErrors('signature');
+        $this->assertNull($teacher->fresh()->signature_path);
+    }
+
+    public function test_department_signature_upload_accepts_valid_png(): void
+    {
+        Storage::fake('local');
+
+        $teacher = User::factory()->teacher()->create();
+
+        $response = $this->actingAs($teacher)
+            ->from(route('department.profile.edit'))
+            ->post(route('department.profile.signature'), [
+                'signature' => UploadedFile::fake()->image('signature.png', 100, 50)->size(100),
+            ]);
+
+        $response->assertRedirect(route('department.profile.edit'));
+
+        $teacher->refresh();
+        $this->assertNotNull($teacher->signature_path);
+        $this->assertTrue(Str::endsWith($teacher->signature_path, '.png'));
+        Storage::disk('local')->assertExists($teacher->signature_path);
     }
 
     public function test_sensitive_state_changing_routes_are_rate_limited(): void
@@ -163,5 +238,32 @@ class SecurityHardeningTest extends TestCase
             'instructions' => null,
             'is_active' => $isActive,
         ]);
+    }
+
+    /**
+     * @param  array<string, string>  $env
+     * @return array<string, mixed>
+     */
+    private function loadReverbConfigWithEnv(array $env): array
+    {
+        $previousEnv = $_ENV;
+        $previousServer = $_SERVER;
+
+        foreach ($env as $key => $value) {
+            $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
+            putenv("{$key}={$value}");
+        }
+
+        try {
+            return require base_path('config/reverb.php');
+        } finally {
+            foreach (array_keys($env) as $key) {
+                putenv($key);
+            }
+
+            $_ENV = $previousEnv;
+            $_SERVER = $previousServer;
+        }
     }
 }
