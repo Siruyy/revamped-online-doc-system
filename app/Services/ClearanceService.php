@@ -101,8 +101,6 @@ class ClearanceService
                 throw new \RuntimeException('Student must upload the clearance supporting file before department signing.');
             }
 
-            $beforeOverall = $locked->overall_status;
-
             $locked->update([
                 $columns['status'] => 'cleared',
                 $columns['remarks'] => $remarks,
@@ -112,6 +110,9 @@ class ClearanceService
 
             $locked->recomputeOverallStatus();
             $locked->save();
+            $locked->refresh();
+
+            $currentOverallStatus = $locked->overall_status;
 
             ActivityLogger::log(
                 'clearance_signed',
@@ -126,7 +127,7 @@ class ClearanceService
                 $locked->user_id,
                 $department,
                 'signed',
-                $locked->overall_status
+                $currentOverallStatus
             );
 
             $locked->user->notify(new WorkflowStatusNotification([
@@ -136,12 +137,10 @@ class ClearanceService
                 'clearance_id' => $locked->id,
                 'department' => $department,
                 'action' => 'signed',
-                'overall_status' => $locked->overall_status,
+                'overall_status' => $currentOverallStatus,
             ]));
 
-            $locked->refresh();
-
-            if ($locked->overall_status === 'completed' && $beforeOverall !== 'completed') {
+            if ($currentOverallStatus === 'completed') {
                 $this->pdfService->generateClearancePdf($locked);
                 $locked->refresh();
                 ClearanceCompleted::dispatch($locked->id, $locked->user_id);

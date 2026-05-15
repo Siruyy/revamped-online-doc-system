@@ -561,7 +561,7 @@ class RequestService
 
         $stageLabel = str_replace('_', ' ', $stage);
 
-        if (! $documentRequest->payments()->approved()->exists()) {
+        if (! $documentRequest->payments()->where('status', 'approved')->exists()) {
             throw new \RuntimeException("Approve payment before moving this request to {$stageLabel}.");
         }
 
@@ -584,11 +584,14 @@ class RequestService
 
         if ($items->isNotEmpty()) {
             return $items->contains(
-                fn (DocumentRequestItem $item): bool => $item->documentType?->requiresClearance() ?? false
+                fn (DocumentRequestItem $item): bool => $item->documentType instanceof DocumentType
+                    && $item->documentType->requiresClearance()
             );
         }
 
-        return $documentRequest->documentType?->requiresClearance() ?? true;
+        $documentType = $documentRequest->documentType;
+
+        return $documentType instanceof DocumentType ? $documentType->requiresClearance() : true;
     }
 
     public function pauseSla(DocumentRequest $request, User $admin, string $reason): DocumentRequest
@@ -622,12 +625,12 @@ class RequestService
 
         $pausedAt = CarbonImmutable::parse($request->sla_paused_at);
 
-        $pausedFor = $pausedAt->diffInMinutes(now());
+        $pausedForSeconds = (int) ceil($pausedAt->diffInSeconds(now()));
 
         $expectedRelease = $request->expected_release_on ? CarbonImmutable::parse($request->expected_release_on) : null;
 
         $newExpected = $expectedRelease
-            ? $expectedRelease->copy()->addMinutes($pausedFor)
+            ? $expectedRelease->copy()->addSeconds($pausedForSeconds)
             : null;
 
         $request->update([

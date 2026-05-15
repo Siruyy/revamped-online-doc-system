@@ -72,7 +72,9 @@ class RequestManagementTest extends TestCase
 
         $admin = $this->createAdmin();
         $student = $this->createStudent();
-        $request = DocumentRequest::factory()->for($student)->approved()->create();
+        $documentType = DocumentType::factory()->create(['flags' => ['no_clearance_needed']]);
+        $request = DocumentRequest::factory()->for($student)->for($documentType)->approved()->create();
+        Payment::factory()->for($student)->for($request)->approved()->create();
 
         $this->actingAs($admin)->post(route('admin.requests.stage', $request), [
             'processing_stage' => 'ready_for_pickup',

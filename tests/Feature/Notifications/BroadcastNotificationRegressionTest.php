@@ -115,7 +115,9 @@ class BroadcastNotificationRegressionTest extends TestCase
     {
         $admin = $this->activeUser('admin');
         $student = $this->activeUser('student');
-        $request = DocumentRequest::factory()->for($student)->approved()->create();
+        $documentType = DocumentType::factory()->create(['flags' => ['no_clearance_needed']]);
+        $request = DocumentRequest::factory()->for($student)->for($documentType)->approved()->create();
+        Payment::factory()->for($student)->for($request)->approved()->create();
 
         Event::fake([RequestStageUpdated::class]);
         NotificationFake::fake();
@@ -189,7 +191,10 @@ class BroadcastNotificationRegressionTest extends TestCase
     {
         $student = $this->activeUser('student');
         $teacher = $this->activeUser('teacher');
-        $clearance = Clearance::factory()->for($student)->create(['teacher_status' => 'pending']);
+        $clearance = Clearance::factory()->for($student)->create([
+            'teacher_status' => 'pending',
+            'uploaded_file_path' => 'clearance-files/supporting-file.pdf',
+        ]);
 
         Event::fake([ClearanceUpdated::class]);
         NotificationFake::fake();
@@ -233,6 +238,7 @@ class BroadcastNotificationRegressionTest extends TestCase
             'dean_status' => 'cleared',
             'accounting_status' => 'cleared',
             'sao_status' => 'pending',
+            'uploaded_file_path' => 'clearance-files/supporting-file.pdf',
         ]);
 
         Event::fake([ClearanceUpdated::class, ClearanceCompleted::class]);
