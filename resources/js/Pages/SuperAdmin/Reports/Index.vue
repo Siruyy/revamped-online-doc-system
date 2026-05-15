@@ -4,6 +4,7 @@ import EmptyState from '@/Components/UI/EmptyState.vue';
 import PageHeader from '@/Components/UI/PageHeader.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ChartBarIcon } from '@heroicons/vue/24/outline';
+import { computed } from 'vue';
 
 const props = defineProps({
     filters: { type: Object, required: true },
@@ -11,6 +12,7 @@ const props = defineProps({
     paymentsByStatus: { type: Object, required: true },
     clearancesByOverall: { type: Object, required: true },
     registrationsByStatus: { type: Object, required: true },
+    exportUrls: { type: Object, required: true },
 });
 
 const form = useForm({
@@ -21,6 +23,22 @@ const form = useForm({
 const apply = () => {
     form.get(route('superadmin.reports.index'), { preserveState: true, replace: true });
 };
+
+const exportFilters = computed(() => ({ from: form.from, to: form.to }));
+const requestExportUrl = computed(() => {
+    if (form.from === props.filters.from && form.to === props.filters.to) {
+        return props.exportUrls.requests;
+    }
+
+    return route('superadmin.reports.exports.requests', exportFilters.value);
+});
+const paymentExportUrl = computed(() => {
+    if (form.from === props.filters.from && form.to === props.filters.to) {
+        return props.exportUrls.payments;
+    }
+
+    return route('superadmin.reports.exports.payments', exportFilters.value);
+});
 </script>
 
 <template>
@@ -30,7 +48,7 @@ const apply = () => {
         <template #header>
             <PageHeader
                 title="System reports"
-                subtitle="Review summary counts for the selected date range. Excel exports are planned for Phase 09."
+                subtitle="Review summary counts for the selected date range and download available CSV exports."
             />
         </template>
 
@@ -58,6 +76,18 @@ const apply = () => {
                     class="text-sm font-semibold text-slate-600 hover:text-slate-900"
                     >Reset</Link
                 >
+                <a
+                    :href="requestExportUrl"
+                    class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                    Export requests CSV
+                </a>
+                <a
+                    :href="paymentExportUrl"
+                    class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                    Export payments CSV
+                </a>
             </form>
 
             <section class="grid gap-6 lg:grid-cols-2">

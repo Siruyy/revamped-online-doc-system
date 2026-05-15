@@ -51,10 +51,16 @@ class ReportController extends Controller
             ->pluck('c', 'status')
             ->all();
 
+        $filters = [
+            'from' => $fromInput?->toDateString() ?? $from->toDateString(),
+            'to' => $toInput?->toDateString() ?? $to->toDateString(),
+        ];
+
         return Inertia::render('SuperAdmin/Reports/Index', [
-            'filters' => [
-                'from' => $fromInput?->toDateString() ?? $from->toDateString(),
-                'to' => $toInput?->toDateString() ?? $to->toDateString(),
+            'filters' => $filters,
+            'exportUrls' => [
+                'requests' => route('superadmin.reports.exports.requests', $filters),
+                'payments' => route('superadmin.reports.exports.payments', $filters),
             ],
             'requestsByStatus' => $requestsByStatus,
             'paymentsByStatus' => $paymentsByStatus,

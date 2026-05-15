@@ -16,13 +16,39 @@ const props = defineProps({
 
 const filterForm = reactive({ status: props.filters.status || '' });
 const denyReasons = reactive({});
+const processingByPayment = reactive({});
+const rowErrors = reactive({});
 
 watch(
     () => props.payments.data,
     (rows) => {
+        const visibleIds = new Set(rows.map((payment) => String(payment.id)));
+
+        for (const key of Object.keys(denyReasons)) {
+            if (!visibleIds.has(key)) {
+                delete denyReasons[key];
+            }
+        }
+        for (const key of Object.keys(processingByPayment)) {
+            if (!visibleIds.has(key)) {
+                delete processingByPayment[key];
+            }
+        }
+        for (const key of Object.keys(rowErrors)) {
+            if (!visibleIds.has(key)) {
+                delete rowErrors[key];
+            }
+        }
+
         rows.forEach((payment) => {
             if (typeof denyReasons[payment.id] === 'undefined') {
                 denyReasons[payment.id] = '';
+            }
+            if (typeof processingByPayment[payment.id] === 'undefined') {
+                processingByPayment[payment.id] = { approve: false, deny: false };
+            }
+            if (typeof rowErrors[payment.id] === 'undefined') {
+                rowErrors[payment.id] = { payment: null, denial_reason: null };
             }
         });
     },
@@ -33,13 +59,51 @@ const applyFilters = () => {
     router.get(route('admin.payments.index'), filterForm, { preserveState: true, replace: true });
 };
 
+const clearRowErrors = (id) => {
+    rowErrors[id] = { payment: null, denial_reason: null };
+};
+
+const captureRowErrors = (id, errors) => {
+    rowErrors[id] = {
+        payment: errors.payment ?? null,
+        denial_reason: errors.denial_reason ?? null,
+    };
+};
+
 const approve = (id) => {
-    router.post(route('admin.payments.approve', id));
+    clearRowErrors(id);
+    processingByPayment[id].approve = true;
+    router.post(
+        route('admin.payments.approve', id),
+        {},
+        {
+            preserveScroll: true,
+            onError: (errors) => captureRowErrors(id, errors),
+            onFinish: () => {
+                processingByPayment[id].approve = false;
+            },
+        },
+    );
 };
 const deny = (id) => {
-    router.post(route('admin.payments.deny', id), {
-        denial_reason: denyReasons[id] ?? '',
-    });
+    clearRowErrors(id);
+    processingByPayment[id].deny = true;
+    router.post(
+        route('admin.payments.deny', id),
+        {
+            denial_reason: denyReasons[id] ?? '',
+        },
+        {
+            preserveScroll: true,
+            onError: (errors) => captureRowErrors(id, errors),
+            onSuccess: () => {
+                denyReasons[id] = '';
+            },
+            onFinish: () => {
+                processingByPayment[id].deny = false;
+            },
+        },
+    );
 };
 
 const reloadPayments = () => {
@@ -137,10 +201,11 @@ function paymentStatusTone(status) {
                         >
                             <button
                                 type="button"
-                                class="min-h-11 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                                class="min-h-11 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                                :disabled="processingByPayment[item.id]?.approve"
                                 @click="approve(item.id)"
                             >
-                                Approve
+                                {{ processingByPayment[item.id]?.approve ? 'Approving...' : 'Approve' }}
                             </button>
                             <form
                                 class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center"
@@ -155,14 +220,25 @@ function paymentStatusTone(status) {
                                     type="text"
                                     placeholder="Denial reason"
                                     class="min-h-11 w-full rounded-md border-slate-300 text-sm shadow-sm sm:w-56"
+                                    :disabled="processingByPayment[item.id]?.deny"
                                 />
                                 <button
                                     type="submit"
-                                    class="min-h-11 rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-500"
+                                    class="min-h-11 rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-500 disabled:opacity-50"
+                                    :disabled="processingByPayment[item.id]?.deny"
                                 >
-                                    Deny
+                                    {{ processingByPayment[item.id]?.deny ? 'Denying...' : 'Deny' }}
                                 </button>
                             </form>
+                            <div
+                                v-if="rowErrors[item.id]?.payment || rowErrors[item.id]?.denial_reason"
+                                class="w-full text-sm text-rose-600"
+                            >
+                                <p v-if="rowErrors[item.id]?.payment">{{ rowErrors[item.id].payment }}</p>
+                                <p v-if="rowErrors[item.id]?.denial_reason">
+                                    {{ rowErrors[item.id].denial_reason }}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </article>

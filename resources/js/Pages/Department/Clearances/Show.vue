@@ -1,4 +1,5 @@
 <script setup>
+import InputError from '@/Components/InputError.vue';
 import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
@@ -140,6 +141,8 @@ const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
                         rows="2"
                         class="block w-full rounded-md border-slate-300 text-sm shadow-sm"
                     />
+                    <InputError :message="signForm.errors.sign" />
+                    <InputError :message="signForm.errors.remarks" />
                     <button
                         type="submit"
                         class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
@@ -158,6 +161,8 @@ const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
                         rows="2"
                         class="block w-full rounded-md border-slate-300 text-sm shadow-sm"
                     />
+                    <InputError :message="denyForm.errors.deny" />
+                    <InputError :message="denyForm.errors.remarks" />
                     <button
                         type="submit"
                         class="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500 disabled:opacity-50"

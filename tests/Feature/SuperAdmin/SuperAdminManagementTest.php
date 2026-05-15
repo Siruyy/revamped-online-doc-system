@@ -97,11 +97,15 @@ class SuperAdminManagementTest extends TestCase
     public function test_superadmin_can_view_reports(): void
     {
         $superAdmin = User::factory()->superadmin()->create();
+        $filters = ['from' => '2026-01-01', 'to' => '2026-01-31'];
 
         $this->actingAs($superAdmin)
-            ->get(route('superadmin.reports.index'))
+            ->get(route('superadmin.reports.index', $filters))
             ->assertOk()
-            ->assertInertia(fn ($page) => $page->component('SuperAdmin/Reports/Index'));
+            ->assertInertia(fn ($page) => $page
+                ->component('SuperAdmin/Reports/Index')
+                ->where('exportUrls.requests', route('superadmin.reports.exports.requests', $filters))
+                ->where('exportUrls.payments', route('superadmin.reports.exports.payments', $filters)));
     }
 
     public function test_admin_cannot_access_superadmin_user_index(): void
