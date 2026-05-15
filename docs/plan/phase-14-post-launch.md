@@ -2,7 +2,7 @@
 
 > **Goal:** Operate the launched system safely, support users, verify backups, and maintain a realistic v2 roadmap.
 
-**Status:** Not started.
+**Status:** Partial. Support, role training, hotfix, maintenance, manual verification, and v2 roadmap docs exist. Launch-dependent monitoring, backup restore drill, and 30-day review remain future work.
 
 **Depends on:** Phase 12 launch. Phase 13 only if legacy migration is in scope.
 
@@ -19,6 +19,8 @@
 - [ ] Check disk usage for app storage and MySQL volumes.
 - [ ] Record production incidents and fixes.
 
+**Note:** Daily/weekly check procedures are documented in `docs/operations/runbook.md`. These checkboxes remain unchecked because they require execution during the first launch week.
+
 **Acceptance:**
 - [ ] First-week monitoring log exists.
 
@@ -31,13 +33,13 @@
 - `docs/operations/runbook.md`
 
 **Steps:**
-- [ ] Define support email or in-app support account.
-- [ ] Define severity levels: P0 outage, P1 critical workflow blocked, P2 degraded behavior, P3 minor issue.
-- [ ] Define response expectations for each severity.
-- [ ] Define how staff report issues with request references and screenshots.
+- [x] Define support email or in-app support account.
+- [x] Define severity levels: P0 outage, P1 critical workflow blocked, P2 degraded behavior, P3 minor issue.
+- [x] Define response expectations for each severity.
+- [x] Define how staff report issues with request references and screenshots.
 
 **Acceptance:**
-- [ ] Client knows where and how to report issues.
+- [x] Client knows where and how to report issues.
 
 ## Agent Task 14.3 — User Guides And Training
 
@@ -48,16 +50,17 @@
 - `docs/training/admin-guide.md`
 - `docs/training/department-guide.md`
 - `docs/training/superadmin-guide.md`
+- `docs/training/training-agenda.md`
 
 **Steps:**
-- [ ] Create student guide for registration, request submission, payment upload, tracking, and PDF download.
-- [ ] Create admin guide for request/payment approval, document types, announcements, FAQs, and reports.
-- [ ] Create department guide for clearance signing/denial and signatures.
-- [ ] Create SuperAdmin guide for user approval, staff creation, logs, and reports.
-- [ ] Prepare short training agenda or screen-recording script.
+- [x] Create student guide for registration, request submission, payment upload, tracking, and PDF download.
+- [x] Create admin guide for request/payment approval, document types, announcements, FAQs, and reports.
+- [x] Create department guide for clearance signing/denial and signatures.
+- [x] Create SuperAdmin guide for user approval, staff creation, logs, and reports.
+- [x] Prepare short training agenda or screen-recording script.
 
 **Acceptance:**
-- [ ] Guides cover the core role workflows in plain language.
+- [x] Guides cover the core role workflows in plain language.
 
 ## Agent Task 14.4 — Hotfix Process
 
@@ -67,13 +70,13 @@
 - `docs/operations/hotfix.md`
 
 **Steps:**
-- [ ] Define branch-from-main hotfix flow.
-- [ ] Define minimum verification for hotfixes.
-- [ ] Define emergency rollback path.
-- [ ] Define user communication via announcement/email.
+- [x] Define branch-from-main hotfix flow.
+- [x] Define minimum verification for hotfixes.
+- [x] Define emergency rollback path.
+- [x] Define user communication via announcement/email.
 
 **Acceptance:**
-- [ ] Hotfix process is clear before first incident.
+- [x] Hotfix process is clear before first incident.
 
 ## Agent Task 14.5 — Backup Restore Drill
 
@@ -116,24 +119,30 @@
 - PWA hardening.
 - Analytics dashboard.
 
+**Files likely touched:**
+- `docs/operations/v2-roadmap.md`
+
 **Steps:**
-- [ ] Rank v2 candidates by client value, risk, and implementation cost.
-- [ ] Separate must-have fixes from new features.
-- [ ] Create a v2 roadmap document.
+- [x] Rank v2 candidates by client value, risk, and implementation cost.
+- [x] Separate must-have fixes from new features.
+- [x] Create a v2 roadmap document.
 
 **Acceptance:**
-- [ ] V2 roadmap is explicit and not mixed with launch support tasks.
+- [x] V2 roadmap is explicit and not mixed with launch support tasks.
 
 ## Agent Task 14.8 — Maintenance Cadence
 
 **Delegate to:** deployment-patterns
 
+**Files likely touched:**
+- `docs/operations/maintenance.md`
+
 **Steps:**
-- [ ] Monthly: review Composer/npm security updates.
-- [ ] Monthly: check disk usage and backup success.
-- [ ] Quarterly: run backup restore drill.
-- [ ] Quarterly: review audit logs and failed jobs.
-- [ ] Annually: plan PHP/Laravel major version upgrades.
+- [x] Monthly: review Composer/npm security updates.
+- [x] Monthly: check disk usage and backup success.
+- [x] Quarterly: run backup restore drill.
+- [x] Quarterly: review audit logs and failed jobs.
+- [x] Annually: plan PHP/Laravel major version upgrades.
 
 **Acceptance:**
-- [ ] Maintenance calendar is documented.
+- [x] Maintenance calendar is documented.

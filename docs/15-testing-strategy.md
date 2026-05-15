@@ -210,7 +210,7 @@ Generate coverage report:
 composer test:coverage
 ```
 
-Coverage enforcement requires Xdebug or PCOV locally. CI installs Xdebug via `shivammathur/setup-php` and fails the build when coverage is below 80%.
+Coverage enforcement requires Xdebug or PCOV locally. CI installs Xdebug via `shivammathur/setup-php` and fails the PHP test job when coverage is below 80%. The current CI pipeline enforces coverage as pass/fail; it does not publish a coverage artifact.
 
 ## Notification & Broadcasting Tests
 
@@ -257,35 +257,23 @@ it('rejects executable file uploads', function () {
 
 ## CI Pipeline
 
-```yaml
-# .github/workflows/ci.yml
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:8
-        env: { MYSQL_ROOT_PASSWORD: secret, MYSQL_DATABASE: svci_test }
-        ports: ['3306:3306']
-        options: --health-cmd="mysqladmin ping" --health-interval=10s
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with: { php-version: '8.3', extensions: 'pdo_mysql, gd, zip, bcmath, intl, mbstring, xml', coverage: 'xdebug' }
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: composer install --no-interaction --prefer-dist
-      - run: npm ci
-      - run: npm run build
-      - run: cp .env.example .env && php artisan key:generate
-      - run: php artisan migrate --force
-      - run: ./vendor/bin/pint --test
-      - run: ./vendor/bin/phpstan analyse
-      - run: composer test:coverage
-      - run: npx playwright install --with-deps
-      - run: npx playwright test
+Current CI is split into three jobs in `.github/workflows/ci.yml`:
+
+| Job | Main commands | Notes |
+|---|---|---|
+| PHP Tests + Static Analysis | `npm run build`, `./vendor/bin/pint --test`, `./vendor/bin/phpstan analyse --no-progress`, `composer test:coverage` | Uses MySQL and Xdebug coverage; coverage is enforced at 80% by the Composer script. |
+| Frontend Lint | `npm run lint` | Runs ESLint against `resources/js`. |
+| Playwright E2E | `npx playwright install --with-deps chromium`, `npm run test:e2e` | Chromium-only, single worker, seeded with `E2E_REFRESH_DB=1`; uploads Playwright reports and test results only on failure. |
+
+Run the same checks locally with:
+
+```bash
+php artisan test
+./vendor/bin/pint --test
+./vendor/bin/phpstan analyse --no-progress
+npm run lint
+npm run build
+E2E_REFRESH_DB=1 npm run test:e2e
 ```
 
 ## TDD Workflow

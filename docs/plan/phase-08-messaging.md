@@ -6,6 +6,8 @@
 
 **Phase notes (2026-05-10):** Client confirmed messaging should be deferred for now. Do not expose new messaging UI or routes until this phase is explicitly reactivated.
 
+**Phase notes (2026-05-16):** Existing chat channel authorization tests are placeholder coverage for the deferred model/channel shape only. They do not indicate that messaging routes, inbox pages, composers, unread counts, or user-facing chat workflows are available.
+
 **Depends on:** Phase 07.
 
 **Primary docs:** [`05-features.md`](../05-features.md), [`07-routes-and-controllers.md`](../07-routes-and-controllers.md), [`08-real-time.md`](../08-real-time.md), [`10-security.md`](../10-security.md).

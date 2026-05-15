@@ -13,7 +13,7 @@ Core MVP exists for setup, schema, auth, student, admin, department, SuperAdmin,
 | 08 | Messaging | [`phase-08-messaging.md`](./phase-08-messaging.md) | Deferred | backend + frontend |
 | 12 | Deployment | [`phase-12-deployment.md`](./phase-12-deployment.md) | Skipped for current scope | deployment |
 | 13 | Legacy Data Migration | [`phase-13-legacy-data-migration.md`](./phase-13-legacy-data-migration.md) | Skipped for current scope | database + migration |
-| 14 | Post-Launch | [`phase-14-post-launch.md`](./phase-14-post-launch.md) | Not started | support + docs |
+| 14 | Post-Launch | [`phase-14-post-launch.md`](./phase-14-post-launch.md) | Partial | support + docs |
 
 ## Finished Phases
 
