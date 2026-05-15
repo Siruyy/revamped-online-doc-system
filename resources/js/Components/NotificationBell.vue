@@ -1,10 +1,11 @@
 <script setup>
+import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import { BellIcon } from '@heroicons/vue/24/outline';
 import { computed, onMounted, onUnmounted } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 
 /** Avoid duplicate .notification() handlers when the bell remounts across navigations. */
-const notificationEchoBound = new Set();
+const notificationEchoBound = new Map();
 
 const page = usePage();
 
@@ -28,19 +29,32 @@ const notificationsUrl = computed(() => {
 
 const userId = computed(() => page.props.auth?.user?.id ?? null);
 
+const reloadNotifications = () => {
+    router.reload({ only: ['unreadNotificationsCount'], preserveScroll: true });
+};
+
+const echoConnection = () =>
+    window.Echo?.connector?.pusher?.connection ?? window.Echo?.connector?.connection ?? window.Echo;
+
+const hasEchoChannel = (name) => Boolean(window.Echo?.connector?.channels?.[`private-${name}`]);
+
 onMounted(() => {
     if (!userId.value || typeof window === 'undefined' || !window.Echo) {
         return;
     }
     const key = `notifications:${userId.value}`;
-    if (notificationEchoBound.has(key)) {
+    const channelName = `user.${userId.value}`;
+    const connection = echoConnection();
+    if (notificationEchoBound.get(key) === connection && hasEchoChannel(channelName)) {
         return;
     }
-    notificationEchoBound.add(key);
-    window.Echo.private(`user.${userId.value}`).notification(() => {
-        router.reload({ preserveScroll: true });
+    notificationEchoBound.set(key, connection);
+    window.Echo.private(channelName).notification(() => {
+        reloadNotifications();
     });
 });
+
+useRealtimeOrPoll(reloadNotifications, { intervalMs: 90000 });
 
 onUnmounted(() => {
     // Intentionally do not Echo.leave(user.*): other views may still be listening.

@@ -2,6 +2,8 @@
 import EmptyState from '@/Components/UI/EmptyState.vue';
 import PageHeader from '@/Components/UI/PageHeader.vue';
 import StatusBadge from '@/Components/UI/StatusBadge.vue';
+import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
+import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { BanknotesIcon } from '@heroicons/vue/24/outline';
@@ -39,6 +41,16 @@ const deny = (id) => {
         denial_reason: denyReasons[id] ?? '',
     });
 };
+
+const reloadPayments = () => {
+    router.reload({ only: ['payments', 'filters'], preserveScroll: true });
+};
+
+useEchoPrivateChannel(() => 'role.admin', {
+    PaymentSubmitted: reloadPayments,
+});
+
+useRealtimeOrPoll(reloadPayments, { intervalMs: 90000 });
 
 function paymentStatusTone(status) {
     return (

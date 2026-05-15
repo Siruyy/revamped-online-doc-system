@@ -5,7 +5,7 @@ import Pagination from '@/Components/UI/Pagination.vue';
 import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { BellIcon } from '@heroicons/vue/24/outline';
 import { computed, ref } from 'vue';
 
@@ -51,6 +51,30 @@ const markAsRead = (notification) => {
             },
         },
     );
+};
+
+const notificationUrl = (notification) => {
+    const url = notification.data?.url;
+
+    if (typeof url !== 'string' || url === '') {
+        return null;
+    }
+
+    if (url.startsWith('/')) {
+        return url;
+    }
+
+    if (typeof window === 'undefined') {
+        return null;
+    }
+
+    try {
+        const parsed = new URL(url, window.location.origin);
+
+        return parsed.origin === window.location.origin ? parsed.href : null;
+    } catch {
+        return null;
+    }
 };
 </script>
 
@@ -127,6 +151,13 @@ const markAsRead = (notification) => {
                         <div>
                             <p class="text-sm font-semibold text-slate-800">{{ notification.type }}</p>
                             <p class="mt-1 text-sm text-slate-600">{{ notification.message }}</p>
+                            <Link
+                                v-if="notificationUrl(notification)"
+                                :href="notificationUrl(notification)"
+                                class="mt-2 inline-flex text-xs font-semibold text-indigo-600 hover:text-indigo-500"
+                            >
+                                View details
+                            </Link>
                             <p class="mt-1 text-xs text-slate-500">{{ notification.created_at }}</p>
                         </div>
                         <StatusBadge

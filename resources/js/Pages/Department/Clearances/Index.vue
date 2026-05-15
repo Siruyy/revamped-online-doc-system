@@ -2,9 +2,11 @@
 import EmptyState from '@/Components/UI/EmptyState.vue';
 import DataTableShell from '@/Components/UI/DataTableShell.vue';
 import ResponsiveRecordList from '@/Components/UI/ResponsiveRecordList.vue';
+import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
+import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import { reactive } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { computed, reactive } from 'vue';
 import { ArrowRightIcon, CheckBadgeIcon, FunnelIcon, XMarkIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -20,12 +22,26 @@ const form = reactive({
     search: props.filters.search || '',
 });
 
+const page = usePage();
+const department = computed(() => page.props.auth?.user?.role ?? null);
+
 const applyFilters = () =>
     router.get(route('department.clearances.index'), form, { preserveState: true, replace: true });
 const clearFilters = () => {
     Object.keys(form).forEach((k) => (form[k] = k === 'status' ? 'pending' : ''));
     applyFilters();
 };
+
+const reloadClearances = () => {
+    router.reload({ only: ['clearances', 'filters', 'departmentStatusColumn'], preserveScroll: true });
+};
+
+useEchoPrivateChannel(() => (department.value ? `role.department.${department.value}` : null), {
+    ClearanceCreated: reloadClearances,
+    ClearanceUpdated: reloadClearances,
+});
+
+useRealtimeOrPoll(reloadClearances, { intervalMs: 90000 });
 
 function badge(status) {
     return (
