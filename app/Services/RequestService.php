@@ -430,6 +430,8 @@ class RequestService
             throw new \RuntimeException('Only approved requests can move between processing stages.');
         }
 
+        $this->ensureStageGatesArePassed($documentRequest, $stage);
+
         $updates = ['processing_stage' => $stage];
 
         if ($stage === 'released') {
@@ -470,6 +472,37 @@ class RequestService
         ]));
 
         return $documentRequest;
+    }
+
+    private function ensureStageGatesArePassed(DocumentRequest $documentRequest, string $stage): void
+    {
+        if ($stage === 'processing') {
+            return;
+        }
+
+        $stageLabel = str_replace('_', ' ', $stage);
+
+        if (! $documentRequest->payments()->approved()->exists()) {
+            throw new \RuntimeException("Approve payment before moving this request to {$stageLabel}.");
+        }
+
+        if ($this->requestRequiresClearance($documentRequest)
+            && ! $documentRequest->clearances()->where('overall_status', 'completed')->exists()) {
+            throw new \RuntimeException("Complete clearance before moving this request to {$stageLabel}.");
+        }
+    }
+
+    private function requestRequiresClearance(DocumentRequest $documentRequest): bool
+    {
+        $items = $documentRequest->items()->with('documentType')->get();
+
+        if ($items->isNotEmpty()) {
+            return $items->contains(
+                fn (DocumentRequestItem $item): bool => $item->documentType?->requiresClearance() ?? false
+            );
+        }
+
+        return $documentRequest->documentType?->requiresClearance() ?? true;
     }
 
     public function pauseSla(DocumentRequest $request, User $admin, string $reason): DocumentRequest
