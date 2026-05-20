@@ -30,12 +30,12 @@ export default defineConfig({
     webServer: [
         {
             command: `${seedCommand}php artisan serve --host=${host} --port=${appPort}`,
-            url: baseURL,
+            url: `${baseURL}/up`,
             reuseExistingServer: !process.env.CI,
             timeout: 120_000,
         },
         {
-            command: `npm run dev -- --host ${host} --port ${vitePort}`,
+            command: `LARAVEL_BYPASS_ENV_CHECK=1 npm run dev -- --host ${host} --port ${vitePort}`,
             url: `http://${host}:${vitePort}/resources/js/app.js`,
             reuseExistingServer: !process.env.CI,
             timeout: 120_000,

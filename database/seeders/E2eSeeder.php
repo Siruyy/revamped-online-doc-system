@@ -138,6 +138,7 @@ class E2eSeeder extends Seeder
         ]);
 
         Storage::disk('local')->put('e2e/receipt.txt', 'E2E receipt fixture');
+        Storage::disk('local')->put('e2e/clearance-supporting.txt', 'E2E clearance supporting fixture');
 
         Payment::query()->updateOrCreate(
             ['document_request_id' => $clearanceRequest->id],
@@ -161,6 +162,7 @@ class E2eSeeder extends Seeder
                 'accounting_status' => 'pending',
                 'sao_status' => 'pending',
                 'overall_status' => 'in_progress',
+                'uploaded_file_path' => 'e2e/clearance-supporting.txt',
             ]
         );
     }

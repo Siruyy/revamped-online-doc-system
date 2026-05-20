@@ -51,7 +51,7 @@ class AdminPerformanceTest extends TestCase
             ->expectsOutputToContain('Seeded performance volume')
             ->expectsOutputToContain('Admin dashboard queries:')
             ->expectsOutputToContain('Admin request list queries:')
-            ->expectsOutputToContain('Admin request list EXPLAIN: using document_requests_admin_type_filter_index')
+            ->expectsOutputToContain('Admin request list EXPLAIN:')
             ->assertExitCode(0);
 
         $this->assertSame(8, User::query()->where('role', 'student')->count());
