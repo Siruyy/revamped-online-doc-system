@@ -7,7 +7,7 @@ mkdir -p storage/app/private storage/app/public storage/framework/cache storage/
 chown -R www-data:www-data storage bootstrap/cache
 
 if [ "${DB_CONNECTION:-}" = "mysql" ] && [ -n "${DB_HOST:-}" ]; then
-    until mysqladmin ping -h"${DB_HOST}" -P"${DB_PORT:-3306}" -u"${DB_USERNAME:-root}" -p"${DB_PASSWORD:-}" --silent; do
+    until mysqladmin --ssl=0 ping -h"${DB_HOST}" -P"${DB_PORT:-3306}" -u"${DB_USERNAME:-root}" -p"${DB_PASSWORD:-}" --silent; do
         echo "Waiting for database at ${DB_HOST}:${DB_PORT:-3306}..."
         sleep 2
     done
