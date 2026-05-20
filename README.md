@@ -16,7 +16,7 @@ Deferred or out of current scope:
 
 ## Tech Stack
 
-- **Backend:** PHP 8.3, Laravel 13, Inertia Laravel, Laravel Sanctum, Laravel Reverb
+- **Backend:** PHP 8.4, Laravel 13, Inertia Laravel, Laravel Sanctum, Laravel Reverb
 - **Frontend:** Vue 3, Inertia.js, Tailwind CSS, Headless UI, Heroicons
 - **Database and storage:** MySQL 8 in Docker, Laravel filesystem storage for private receipts, clearance files, signatures, and PDFs
 - **Async and realtime:** database queues, Laravel notifications, Laravel Echo, Reverb WebSockets
