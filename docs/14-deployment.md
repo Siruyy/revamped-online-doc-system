@@ -6,6 +6,8 @@
 - **Spec recommended:** 2 vCPU, 4 GB RAM, 80 GB SSD (the $24/mo "Basic" tier)
 - **OS:** Ubuntu 22.04 LTS
 - **Orchestrator:** Dokploy (Docker-based, free, self-hosted)
+- **Current VPS:** `100.109.80.94`
+- **Temporary domain plan:** `docs.siruyy.cloud` for the Laravel app and `docs-ws.siruyy.cloud` for Reverb until the permanent domain is available.
 
 > Dokploy must be installed on the droplet first. See [Dokploy docs](https://dokploy.com/docs).
 
@@ -36,7 +38,7 @@
 
 | Service | Image base | Purpose |
 |---------|-----------|---------|
-| `app` | `php:8.3-fpm-alpine` (custom build) | Laravel app + Nginx in one container |
+| `app` | `php:8.4-fpm-alpine` (custom build) | Laravel app + Nginx in one container |
 | `mysql` | `mysql:8.0` | Database |
 | `reverb` | Same as `app`, different command | WebSocket server |
 | `queue` | Same as `app`, different command | Async job processor |
@@ -54,7 +56,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM php:8.3-fpm-alpine AS base
+FROM php:8.4-fpm-alpine AS base
 
 RUN apk add --no-cache \
     nginx supervisor git curl libpng-dev libjpeg-turbo-dev \
@@ -199,25 +201,21 @@ http {
 
 ## Dokploy Setup Steps
 
-1. **Provision Droplet** — DigitalOcean → Ubuntu 22.04, 2 vCPU / 4 GB.
-2. **Install Dokploy** — `curl -sSL https://dokploy.com/install.sh | sh`.
-3. **Access Dokploy panel** at `http://<droplet-ip>:3000`, create admin account.
-4. **Create new Project** named `svci-document-system`.
-5. **Add Application** → connect GitHub repo (or push via Dokploy CLI).
-6. **Configure environment variables** in Dokploy UI (see `.env` template below).
-7. **Add Database service** → MySQL 8 → set root + app user passwords.
-8. **Connect app to database** via Dokploy's internal network.
-9. **Add Reverb service** → use same image, override command to `supervisord -c /etc/supervisord-reverb.conf`.
-10. **Add Queue service** → same image, command `supervisord -c /etc/supervisord-queue.conf`.
-11. **Configure persistent volumes**:
-    - `app-storage` → mount at `/var/www/html/storage/app`
-    - `mysql-data` → mount at `/var/lib/mysql`
-12. **Configure Dokploy reverse proxy**:
-    - Web app on `:80` (and `:443` once domain + SSL)
-    - Reverb on path `/app` proxied to internal `reverb:8080` with WebSocket upgrade headers
-13. **Deploy** — Dokploy builds image, runs migrations, starts containers.
-14. **Run seeder** for initial data: `dokploy exec app php artisan db:seed --class=ProductionSeeder`.
-15. **Create initial SuperAdmin**: `dokploy exec app php artisan svci:make-superadmin`.
+Use `docker-compose.dokploy.yml` for the first deployment. The detailed operational runbook is in [`docs/operations/dokploy-runbook.md`](operations/dokploy-runbook.md).
+
+1. **Create DNS records** pointing the temporary domains `docs.siruyy.cloud` and `docs-ws.siruyy.cloud` to `100.109.80.94`.
+2. **Create new Project** named `svci-document-system`.
+3. **Add Compose Application** → connect GitHub repo.
+4. **Set Compose file path** to `docker-compose.dokploy.yml`.
+5. **Configure environment variables** in Dokploy UI.
+6. **Configure domains**:
+    - `docs.siruyy.cloud` → `app` service port `80`
+    - `docs-ws.siruyy.cloud` → `reverb` service port `8080`
+7. **Enable HTTPS** for both domains.
+8. **Configure health check** → `GET /up`.
+9. **Deploy** — Dokploy builds the image, starts MySQL, runs migrations through the app container, and starts queue/Reverb.
+10. **Run seeder** for initial data: `php artisan db:seed --class=ProductionSeeder --force`.
+11. **Create initial SuperAdmin**: `php artisan svci:make-superadmin admin@example.com`.
 
 ## Environment Variables
 
@@ -226,7 +224,7 @@ APP_NAME="SVCI Document System"
 APP_ENV=production
 APP_KEY=                     # generate with php artisan key:generate
 APP_DEBUG=false
-APP_URL=http://YOUR_DROPLET_IP   # change to https://yourdomain.tld later
+APP_URL=https://docs.siruyy.cloud
 
 LOG_CHANNEL=daily
 LOG_LEVEL=warning
@@ -240,7 +238,7 @@ DB_PASSWORD=<strong-random>
 
 SESSION_DRIVER=database
 SESSION_LIFETIME=120
-SESSION_SECURE_COOKIE=false  # set true once HTTPS enabled
+SESSION_SECURE_COOKIE=true
 
 CACHE_STORE=database
 QUEUE_CONNECTION=database
@@ -249,14 +247,14 @@ BROADCAST_CONNECTION=reverb
 REVERB_APP_ID=svci
 REVERB_APP_KEY=<random>
 REVERB_APP_SECRET=<random>
-REVERB_HOST=0.0.0.0
+REVERB_HOST=reverb
 REVERB_PORT=8080
-REVERB_SCHEME=http           # https when SSL enabled
+REVERB_SCHEME=http
 
 VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
-VITE_REVERB_HOST="YOUR_DROPLET_IP"
-VITE_REVERB_PORT=80          # accessed via reverse proxy /app
-VITE_REVERB_SCHEME=http
+VITE_REVERB_HOST=docs-ws.siruyy.cloud
+VITE_REVERB_PORT=443
+VITE_REVERB_SCHEME=https
 
 MAIL_MAILER=smtp
 MAIL_HOST=
@@ -268,18 +266,27 @@ MAIL_FROM_ADDRESS=noreply@svci.example
 MAIL_FROM_NAME="SVCI Document System"
 ```
 
-## SSL (Once Domain Available)
+## SSL
 
-Dokploy supports automatic Let's Encrypt SSL via Traefik. After pointing the domain's A record to the droplet IP:
+Dokploy supports automatic Let's Encrypt SSL via Traefik. After pointing the domain records to the VPS:
 
-1. In Dokploy → Application → Domains → add `yourdomain.tld`.
+1. In Dokploy → Application → Domains → add `docs.siruyy.cloud`.
+2. In Dokploy → Reverb service → Domains → add `docs-ws.siruyy.cloud`.
 2. Enable "HTTPS" → Dokploy provisions cert via Let's Encrypt.
-3. Update `.env`:
-    - `APP_URL=https://yourdomain.tld`
-    - `SESSION_SECURE_COOKIE=true`
-    - `REVERB_SCHEME=https`
-    - `VITE_REVERB_SCHEME=https`
-4. Re-deploy.
+3. Re-deploy after certificates are ready.
+
+## Permanent Domain Cutover
+
+When the permanent domain is ready:
+
+1. Point the new app and Reverb/WebSocket DNS records to `100.109.80.94`.
+2. Update Dokploy domains from the temporary `siruyy.cloud` subdomains to the permanent domains.
+3. Update Dokploy environment variables:
+    - `APP_URL=https://<permanent-app-domain>`
+    - `REVERB_ALLOWED_ORIGINS=https://<permanent-app-domain>`
+    - `VITE_REVERB_HOST=<permanent-reverb-domain>`
+4. Redeploy so Vite rebuilds the browser bundle with the new `VITE_REVERB_HOST`.
+5. Re-run the `/up`, login, queue, and Reverb smoke checks.
 
 ## Backups
 
@@ -294,17 +301,9 @@ Dokploy supports scheduled backups for MySQL volumes. Configure:
 
 ## Health Checks
 
-Add a healthcheck endpoint:
+Laravel's built-in health route is configured at `/up` in `bootstrap/app.php`.
 
-```php
-Route::get('/health', fn () => response()->json([
-    'status' => 'ok',
-    'timestamp' => now()->toIso8601String(),
-    'version' => config('app.version'),
-]));
-```
-
-Configure Dokploy healthcheck → `GET /health` every 30s.
+Configure Dokploy healthcheck → `GET /up` every 30s.
 
 ## Monitoring (Initial)
 

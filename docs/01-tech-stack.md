@@ -4,7 +4,7 @@
 
 | Layer | Technology | Version | Purpose |
 |-------|-----------|---------|---------|
-| Runtime | PHP | 8.3+ | Backend language |
+| Runtime | PHP | 8.4+ | Backend language |
 | Framework | Laravel | 13.x | MVC, ORM, routing, queues |
 | Frontend bridge | Inertia.js | 2.x | SPA-like navigation, no API layer |
 | UI framework | Vue.js | 3.x (Composition API) | Component-based UI |
@@ -31,7 +31,7 @@
 | Containerization | Docker + Docker Compose | latest | Dev parity, deployment |
 | Deployment | Dokploy | latest | Docker orchestration on VPS |
 | Web server | Nginx | latest | Reverse proxy + static files |
-| PHP runtime | PHP-FPM 8.3 | latest | FastCGI |
+| PHP runtime | PHP-FPM 8.4 | latest | FastCGI |
 | OS | Ubuntu 22.04 LTS | — | VPS base |
 
 ## Why These Choices
@@ -61,7 +61,7 @@ Single-VPS deployment with modest concurrent load. Database queue is dead-simple
 
 ```json
 {
-  "php": "^8.3",
+  "php": "^8.4",
   "laravel/framework": "^13.0",
   "inertiajs/inertia-laravel": "^2.0",
   "laravel/reverb": "^1.0",
@@ -90,7 +90,7 @@ Single-VPS deployment with modest concurrent load. Database queue is dead-simple
 
 ## Local Development Requirements
 
-- PHP 8.3 with extensions: `mbstring`, `pdo_mysql`, `gd`, `bcmath`, `intl`, `zip`, `xml`
+- PHP 8.4 with extensions: `mbstring`, `pdo_mysql`, `gd`, `bcmath`, `intl`, `zip`, `xml`
 - Composer 2.x
 - Node.js 20 LTS + npm
 - MySQL 8 (or MariaDB 10.6+)

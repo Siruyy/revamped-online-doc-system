@@ -37,26 +37,22 @@ Core workflows:
 Finished phases are archived in `docs/plan/finished/`.
 
 Active work is in:
-- `docs/plan/phase-05-department-clearance.md`
-- `docs/plan/phase-06-superadmin-features.md`
-- `docs/plan/phase-07-realtime-and-notifications.md`
 - `docs/plan/phase-08-messaging.md`
-- `docs/plan/phase-09-pdf-and-exports.md`
-- `docs/plan/phase-10-ui-polish.md`
-- `docs/plan/phase-11-testing-and-hardening.md`
-- `docs/plan/phase-12-deployment.md`
-- `docs/plan/phase-13-legacy-data-migration.md`
 - `docs/plan/phase-14-post-launch.md`
 
-Do not trust old phase status without checking the active phase file and current code.
+Skipped for current scope:
+- `docs/plan/phase-12-deployment.md`
+- `docs/plan/phase-13-legacy-data-migration.md`
+
+Finished phases 00-07 and 09-11 are archived in `docs/plan/finished/`. Do not trust old phase status without checking `docs/plan/README.md` and current code.
 
 ## Known Audit Findings To Respect
 
-- Fix CI/readiness blockers before major new features: PHPStan config, Pint formatting, ESLint errors, coverage driver/CI DB parity.
-- Phase 07 is partial: notifications need `ShouldQueue`, `toBroadcast()`, full class catalog, side-effect tests, and manual Reverb verification.
+- Automated readiness blockers are currently green locally: `php artisan test`, Pint, PHPStan, ESLint, and Vite build passed on 2026-05-14.
+- Phase 07 automated implementation is finished; manual Reverb/browser, `queue:work`, and Mailpit/Mailhog verification remain. See `docs/manual-verification-checklist.md`.
 - Phase 08 messaging is not implemented unless future code changes prove otherwise.
-- Phase 09 PDF/export is not implemented; current clearance PDF behavior may be a stub.
-- Phase 12 deployment artifacts are missing; only dev Docker setup was found during audit.
+- Phase 09 PDF/export MVP is implemented and archived; add XLSX/extra export formats only if requested.
+- Phase 12 deployment artifacts are skipped for current scope; only dev Docker setup was found during audit.
 - Legacy PHP folders are insecure and should not be reused as-is.
 
 ## Legacy Context
@@ -125,6 +121,8 @@ php artisan queue:work
 npm run dev
 php artisan serve
 ```
+
+Manual verification checklist: `docs/manual-verification-checklist.md`.
 
 ## Workflow Rules
 
