@@ -20,6 +20,12 @@ class DocumentRequest extends Model
     protected $fillable = [
         'reference_no',
         'user_id',
+        'requester_name',
+        'requester_email',
+        'requester_contact_number',
+        'requester_student_id',
+        'requester_course',
+        'requester_year_level',
         'document_type_id',
         'quantity',
         'page_count',
@@ -68,6 +74,7 @@ class DocumentRequest extends Model
             'requires_hd_return' => 'boolean',
             'transfer_exception_requested' => 'boolean',
             'transfer_exception_approved' => 'boolean',
+            'requester_year_level' => 'integer',
             'fee_snapshot' => 'decimal:2',
             'extra_data' => 'array',
         ];
