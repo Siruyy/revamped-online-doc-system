@@ -305,6 +305,10 @@ class RequestService
      */
     public function approveRequest(DocumentRequest $documentRequest, User $admin): DocumentRequest
     {
+        if ($documentRequest->user_id === null || $documentRequest->intake_mode === 'public') {
+            throw new \RuntimeException('Use package approval for public requests.');
+        }
+
         if ($documentRequest->status !== 'pending') {
             throw new \RuntimeException('Only pending requests can be approved.');
         }
@@ -351,6 +355,10 @@ class RequestService
 
     public function denyRequest(DocumentRequest $documentRequest, User $admin, string $reason): DocumentRequest
     {
+        if ($documentRequest->user_id === null || $documentRequest->intake_mode === 'public') {
+            throw new \RuntimeException('Use package denial for public requests.');
+        }
+
         if (! in_array($documentRequest->status, ['pending', 'approved'], true)) {
             throw new \RuntimeException('This request can no longer be denied.');
         }
@@ -389,6 +397,114 @@ class RequestService
         return $documentRequest->refresh();
     }
 
+    public function approvePublicRequestPackage(DocumentRequest $documentRequest, User $admin, PaymentService $payments): DocumentRequest
+    {
+        return DB::transaction(function () use ($documentRequest, $admin, $payments): DocumentRequest {
+            /** @var DocumentRequest $locked */
+            $locked = DocumentRequest::query()
+                ->with(['documentType', 'requirements', 'payments'])
+                ->whereKey($documentRequest->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($locked->user_id !== null || $locked->intake_mode !== 'public') {
+                throw new \RuntimeException('Only public requests can use package approval.');
+            }
+
+            if ($locked->status !== 'pending') {
+                throw new \RuntimeException('Only pending requests can be approved.');
+            }
+
+            if ($locked->requirements->contains(fn (RequestRequirement $requirement): bool => $requirement->status !== 'validated')) {
+                throw new \RuntimeException('All requirements must be validated before approval.');
+            }
+
+            /** @var Payment|null $payment */
+            $payment = $locked->payments->sortByDesc('submitted_at')->first();
+
+            if (! $payment instanceof Payment || $payment->status !== 'pending_approval') {
+                throw new \RuntimeException('A pending approval payment is required before approval.');
+            }
+
+            $now = now();
+            $slaDays = $locked->documentType->processing_days ?: 3;
+            $canStartClock = ! $locked->requires_hd_return || $locked->hd_received_at;
+            $updates = [
+                'status' => 'approved',
+                'processing_stage' => 'processing',
+                'approved_by' => $admin->id,
+                'approved_at' => $now,
+                'denial_reason' => null,
+            ];
+
+            if ($canStartClock) {
+                $updates['sla_start_at'] = $now;
+                $updates['expected_release_on'] = $this->sla->expectedReleaseOn($now, $slaDays)->toDateString();
+            }
+
+            $locked->update($updates);
+            $payments->approve($payment, $admin);
+
+            RequestApproved::dispatch($locked->id, $locked->user_id, $admin->id);
+
+            ActivityLogger::log(
+                'public_request_package_approved',
+                "Admin {$admin->email} approved public request package {$locked->reference_no}.",
+                $admin,
+                null,
+                ['document_request_id' => $locked->id, 'payment_id' => $payment->id]
+            );
+
+            return $locked->refresh();
+        });
+    }
+
+    public function denyPublicRequestPackage(DocumentRequest $documentRequest, User $admin, string $reason, PaymentService $payments): DocumentRequest
+    {
+        return DB::transaction(function () use ($documentRequest, $admin, $reason, $payments): DocumentRequest {
+            /** @var DocumentRequest $locked */
+            $locked = DocumentRequest::query()
+                ->with('payments')
+                ->whereKey($documentRequest->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($locked->user_id !== null || $locked->intake_mode !== 'public') {
+                throw new \RuntimeException('Only public requests can use package denial.');
+            }
+
+            if (! in_array($locked->status, ['pending', 'approved'], true)) {
+                throw new \RuntimeException('This request can no longer be denied.');
+            }
+
+            $locked->update([
+                'status' => 'denied',
+                'processing_stage' => 'not_started',
+                'approved_by' => $admin->id,
+                'approved_at' => now(),
+                'denial_reason' => $reason,
+            ]);
+
+            $locked->payments
+                ->where('status', 'pending_approval')
+                ->each(function (Payment $payment) use ($admin, $reason, $payments): void {
+                    $payments->deny($payment, $admin, $reason);
+                });
+
+            RequestDenied::dispatch($locked->id, $locked->user_id, $admin->id, $reason);
+
+            ActivityLogger::log(
+                'public_request_package_denied',
+                "Admin {$admin->email} denied public request package {$locked->reference_no}.",
+                $admin,
+                null,
+                ['document_request_id' => $locked->id, 'reason' => $reason]
+            );
+
+            return $locked->refresh();
+        });
+    }
+
     public function validateRequirement(DocumentRequest $documentRequest, RequestRequirement $requirement, User $admin): RequestRequirement
     {
         $this->ensureRequirementBelongsToRequest($documentRequest, $requirement);
@@ -412,14 +528,16 @@ class RequestService
             ]
         );
 
-        User::query()->findOrFail($documentRequest->user_id)->notify(new WorkflowStatusNotification([
-            'type' => 'requirement_validated',
-            'title' => 'Requirement validated',
-            'message' => "Your {$requirement->label} requirement was validated.",
-            'document_request_id' => $documentRequest->id,
-            'status' => 'validated',
-            'url' => route('student.requests.show', $documentRequest),
-        ]));
+        if ($documentRequest->user_id !== null) {
+            User::query()->findOrFail($documentRequest->user_id)->notify(new WorkflowStatusNotification([
+                'type' => 'requirement_validated',
+                'title' => 'Requirement validated',
+                'message' => "Your {$requirement->label} requirement was validated.",
+                'document_request_id' => $documentRequest->id,
+                'status' => 'validated',
+                'url' => route('student.requests.show', $documentRequest),
+            ]));
+        }
 
         return $requirement->refresh();
     }
@@ -448,14 +566,16 @@ class RequestService
             ]
         );
 
-        User::query()->findOrFail($documentRequest->user_id)->notify(new WorkflowStatusNotification([
-            'type' => 'requirement_rejected',
-            'title' => 'Requirement needs revision',
-            'message' => "Your {$requirement->label} requirement needs revision.",
-            'document_request_id' => $documentRequest->id,
-            'status' => 'rejected',
-            'url' => route('student.requests.show', $documentRequest),
-        ]));
+        if ($documentRequest->user_id !== null) {
+            User::query()->findOrFail($documentRequest->user_id)->notify(new WorkflowStatusNotification([
+                'type' => 'requirement_rejected',
+                'title' => 'Requirement needs revision',
+                'message' => "Your {$requirement->label} requirement needs revision.",
+                'document_request_id' => $documentRequest->id,
+                'status' => 'rejected',
+                'url' => route('student.requests.show', $documentRequest),
+            ]));
+        }
 
         return $requirement->refresh();
     }
@@ -541,14 +661,16 @@ class RequestService
             $documentRequest->status,
         );
 
-        User::query()->findOrFail($documentRequest->user_id)->notify(new WorkflowStatusNotification([
-            'type' => 'request_stage_updated',
-            'title' => 'Request status updated',
-            'message' => "Your request {$documentRequest->reference_no} moved to {$documentRequest->processing_stage}.",
-            'document_request_id' => $documentRequest->id,
-            'processing_stage' => $documentRequest->processing_stage,
-            'status' => $documentRequest->status,
-        ]));
+        if ($documentRequest->user_id !== null) {
+            User::query()->findOrFail($documentRequest->user_id)->notify(new WorkflowStatusNotification([
+                'type' => 'request_stage_updated',
+                'title' => 'Request status updated',
+                'message' => "Your request {$documentRequest->reference_no} moved to {$documentRequest->processing_stage}.",
+                'document_request_id' => $documentRequest->id,
+                'processing_stage' => $documentRequest->processing_stage,
+                'status' => $documentRequest->status,
+            ]));
+        }
 
         return $documentRequest;
     }

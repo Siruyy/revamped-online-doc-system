@@ -27,6 +27,8 @@ Route::get('/requests/{documentRequest}', [RequestController::class, 'show'])->n
 Route::middleware('throttle:sensitive-actions')->group(function () {
     Route::post('/requests/{documentRequest}/approve', [RequestController::class, 'approve'])->name('requests.approve');
     Route::post('/requests/{documentRequest}/deny', [RequestController::class, 'deny'])->name('requests.deny');
+    Route::post('/requests/{documentRequest}/approve-with-payment', [RequestController::class, 'approveWithPayment'])->name('requests.approve-with-payment');
+    Route::post('/requests/{documentRequest}/deny-with-payment', [RequestController::class, 'denyWithPayment'])->name('requests.deny-with-payment');
     Route::post('/requests/{documentRequest}/stage', [RequestController::class, 'updateStage'])->name('requests.stage');
     Route::post('/requests/{documentRequest}/requirements/{requirement}/validate', [RequestController::class, 'validateRequirement'])->name('requests.requirements.validate');
     Route::post('/requests/{documentRequest}/requirements/{requirement}/reject', [RequestController::class, 'rejectRequirement'])->name('requests.requirements.reject');

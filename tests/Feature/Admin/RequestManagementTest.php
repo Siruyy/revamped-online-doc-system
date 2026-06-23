@@ -66,6 +66,25 @@ class RequestManagementTest extends TestCase
         ]);
     }
 
+    public function test_admin_denial_reason_strips_html_tags(): void
+    {
+        Event::fake([RequestDenied::class]);
+
+        $admin = $this->createAdmin();
+        $student = $this->createStudent();
+        $request = DocumentRequest::factory()->for($student)->pending()->create();
+
+        $this->actingAs($admin)->post(route('admin.requests.deny', $request), [
+            'denial_reason' => '<strong>Invalid</strong> student records',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('document_requests', [
+            'id' => $request->id,
+            'status' => 'denied',
+            'denial_reason' => 'Invalid student records',
+        ]);
+    }
+
     public function test_admin_can_update_request_stage(): void
     {
         Event::fake([RequestStageUpdated::class]);

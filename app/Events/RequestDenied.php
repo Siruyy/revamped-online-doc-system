@@ -15,7 +15,7 @@ class RequestDenied implements ShouldBroadcast
 
     public function __construct(
         public int $documentRequestId,
-        public int $studentId,
+        public ?int $studentId,
         public int $adminId,
         public string $reason,
     ) {}
@@ -25,6 +25,10 @@ class RequestDenied implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
+        if ($this->studentId === null) {
+            return [new PrivateChannel('role.admin')];
+        }
+
         return [new PrivateChannel('user.'.$this->studentId)];
     }
 

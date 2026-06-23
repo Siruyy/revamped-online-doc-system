@@ -106,14 +106,16 @@ class PaymentService
             ['payment_id' => $payment->id]
         );
 
-        PaymentApproved::dispatch($payment->id, $payment->user_id, $admin->id);
+        if ($payment->user_id !== null) {
+            PaymentApproved::dispatch($payment->id, $payment->user_id, $admin->id);
 
-        $payment->user->notify(new WorkflowStatusNotification([
-            'type' => 'payment_approved',
-            'title' => 'Payment approved',
-            'message' => 'Your payment receipt was approved.',
-            'payment_id' => $payment->id,
-        ]));
+            $payment->user->notify(new WorkflowStatusNotification([
+                'type' => 'payment_approved',
+                'title' => 'Payment approved',
+                'message' => 'Your payment receipt was approved.',
+                'payment_id' => $payment->id,
+            ]));
+        }
 
         return $payment->refresh();
     }
@@ -139,15 +141,17 @@ class PaymentService
             ['payment_id' => $payment->id, 'reason' => $reason]
         );
 
-        PaymentDenied::dispatch($payment->id, $payment->user_id, $admin->id, $reason);
+        if ($payment->user_id !== null) {
+            PaymentDenied::dispatch($payment->id, $payment->user_id, $admin->id, $reason);
 
-        $payment->user->notify(new WorkflowStatusNotification([
-            'type' => 'payment_denied',
-            'title' => 'Payment denied',
-            'message' => 'Your payment receipt was denied.',
-            'payment_id' => $payment->id,
-            'reason' => $reason,
-        ]));
+            $payment->user->notify(new WorkflowStatusNotification([
+                'type' => 'payment_denied',
+                'title' => 'Payment denied',
+                'message' => 'Your payment receipt was denied.',
+                'payment_id' => $payment->id,
+                'reason' => $reason,
+            ]));
+        }
 
         return $payment->refresh();
     }
@@ -189,11 +193,13 @@ class PaymentService
         );
 
         if ($clearance->wasRecentlyCreated) {
-            ClearanceCreated::dispatch(
-                $clearance->id,
-                $clearance->user_id,
-                $clearance->document_request_id
-            );
+            if ($clearance->user_id !== null) {
+                ClearanceCreated::dispatch(
+                    $clearance->id,
+                    $clearance->user_id,
+                    $clearance->document_request_id
+                );
+            }
 
             Notification::send(
                 User::query()->whereIn('role', ['teacher', 'dean', 'accounting', 'sao'])->where('status', 'active')->get(),

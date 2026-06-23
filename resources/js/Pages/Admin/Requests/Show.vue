@@ -26,6 +26,7 @@ const props = defineProps({
 });
 
 const denyForm = useForm({ denial_reason: '' });
+const approvePackageForm = useForm({});
 const stageForm = useForm({ processing_stage: props.request.processing_stage || 'processing' });
 const pauseForm = useForm({ reason: '' });
 const rejectForm = useForm({ notes: '' });
@@ -37,12 +38,21 @@ const payment = computed(() => props.request.payments?.[0]);
 const clearance = computed(() => props.request.clearances?.[0]);
 const claimSlip = computed(() => props.request.claim_slip);
 const requirements = computed(() => props.request.requirements ?? []);
+const isPublicRequest = computed(() => props.request.intake_mode === 'public');
 const allReqsValidated = computed(
     () => requirements.value.length === 0 || requirements.value.every((r) => r.status === 'validated'),
 );
 const paymentApproved = computed(() => payment.value?.status === 'approved');
+const paymentPendingApproval = computed(() => payment.value?.status === 'pending_approval');
 
-const canApprove = computed(() => props.request.status === 'pending');
+const canApprove = computed(() => !isPublicRequest.value && props.request.status === 'pending');
+const canApprovePackage = computed(
+    () =>
+        isPublicRequest.value &&
+        props.request.status === 'pending' &&
+        allReqsValidated.value &&
+        paymentPendingApproval.value,
+);
 const canDeny = computed(() => ['pending', 'approved'].includes(props.request.status));
 const canUpdateStage = computed(() => props.request.status === 'approved');
 const canRelease = computed(
@@ -57,8 +67,16 @@ function approve() {
     router.post(route(`${routeBase.value}.requests.approve`, props.request.id));
 }
 
+function approvePackage() {
+    approvePackageForm.post(route(`${routeBase.value}.requests.approve-with-payment`, props.request.id));
+}
+
 function deny() {
-    denyForm.post(route(`${routeBase.value}.requests.deny`, props.request.id), {
+    const routeName = isPublicRequest.value
+        ? `${routeBase.value}.requests.deny-with-payment`
+        : `${routeBase.value}.requests.deny`;
+
+    denyForm.post(route(routeName, props.request.id), {
         onSuccess: () => {
             showDeny.value = false;
             denyForm.reset();
@@ -183,35 +201,50 @@ function fmtDateOnly(value) {
         <div class="mx-auto grid max-w-7xl gap-6 px-4 pb-12 sm:px-6 lg:grid-cols-3 lg:px-8">
             <!-- Main column -->
             <div class="space-y-6 lg:col-span-2">
-                <!-- Student card -->
+                <!-- Requestor card -->
                 <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
                     <div class="flex items-start gap-4">
                         <div class="rounded-xl bg-brand-100 p-3 text-brand-700">
                             <UserCircleIcon class="h-7 w-7" />
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-display text-lg font-semibold text-slate-900">
+                            <h3 v-if="!isPublicRequest" class="font-display text-lg font-semibold text-slate-900">
                                 {{ request.user?.fullname }}
                             </h3>
-                            <p class="text-xs text-slate-500">
+                            <h3 v-else class="font-display text-lg font-semibold text-slate-900">
+                                {{ request.requester_name }}
+                            </h3>
+                            <p v-if="!isPublicRequest" class="text-xs text-slate-500">
                                 {{ request.user?.email }} · {{ request.user?.contact_number || '—' }}
+                            </p>
+                            <p v-else class="text-xs text-slate-500">
+                                {{ request.requester_email || 'No email provided' }} ·
+                                {{ request.requester_contact_number }}
                             </p>
                             <dl class="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-xs sm:grid-cols-3">
                                 <div>
                                     <dt class="text-slate-500">Student ID</dt>
-                                    <dd class="font-mono text-slate-900">{{ request.user?.student_id }}</dd>
+                                    <dd class="font-mono text-slate-900">
+                                        {{ isPublicRequest ? request.requester_student_id : request.user?.student_id }}
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt class="text-slate-500">Course / Year</dt>
                                     <dd class="text-slate-900">
-                                        {{ request.user?.course }} · Y{{ request.user?.year_level }}
+                                        {{ isPublicRequest ? request.requester_course : request.user?.course }} · Y{{
+                                            isPublicRequest ? request.requester_year_level : request.user?.year_level
+                                        }}
                                     </dd>
                                 </div>
-                                <div>
+                                <div v-if="!isPublicRequest">
                                     <dt class="text-slate-500">Academic status</dt>
                                     <dd class="capitalize text-slate-900">
                                         {{ (request.user?.academic_status || 'enrolled').replaceAll('_', ' ') }}
                                     </dd>
+                                </div>
+                                <div v-else>
+                                    <dt class="text-slate-500">Intake</dt>
+                                    <dd class="capitalize text-slate-900">Public request</dd>
                                 </div>
                             </dl>
                         </div>
@@ -399,6 +432,16 @@ function fmtDateOnly(value) {
                 <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
                     <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Decision</h3>
                     <div class="mt-3 flex flex-col gap-2">
+                        <div
+                            v-if="approvePackageForm.hasErrors"
+                            class="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700 ring-1 ring-rose-200"
+                        >
+                            {{
+                                approvePackageForm.errors.request ||
+                                approvePackageForm.errors.payment ||
+                                approvePackageForm.errors.requirement
+                            }}
+                        </div>
                         <button
                             v-if="canApprove"
                             type="button"
@@ -406,6 +449,15 @@ function fmtDateOnly(value) {
                             @click="approve"
                         >
                             <CheckCircleIcon class="h-5 w-5" /> Approve request
+                        </button>
+                        <button
+                            v-if="canApprovePackage"
+                            type="button"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500"
+                            :disabled="approvePackageForm.processing"
+                            @click="approvePackage"
+                        >
+                            <CheckCircleIcon class="h-5 w-5" /> Approve request + payment
                         </button>
                         <button
                             v-if="canDeny"
@@ -421,7 +473,7 @@ function fmtDateOnly(value) {
                         class="mt-3 space-y-2 rounded-lg border border-slate-200 p-3"
                         @submit.prevent="deny"
                     >
-                        <label class="text-xs font-medium text-slate-700">Reason (will be sent to student)</label>
+                        <label class="text-xs font-medium text-slate-700">Reason (visible in public tracking)</label>
                         <textarea
                             v-model="denyForm.denial_reason"
                             rows="3"
@@ -429,9 +481,16 @@ function fmtDateOnly(value) {
                             required
                             class="block w-full rounded-md border-slate-300 text-sm"
                         />
+                        <p v-if="denyForm.errors.denial_reason" class="text-xs text-rose-600">
+                            {{ denyForm.errors.denial_reason }}
+                        </p>
+                        <p v-if="denyForm.errors.request" class="text-xs text-rose-600">
+                            {{ denyForm.errors.request }}
+                        </p>
                         <button
                             type="submit"
                             class="w-full rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-500"
+                            :disabled="denyForm.processing"
                         >
                             Submit denial
                         </button>
@@ -603,11 +662,11 @@ function fmtDateOnly(value) {
                         </div>
                     </dl>
                     <Link
-                        v-if="payment.id && routeBase === 'admin'"
-                        :href="route('admin.payments.index')"
+                        v-if="payment.receipt_path"
+                        :href="route('files.payment-receipt', payment.id)"
                         class="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
                     >
-                        Verify in Payments queue →
+                        Open receipt →
                     </Link>
                 </section>
 

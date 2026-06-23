@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\DocumentRequest;
 use App\Models\RequestRequirement;
+use App\Services\PaymentService;
 use App\Services\RequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -69,13 +70,15 @@ class RequestController extends Controller
             'claimSlip',
         ]);
 
-        $batchRequests = DocumentRequest::query()
-            ->with(['documentType:id,name,category'])
-            ->where('user_id', $documentRequest->user_id)
-            ->whereDate('created_at', $documentRequest->created_at->toDateString())
-            ->where('id', '!=', $documentRequest->id)
-            ->orderBy('id')
-            ->get();
+        $batchRequests = $documentRequest->user_id === null
+            ? collect()
+            : DocumentRequest::query()
+                ->with(['documentType:id,name,category'])
+                ->where('user_id', $documentRequest->user_id)
+                ->whereDate('created_at', $documentRequest->created_at->toDateString())
+                ->where('id', '!=', $documentRequest->id)
+                ->orderBy('id')
+                ->get();
 
         return Inertia::render('Admin/Requests/Show', [
             'request' => $documentRequest,
@@ -108,14 +111,58 @@ class RequestController extends Controller
         $validated = $request->validate([
             'denial_reason' => ['required', 'string', 'max:500'],
         ]);
+        $reason = trim(strip_tags($validated['denial_reason']));
+
+        if ($reason === '') {
+            return back()->withErrors(['denial_reason' => 'A denial reason is required.'])->withInput();
+        }
 
         try {
-            $requestService->denyRequest($documentRequest, $request->user(), $validated['denial_reason']);
+            $requestService->denyRequest($documentRequest, $request->user(), $reason);
         } catch (\Throwable $exception) {
+            if (str_contains($exception->getMessage(), 'package denial')) {
+                return back()->withErrors(['request' => $exception->getMessage()]);
+            }
+
             return back()->withErrors(['denial_reason' => $exception->getMessage()]);
         }
 
         return back()->with('status', 'Request denied successfully.');
+    }
+
+    public function approveWithPayment(DocumentRequest $documentRequest, RequestService $requestService, PaymentService $paymentService): RedirectResponse
+    {
+        $this->authorize('approve', $documentRequest);
+
+        try {
+            $requestService->approvePublicRequestPackage($documentRequest, request()->user(), $paymentService);
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors([$this->packageErrorKey($exception->getMessage()) => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Request and payment approved successfully.');
+    }
+
+    public function denyWithPayment(Request $request, DocumentRequest $documentRequest, RequestService $requestService, PaymentService $paymentService): RedirectResponse
+    {
+        $this->authorize('deny', $documentRequest);
+
+        $validated = $request->validate([
+            'denial_reason' => ['required', 'string', 'max:500'],
+        ]);
+        $reason = trim(strip_tags($validated['denial_reason']));
+
+        if ($reason === '') {
+            return back()->withErrors(['denial_reason' => 'A denial reason is required.'])->withInput();
+        }
+
+        try {
+            $requestService->denyPublicRequestPackage($documentRequest, $request->user(), $reason, $paymentService);
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors(['request' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Request and payment denied successfully.');
     }
 
     public function updateStage(Request $request, DocumentRequest $documentRequest, RequestService $requestService): RedirectResponse
@@ -202,5 +249,11 @@ class RequestController extends Controller
         }
 
         return back()->with('status', 'Request marked as released.');
+    }
+
+    private function packageErrorKey(string $message): string
+    {
+        return str_contains($message, 'payment') ? 'payment'
+            : (str_contains($message, 'requirement') ? 'requirement' : 'request');
     }
 }
