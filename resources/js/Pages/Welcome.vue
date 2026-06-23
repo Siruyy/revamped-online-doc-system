@@ -93,13 +93,6 @@ const processSteps = [
                         >
                             Log in
                         </Link>
-                        <Link
-                            v-if="canRegister"
-                            :href="route('register')"
-                            class="hidden min-h-11 items-center justify-center rounded-xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-brand-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 motion-reduce:hover:translate-y-0 sm:inline-flex"
-                        >
-                            Create account
-                        </Link>
                     </template>
                 </nav>
             </div>
@@ -135,11 +128,11 @@ const processSteps = [
 
                         <div class="mt-9 flex flex-col gap-3 sm:flex-row">
                             <Link
-                                v-if="!$page.props.auth.user && canRegister"
-                                :href="route('register')"
+                                v-if="!$page.props.auth.user"
+                                :href="route('public.requests.create')"
                                 class="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent-500 px-6 py-3 text-base font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-accent-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 motion-reduce:hover:translate-y-0"
                             >
-                                Start a request
+                                Request Document
                                 <ArrowRightIcon class="h-5 w-5" />
                             </Link>
                             <Link
@@ -150,12 +143,12 @@ const processSteps = [
                                 Go to dashboard
                                 <ArrowRightIcon class="h-5 w-5" />
                             </Link>
-                            <a
-                                href="#process"
+                            <Link
+                                :href="route('track-document')"
                                 class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-3 text-base font-semibold text-slate-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 motion-reduce:hover:translate-y-0"
                             >
-                                See how it works
-                            </a>
+                                Track Document
+                            </Link>
                         </div>
                     </div>
 
