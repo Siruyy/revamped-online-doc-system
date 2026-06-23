@@ -225,6 +225,106 @@ class SecurityHardeningTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_admin_can_download_public_request_requirement_file(): void
+    {
+        Storage::fake('local');
+
+        $admin = User::factory()->admin()->create();
+        $requirement = $this->createPublicRequirementFile();
+
+        $this->actingAs($admin)
+            ->get(route('files.request-requirement', $requirement))
+            ->assertOk();
+    }
+
+    public function test_superadmin_can_download_public_request_requirement_file(): void
+    {
+        Storage::fake('local');
+
+        $superadmin = User::factory()->superadmin()->create();
+        $requirement = $this->createPublicRequirementFile();
+
+        $this->actingAs($superadmin)
+            ->get(route('files.request-requirement', $requirement))
+            ->assertOk();
+    }
+
+    public function test_unrelated_student_cannot_download_request_requirement_file(): void
+    {
+        Storage::fake('local');
+
+        $owner = User::factory()->student()->create();
+        $otherStudent = User::factory()->student()->create();
+        $documentRequest = DocumentRequest::factory()->for($owner)->create();
+        $path = "request-requirements/{$owner->id}/{$documentRequest->id}/valid-id.pdf";
+        Storage::disk('local')->put($path, 'private requirement');
+        $requirement = RequestRequirement::query()->create([
+            'document_request_id' => $documentRequest->id,
+            'requirement_key' => 'valid_id_photocopy_claimant',
+            'label' => 'Valid ID photocopy',
+            'status' => 'submitted',
+            'file_path' => $path,
+        ]);
+
+        $this->actingAs($otherStudent)
+            ->get(route('files.request-requirement', $requirement))
+            ->assertForbidden();
+    }
+
+    public function test_student_cannot_download_public_request_requirement_file(): void
+    {
+        Storage::fake('local');
+
+        $student = User::factory()->student()->create();
+        $requirement = $this->createPublicRequirementFile();
+
+        $this->actingAs($student)
+            ->get(route('files.request-requirement', $requirement))
+            ->assertForbidden();
+    }
+
+    public function test_department_user_cannot_download_request_requirement_file(): void
+    {
+        Storage::fake('local');
+
+        $teacher = User::factory()->teacher()->create();
+        $requirement = $this->createPublicRequirementFile();
+
+        $this->actingAs($teacher)
+            ->get(route('files.request-requirement', $requirement))
+            ->assertForbidden();
+    }
+
+    public function test_request_requirement_file_route_returns_404_for_missing_or_traversal_path(): void
+    {
+        Storage::fake('local');
+
+        $admin = User::factory()->admin()->create();
+        $missingRequirement = $this->createPublicRequirementFile('missing.pdf', false);
+        $traversalRequirement = $this->createPublicRequirementFile('../../secret.pdf');
+
+        $this->actingAs($admin)
+            ->get(route('files.request-requirement', $missingRequirement))
+            ->assertNotFound();
+
+        $this->actingAs($admin)
+            ->get(route('files.request-requirement', $traversalRequirement))
+            ->assertNotFound();
+    }
+
+    public function test_admin_request_detail_does_not_generate_public_storage_requirement_links(): void
+    {
+        Storage::fake('local');
+
+        $admin = User::factory()->admin()->create();
+        $requirement = $this->createPublicRequirementFile();
+
+        $response = $this->actingAs($admin)->get(route('admin.requests.show', $requirement->documentRequest));
+
+        $response->assertOk();
+        $this->assertStringNotContainsString('/storage/'.$requirement->file_path, $response->getContent());
+    }
+
     private function createPaymentProfile(bool $isActive): PaymentProfile
     {
         $path = 'payment-qr/test-qr.png';
@@ -237,6 +337,24 @@ class SecurityHardeningTest extends TestCase
             'qr_path' => $path,
             'instructions' => null,
             'is_active' => $isActive,
+        ]);
+    }
+
+    private function createPublicRequirementFile(string $filename = 'valid-id.pdf', bool $storeFile = true): RequestRequirement
+    {
+        $documentRequest = DocumentRequest::factory()->create(['user_id' => null]);
+        $path = "request-requirements/public/{$documentRequest->id}/{$filename}";
+
+        if ($storeFile) {
+            Storage::disk('local')->put($path, 'private requirement');
+        }
+
+        return RequestRequirement::query()->create([
+            'document_request_id' => $documentRequest->id,
+            'requirement_key' => 'valid_id_photocopy_claimant',
+            'label' => 'Valid ID photocopy',
+            'status' => 'submitted',
+            'file_path' => $path,
         ]);
     }
 

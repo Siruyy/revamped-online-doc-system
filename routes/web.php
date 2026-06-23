@@ -50,6 +50,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/files/payment-receipt/{payment}', [FileController::class, 'paymentReceipt'])->name('files.payment-receipt');
     Route::get('/files/payment-qr/{paymentProfile}', [FileController::class, 'paymentQr'])->name('files.payment-qr');
+    Route::get('/files/request-requirements/{requirement}', [FileController::class, 'requestRequirement'])->name('files.request-requirement');
     Route::get('/files/clearance/{clearance}/pdf', [FileController::class, 'clearancePdf'])->name('files.clearance-pdf');
     Route::get('/files/clearance/{clearance}/supporting', [FileController::class, 'clearanceSupportingFile'])->name('files.clearance-supporting');
 });

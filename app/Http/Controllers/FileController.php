@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Clearance;
+use App\Models\DocumentRequest;
 use App\Models\Payment;
 use App\Models\PaymentProfile;
+use App\Models\RequestRequirement;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -54,6 +56,30 @@ class FileController extends Controller
         );
 
         return Storage::disk('local')->download($paymentProfile->qr_path);
+    }
+
+    public function requestRequirement(RequestRequirement $requirement): StreamedResponse
+    {
+        $this->authorize('view', $requirement);
+
+        $requirement->loadMissing('documentRequest');
+        /** @var DocumentRequest|null $documentRequest */
+        $documentRequest = $requirement->documentRequest;
+        abort_unless($documentRequest !== null, 404);
+
+        $expectedPrefix = $documentRequest->user_id !== null
+            ? "request-requirements/{$documentRequest->user_id}/{$documentRequest->id}/"
+            : "request-requirements/public/{$documentRequest->id}/";
+
+        abort_if(
+            empty($requirement->file_path)
+                || ! str_starts_with($requirement->file_path, $expectedPrefix)
+                || str_contains($requirement->file_path, '..')
+                || ! Storage::disk('local')->exists($requirement->file_path),
+            404
+        );
+
+        return Storage::disk('local')->download($requirement->file_path);
     }
 
     public function publicPaymentQr(PaymentProfile $paymentProfile): StreamedResponse

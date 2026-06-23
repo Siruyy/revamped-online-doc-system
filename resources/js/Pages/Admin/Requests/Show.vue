@@ -301,7 +301,7 @@ function fmtDateOnly(value) {
                                     </p>
                                     <a
                                         v-if="req.file_path"
-                                        :href="`/storage/${req.file_path}`"
+                                        :href="route('files.request-requirement', req.id)"
                                         target="_blank"
                                         class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
                                     >
