@@ -14,9 +14,14 @@ class FileController extends Controller
     {
         $this->authorize('view', $payment);
 
+        $expectedPrefix = $payment->user_id !== null
+            ? "payment-receipts/{$payment->user_id}/"
+            : "payment-receipts/public/{$payment->document_request_id}/";
+
         abort_if(
             empty($payment->receipt_path)
-                || ! str_starts_with($payment->receipt_path, "payment-receipts/{$payment->user_id}/")
+                || ! str_starts_with($payment->receipt_path, $expectedPrefix)
+                || str_contains($payment->receipt_path, '..')
                 || ! Storage::disk('local')->exists($payment->receipt_path),
             404
         );
@@ -49,6 +54,21 @@ class FileController extends Controller
         );
 
         return Storage::disk('local')->download($paymentProfile->qr_path);
+    }
+
+    public function publicPaymentQr(PaymentProfile $paymentProfile): StreamedResponse
+    {
+        abort_unless($paymentProfile->is_active, 404);
+
+        abort_if(
+            empty($paymentProfile->qr_path)
+                || ! str_starts_with($paymentProfile->qr_path, 'payment-qr/')
+                || str_contains($paymentProfile->qr_path, '..')
+                || ! Storage::disk('local')->exists($paymentProfile->qr_path),
+            404
+        );
+
+        return Storage::disk('local')->response($paymentProfile->qr_path);
     }
 
     public function clearanceSupportingFile(Clearance $clearance): StreamedResponse

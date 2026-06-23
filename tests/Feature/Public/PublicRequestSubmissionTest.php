@@ -5,8 +5,11 @@ namespace Tests\Feature\Public;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\Payment;
+use App\Models\PaymentProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PublicRequestSubmissionTest extends TestCase
@@ -51,5 +54,289 @@ class PublicRequestSubmissionTest extends TestCase
         $this->assertSame('SVCI-2026-0001', $request->requester_student_id);
         $this->assertSame('BSIT', $request->requester_course);
         $this->assertSame(3, $request->requester_year_level);
+    }
+
+    public function test_public_request_requires_requestor_details_items_and_receipt(): void
+    {
+        $response = $this->from('/request-document')->post('/request-document', []);
+
+        $response->assertRedirect('/request-document');
+        $response->assertSessionHasErrors([
+            'requester_name',
+            'requester_contact_number',
+            'requester_student_id',
+            'requester_course',
+            'requester_year_level',
+            'items',
+            'purpose',
+            'payment_method',
+            'receipt',
+        ]);
+    }
+
+    public function test_public_request_requires_selected_document_type_requirement_files(): void
+    {
+        Storage::fake('local');
+
+        $documentType = DocumentType::factory()->create([
+            'requirements' => ['valid_id_photocopy_claimant'],
+        ]);
+
+        $response = $this->from('/request-document')->post('/request-document', $this->validPayload($documentType, [
+            'requirements' => [],
+        ]));
+
+        $response->assertRedirect('/request-document');
+        $response->assertSessionHasErrors(['requirements.valid_id_photocopy_claimant']);
+    }
+
+    public function test_public_request_rejects_invalid_upload_file_types(): void
+    {
+        Storage::fake('local');
+
+        $documentType = DocumentType::factory()->create([
+            'requirements' => ['valid_id_photocopy_claimant'],
+        ]);
+
+        $response = $this->from('/request-document')->post('/request-document', $this->validPayload($documentType, [
+            'receipt' => UploadedFile::fake()->create('receipt.txt', 1, 'text/plain'),
+            'requirements' => [
+                'valid_id_photocopy_claimant' => UploadedFile::fake()->create('id.txt', 1, 'text/plain'),
+            ],
+        ]));
+
+        $response->assertRedirect('/request-document');
+        $response->assertSessionHasErrors([
+            'receipt',
+            'requirements.valid_id_photocopy_claimant',
+        ]);
+    }
+
+    public function test_public_request_submission_stores_request_payment_and_private_files(): void
+    {
+        Storage::fake('local');
+
+        $documentType = DocumentType::factory()->create([
+            'fee' => 75,
+            'default_page_count' => 2,
+            'requirements' => ['valid_id_photocopy_claimant'],
+        ]);
+
+        $response = $this->post('/request-document', $this->validPayload($documentType));
+
+        $documentRequest = DocumentRequest::query()->firstOrFail();
+        $payment = Payment::query()->firstOrFail();
+
+        $response->assertRedirect(route('public.requests.submitted', $documentRequest->reference_no));
+
+        $this->assertSame(0, User::query()->count());
+        $this->assertNull($documentRequest->user_id);
+        $this->assertSame('public', $documentRequest->intake_mode);
+        $this->assertSame('pending', $documentRequest->status);
+        $this->assertSame('Public Requestor', $documentRequest->requester_name);
+        $this->assertSame('SVCI-2026-0001', $documentRequest->requester_student_id);
+        $this->assertSame(150.0, (float) $documentRequest->fee_snapshot);
+
+        $this->assertNull($payment->user_id);
+        $this->assertSame($documentRequest->id, $payment->document_request_id);
+        $this->assertSame('pending_approval', $payment->status);
+        $this->assertSame('GCash', $payment->payment_method);
+        $this->assertSame('GCASH-12345', $payment->reference_number);
+        $this->assertSame(150.0, (float) $payment->total_amount);
+        $this->assertNotNull($payment->submitted_at);
+
+        $requirement = $documentRequest->requirements()->firstOrFail();
+        $this->assertSame('valid_id_photocopy_claimant', $requirement->requirement_key);
+        $this->assertSame('submitted', $requirement->status);
+
+        $this->assertStringStartsWith("payment-receipts/public/{$documentRequest->id}/", $payment->receipt_path);
+        $this->assertStringStartsWith("request-requirements/public/{$documentRequest->id}/", $requirement->file_path);
+        Storage::disk('local')->assertExists($payment->receipt_path);
+        Storage::disk('local')->assertExists($requirement->file_path);
+    }
+
+    public function test_public_request_stores_shared_requirement_file_once(): void
+    {
+        Storage::fake('local');
+
+        $firstType = DocumentType::factory()->create([
+            'fee' => 75,
+            'default_page_count' => 1,
+            'requirements' => ['valid_id_photocopy_claimant'],
+        ]);
+        $secondType = DocumentType::factory()->create([
+            'fee' => 50,
+            'default_page_count' => 1,
+            'requirements' => ['valid_id_photocopy_claimant'],
+        ]);
+
+        $this->post('/request-document', $this->validPayload($firstType, [
+            'items' => [
+                ['document_type_id' => $firstType->id, 'copies' => 1],
+                ['document_type_id' => $secondType->id, 'copies' => 1],
+            ],
+        ]))->assertRedirect();
+
+        $documentRequest = DocumentRequest::query()->firstOrFail();
+
+        $this->assertSame(1, $documentRequest->requirements()->count());
+        $this->assertCount(1, Storage::disk('local')->allFiles("request-requirements/public/{$documentRequest->id}"));
+    }
+
+    public function test_admin_can_download_public_payment_receipt(): void
+    {
+        Storage::fake('local');
+
+        $documentType = DocumentType::factory()->create();
+        $documentRequest = DocumentRequest::query()->create([
+            'user_id' => null,
+            'document_type_id' => $documentType->id,
+            'requester_name' => 'Public Requestor',
+            'requester_contact_number' => '09171234567',
+            'requester_student_id' => 'SVCI-2026-0001',
+            'requester_course' => 'BSIT',
+            'requester_year_level' => 3,
+            'status' => 'pending',
+            'processing_stage' => 'not_started',
+            'intake_mode' => 'public',
+            'purpose' => 'For employment',
+        ]);
+        $receiptPath = "payment-receipts/public/{$documentRequest->id}/receipt.jpg";
+        Storage::disk('local')->put($receiptPath, 'receipt-content');
+        $payment = Payment::query()->create([
+            'user_id' => null,
+            'document_request_id' => $documentRequest->id,
+            'total_amount' => 150.00,
+            'receipt_path' => $receiptPath,
+            'payment_method' => 'GCash',
+            'reference_number' => 'GCASH-12345',
+            'status' => 'pending_approval',
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('files.payment-receipt', $payment))
+            ->assertOk();
+    }
+
+    public function test_admin_cannot_download_public_payment_receipt_with_traversal_path(): void
+    {
+        Storage::fake('local');
+
+        $documentType = DocumentType::factory()->create();
+        $documentRequest = DocumentRequest::query()->create([
+            'user_id' => null,
+            'document_type_id' => $documentType->id,
+            'requester_name' => 'Public Requestor',
+            'requester_contact_number' => '09171234567',
+            'requester_student_id' => 'SVCI-2026-0001',
+            'requester_course' => 'BSIT',
+            'requester_year_level' => 3,
+            'status' => 'pending',
+            'processing_stage' => 'not_started',
+            'intake_mode' => 'public',
+            'purpose' => 'For employment',
+        ]);
+        Storage::disk('local')->put('secret.jpg', 'secret-content');
+        $payment = Payment::query()->create([
+            'user_id' => null,
+            'document_request_id' => $documentRequest->id,
+            'total_amount' => 150.00,
+            'receipt_path' => "payment-receipts/public/{$documentRequest->id}/../../secret.jpg",
+            'payment_method' => 'GCash',
+            'reference_number' => 'GCASH-12345',
+            'status' => 'pending_approval',
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('files.payment-receipt', $payment))
+            ->assertNotFound();
+    }
+
+    public function test_public_request_page_uses_public_payment_qr_url(): void
+    {
+        Storage::fake('local');
+        $path = 'payment-qr/public-qr.png';
+        Storage::disk('local')->put($path, 'qr-content');
+        $profile = PaymentProfile::query()->create([
+            'bank_name' => 'Test Bank',
+            'account_name' => 'SVCI',
+            'account_number' => '1234567890',
+            'qr_path' => $path,
+            'instructions' => null,
+            'is_active' => true,
+        ]);
+
+        $this->get('/request-document')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Public/RequestDocument', false)
+                ->where('paymentProfile.qr_url', route('public.files.payment-qr', $profile))
+            );
+    }
+
+    public function test_public_payment_qr_route_serves_only_active_profiles(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('payment-qr/active.png', 'active-qr');
+        Storage::disk('local')->put('payment-qr/inactive.png', 'inactive-qr');
+        Storage::disk('local')->put('secret.png', 'secret-content');
+
+        $activeProfile = PaymentProfile::query()->create([
+            'bank_name' => 'Test Bank',
+            'account_name' => 'SVCI',
+            'account_number' => '1234567890',
+            'qr_path' => 'payment-qr/active.png',
+            'instructions' => null,
+            'is_active' => true,
+        ]);
+        $inactiveProfile = PaymentProfile::query()->create([
+            'bank_name' => 'Old Bank',
+            'account_name' => 'SVCI',
+            'account_number' => '0000000000',
+            'qr_path' => 'payment-qr/inactive.png',
+            'instructions' => null,
+            'is_active' => false,
+        ]);
+        $traversalProfile = PaymentProfile::query()->create([
+            'bank_name' => 'Test Bank',
+            'account_name' => 'SVCI',
+            'account_number' => '1234567890',
+            'qr_path' => 'payment-qr/../secret.png',
+            'instructions' => null,
+            'is_active' => true,
+        ]);
+
+        $this->get(route('public.files.payment-qr', $activeProfile))->assertOk();
+        $this->get(route('public.files.payment-qr', $inactiveProfile))->assertNotFound();
+        $this->get(route('public.files.payment-qr', $traversalProfile))->assertNotFound();
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function validPayload(DocumentType $documentType, array $overrides = []): array
+    {
+        return array_replace([
+            'requester_name' => 'Public Requestor',
+            'requester_email' => 'requestor@example.test',
+            'requester_contact_number' => '09171234567',
+            'requester_student_id' => 'SVCI-2026-0001',
+            'requester_course' => 'BSIT',
+            'requester_year_level' => 3,
+            'items' => [[
+                'document_type_id' => $documentType->id,
+                'copies' => 1,
+            ]],
+            'purpose' => 'For employment requirements',
+            'payment_method' => 'GCash',
+            'payment_reference_number' => 'GCASH-12345',
+            'receipt' => UploadedFile::fake()->image('receipt.jpg'),
+            'requirements' => [
+                'valid_id_photocopy_claimant' => UploadedFile::fake()->image('valid-id.jpg'),
+            ],
+        ], $overrides);
     }
 }

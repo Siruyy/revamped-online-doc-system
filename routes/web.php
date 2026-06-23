@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Public\DocumentRequestController as PublicDocumentRequestController;
 use App\Models\User;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,16 @@ Route::middleware('auth')->get('/dashboard', function () {
 
     return redirect()->route($user->roleHomeRoute());
 })->name('dashboard');
+
+Route::get('/request-document', [PublicDocumentRequestController::class, 'create'])
+    ->name('public.requests.create');
+Route::post('/request-document', [PublicDocumentRequestController::class, 'store'])
+    ->middleware('throttle:public-requests')
+    ->name('public.requests.store');
+Route::get('/request-document/submitted/{reference}', [PublicDocumentRequestController::class, 'submitted'])
+    ->name('public.requests.submitted');
+Route::get('/public/files/payment-qr/{paymentProfile}', [FileController::class, 'publicPaymentQr'])
+    ->name('public.files.payment-qr');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

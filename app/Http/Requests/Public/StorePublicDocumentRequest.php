@@ -1,0 +1,79 @@
+<?php
+
+namespace App\Http\Requests\Public;
+
+use App\Models\DocumentType;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
+
+class StorePublicDocumentRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return array<string, array<int, string>>
+     */
+    public function rules(): array
+    {
+        return [
+            'requester_name' => ['required', 'string', 'max:150'],
+            'requester_email' => ['nullable', 'email', 'max:150'],
+            'requester_contact_number' => ['required', 'string', 'max:30'],
+            'requester_student_id' => ['required', 'string', 'max:50'],
+            'requester_course' => ['required', 'string', 'max:100'],
+            'requester_year_level' => ['required', 'integer', 'min:1', 'max:8'],
+            'items' => ['required', 'array', 'min:1', 'max:10'],
+            'items.*.document_type_id' => ['required', 'integer', 'exists:document_types,id'],
+            'items.*.copies' => ['required', 'integer', 'min:1', 'max:20'],
+            'purpose' => ['required', 'string', 'min:5', 'max:500'],
+            'payment_method' => ['required', 'string', 'max:50'],
+            'payment_reference_number' => ['nullable', 'string', 'max:100'],
+            'receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'],
+            'requirements' => ['nullable', 'array'],
+            'requirements.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'],
+        ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $items = (array) $this->input('items', []);
+            $documentTypeIds = collect($items)
+                ->pluck('document_type_id')
+                ->filter()
+                ->map(fn (mixed $id): int => (int) $id)
+                ->unique()
+                ->values();
+
+            if ($documentTypeIds->isEmpty()) {
+                return;
+            }
+
+            $documentTypes = DocumentType::query()
+                ->whereIn('id', $documentTypeIds)
+                ->where('is_active', true)
+                ->get(['id', 'requirements']);
+
+            if ($documentTypes->count() !== $documentTypeIds->count()) {
+                $validator->errors()->add('items', 'One or more selected document types are inactive or unavailable.');
+
+                return;
+            }
+
+            $requiredKeys = $documentTypes
+                ->flatMap(fn (DocumentType $type): array => (array) $type->requirements)
+                ->filter()
+                ->unique()
+                ->values();
+
+            foreach ($requiredKeys as $key) {
+                if (! $this->hasFile("requirements.{$key}")) {
+                    $validator->errors()->add("requirements.{$key}", 'This requirement file is required.');
+                }
+            }
+        });
+    }
+}
