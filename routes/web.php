@@ -3,6 +3,7 @@
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\DocumentRequestController as PublicDocumentRequestController;
+use App\Http\Controllers\Public\TrackDocumentController;
 use App\Models\User;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,12 @@ Route::post('/request-document', [PublicDocumentRequestController::class, 'store
     ->name('public.requests.store');
 Route::get('/request-document/submitted/{reference}', [PublicDocumentRequestController::class, 'submitted'])
     ->name('public.requests.submitted');
+Route::get('/track-document', [TrackDocumentController::class, 'create'])
+    ->middleware('throttle:public-tracking')
+    ->name('track-document');
+Route::post('/track-document', [TrackDocumentController::class, 'show'])
+    ->middleware('throttle:public-tracking')
+    ->name('track-document.show');
 Route::get('/public/files/payment-qr/{paymentProfile}', [FileController::class, 'publicPaymentQr'])
     ->name('public.files.payment-qr');
 
