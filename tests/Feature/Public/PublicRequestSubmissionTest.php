@@ -7,8 +7,10 @@ use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\PaymentProfile;
 use App\Models\User;
+use App\Notifications\WorkflowStatusNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -153,6 +155,38 @@ class PublicRequestSubmissionTest extends TestCase
         $this->assertStringStartsWith("request-requirements/public/{$documentRequest->id}/", $requirement->file_path);
         Storage::disk('local')->assertExists($payment->receipt_path);
         Storage::disk('local')->assertExists($requirement->file_path);
+    }
+
+    public function test_public_request_submission_notifies_staff_without_private_paths(): void
+    {
+        Storage::fake('local');
+        Notification::fake();
+
+        $admin = User::factory()->admin()->create(['status' => 'active']);
+        $superadmin = User::factory()->superadmin()->create(['status' => 'active']);
+        $documentType = DocumentType::factory()->create([
+            'requirements' => ['valid_id_photocopy_claimant'],
+        ]);
+
+        $this->post('/request-document', $this->validPayload($documentType))->assertRedirect();
+
+        foreach ([$admin, $superadmin] as $staff) {
+            Notification::assertSentTo(
+                $staff,
+                WorkflowStatusNotification::class,
+                function (WorkflowStatusNotification $notification, array $channels) use ($staff): bool {
+                    $payload = $notification->toArray($staff);
+
+                    return $channels === ['database', 'broadcast']
+                        && ($payload['type'] ?? null) === 'request_submitted'
+                        && array_key_exists('document_request_id', $payload)
+                        && ! array_key_exists('receipt_path', $payload)
+                        && ! array_key_exists('file_path', $payload)
+                        && ! str_contains(json_encode($payload, JSON_THROW_ON_ERROR), 'payment-receipts/')
+                        && ! str_contains(json_encode($payload, JSON_THROW_ON_ERROR), 'request-requirements/');
+                },
+            );
+        }
     }
 
     public function test_public_request_stores_shared_requirement_file_once(): void

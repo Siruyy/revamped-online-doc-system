@@ -137,7 +137,7 @@ class PublicDocumentRequestService
                     'type' => 'request_submitted',
                     'title' => 'New public document request',
                     'message' => "{$documentRequest->requester_name} submitted a public document request.",
-                    'document_request_ids' => [$documentRequest->id],
+                    'document_request_id' => $documentRequest->id,
                     'payment_id' => $payment->id,
                 ]),
             );

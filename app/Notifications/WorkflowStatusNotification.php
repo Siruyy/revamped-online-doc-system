@@ -4,7 +4,9 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Messages\BroadcastMessage;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class WorkflowStatusNotification extends Notification implements ShouldQueue
@@ -21,7 +23,25 @@ class WorkflowStatusNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
+        if ($notifiable instanceof AnonymousNotifiable) {
+            return ['mail'];
+        }
+
         return ['database', 'broadcast'];
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        $message = (new MailMessage)
+            ->subject($this->stringOrDefault($this->data['title'] ?? null, 'Workflow update'))
+            ->greeting('SVCI Document Request Update')
+            ->line($this->stringOrDefault($this->data['message'] ?? null, 'Your workflow status was updated.'));
+
+        if (is_string($this->data['url'] ?? null)) {
+            $message->action('Track document', $this->data['url']);
+        }
+
+        return $message;
     }
 
     public function toBroadcast(object $notifiable): BroadcastMessage

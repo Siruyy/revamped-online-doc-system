@@ -10,8 +10,10 @@ use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\RequestRequirement;
 use App\Models\User;
+use App\Notifications\WorkflowStatusNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class PublicRequestValidationTest extends TestCase
@@ -76,6 +78,8 @@ class PublicRequestValidationTest extends TestCase
 
     public function test_admin_can_approve_public_request_package_and_create_clearance(): void
     {
+        Notification::fake();
+
         $admin = User::factory()->admin()->create(['status' => 'active']);
         $request = $this->createPublicRequestPackage();
 
@@ -100,6 +104,15 @@ class PublicRequestValidationTest extends TestCase
             'document_request_id' => $request->id,
             'overall_status' => 'in_progress',
         ]);
+
+        Notification::assertSentOnDemand(
+            WorkflowStatusNotification::class,
+            fn (WorkflowStatusNotification $notification, array $channels, object $notifiable): bool => $channels === ['mail']
+                && ($notifiable->routes['mail'] ?? null) === 'public@example.test'
+                && ($notification->toArray($notifiable)['type'] ?? null) === 'request_approved'
+                && ! array_key_exists('receipt_path', $notification->toArray($notifiable))
+                && ! array_key_exists('file_path', $notification->toArray($notifiable)),
+        );
     }
 
     public function test_superadmin_can_approve_public_request_package(): void
@@ -214,6 +227,8 @@ class PublicRequestValidationTest extends TestCase
 
     public function test_admin_can_deny_public_request_package_and_tracking_shows_reason(): void
     {
+        Notification::fake();
+
         $admin = User::factory()->admin()->create(['status' => 'active']);
         $request = $this->createPublicRequestPackage(requirementStatus: 'submitted');
 
@@ -244,12 +259,36 @@ class PublicRequestValidationTest extends TestCase
                 ->component('Public/TrackResult')
                 ->where('result.status', 'denied')
                 ->where('result.denial_reason', 'Receipt image is unreadable.'));
+
+        Notification::assertSentOnDemand(
+            WorkflowStatusNotification::class,
+            fn (WorkflowStatusNotification $notification, array $channels, object $notifiable): bool => $channels === ['mail']
+                && ($notifiable->routes['mail'] ?? null) === 'public@example.test'
+                && ($notification->toArray($notifiable)['type'] ?? null) === 'request_denied'
+                && ($notification->toArray($notifiable)['reason'] ?? null) === 'Receipt image is unreadable.',
+        );
+    }
+
+    public function test_public_requestor_email_is_not_attempted_when_email_is_absent(): void
+    {
+        Notification::fake();
+
+        $admin = User::factory()->admin()->create(['status' => 'active']);
+        $request = $this->createPublicRequestPackage(requesterEmail: null);
+
+        $this->actingAs($admin)
+            ->post(route('admin.requests.approve-with-payment', $request))
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        Notification::assertSentOnDemandTimes(WorkflowStatusNotification::class, 0);
     }
 
     private function createPublicRequestPackage(
         string $requestStatus = 'pending',
         string $paymentStatus = 'pending_approval',
         string $requirementStatus = 'validated',
+        ?string $requesterEmail = 'public@example.test',
     ): DocumentRequest {
         $documentType = DocumentType::factory()->create([
             'name' => 'Transcript of Records',
@@ -258,7 +297,7 @@ class PublicRequestValidationTest extends TestCase
         $request = DocumentRequest::factory()->for($documentType)->create([
             'user_id' => null,
             'requester_name' => 'Public Requestor',
-            'requester_email' => 'public@example.test',
+            'requester_email' => $requesterEmail,
             'requester_contact_number' => '09171234567',
             'requester_student_id' => 'SVCI-2026-0001',
             'requester_course' => 'BSIT',

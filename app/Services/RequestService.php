@@ -447,6 +447,15 @@ class RequestService
 
             RequestApproved::dispatch($locked->id, $locked->user_id, $admin->id);
 
+            $this->notifyPublicRequestor($locked, [
+                'type' => 'request_approved',
+                'title' => 'Your document request was approved',
+                'message' => "Your request {$locked->reference_no} and payment receipt were approved. Track the request for processing updates.",
+                'url' => route('track-document', ['reference_no' => $locked->reference_no]),
+                'document_request_id' => $locked->id,
+                'status' => 'approved',
+            ]);
+
             ActivityLogger::log(
                 'public_request_package_approved',
                 "Admin {$admin->email} approved public request package {$locked->reference_no}.",
@@ -493,6 +502,16 @@ class RequestService
 
             RequestDenied::dispatch($locked->id, $locked->user_id, $admin->id, $reason);
 
+            $this->notifyPublicRequestor($locked, [
+                'type' => 'request_denied',
+                'title' => 'Your document request was denied',
+                'message' => "Your request {$locked->reference_no} was denied. Reason: {$reason}",
+                'url' => route('track-document', ['reference_no' => $locked->reference_no]),
+                'document_request_id' => $locked->id,
+                'status' => 'denied',
+                'reason' => $reason,
+            ]);
+
             ActivityLogger::log(
                 'public_request_package_denied',
                 "Admin {$admin->email} denied public request package {$locked->reference_no}.",
@@ -503,6 +522,19 @@ class RequestService
 
             return $locked->refresh();
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function notifyPublicRequestor(DocumentRequest $documentRequest, array $data): void
+    {
+        if (! is_string($documentRequest->requester_email) || $documentRequest->requester_email === '') {
+            return;
+        }
+
+        Notification::route('mail', $documentRequest->requester_email)
+            ->notify(new WorkflowStatusNotification($data));
     }
 
     public function validateRequirement(DocumentRequest $documentRequest, RequestRequirement $requirement, User $admin): RequestRequirement
