@@ -53,7 +53,7 @@
 - `docs/training/training-agenda.md`
 
 **Steps:**
-- [x] Create student guide for registration, request submission, payment upload, tracking, and PDF download.
+- [x] Create requestor guide for public request submission, receipt upload, and reference-number tracking.
 - [x] Create admin guide for request/payment approval, document types, announcements, FAQs, and reports.
 - [x] Create department guide for clearance signing/denial and signatures.
 - [x] Create SuperAdmin guide for user approval, staff creation, logs, and reports.

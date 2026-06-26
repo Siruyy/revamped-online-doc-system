@@ -4,12 +4,13 @@ This folder tracks remaining work for the Laravel 13 + Inertia + Vue rewrite.
 
 ## Current State
 
-Core MVP exists for setup, schema, auth, student, admin, department, SuperAdmin, realtime/notifications, PDF/export, UI polish, and hardening flows. Remaining active work is messaging and post-launch handoff; deployment and legacy migration are not needed for the current requested scope.
+Core MVP exists for setup, schema, auth, student, admin, department, SuperAdmin, realtime/notifications, PDF/export, UI polish, and hardening flows. Client feedback on 2026-06-23 changes the requestor workflow: public document requests should no longer require student account registration. The new active priority is replacing the student self-service intake with a public request + receipt + reference tracking flow while keeping existing student routes hidden but not deleted.
 
 ## Active Phases
 
 | # | Phase | File | Status | Suggested Delegate |
 |---|-------|------|:------:|--------------------|
+| 15 | Public Request Intake | [`phase-15-public-request-intake.md`](./phase-15-public-request-intake.md) | Not started | backend + frontend + security |
 | 08 | Messaging | [`phase-08-messaging.md`](./phase-08-messaging.md) | Deferred | backend + frontend |
 | 12 | Deployment | [`phase-12-deployment.md`](./phase-12-deployment.md) | Skipped for current scope | deployment |
 | 13 | Legacy Data Migration | [`phase-13-legacy-data-migration.md`](./phase-13-legacy-data-migration.md) | Skipped for current scope | database + migration |
@@ -35,10 +36,11 @@ Completed phases are archived in [`finished/`](./finished/). Do not edit archive
 
 ## Recommended Execution Order
 
-1. Phase 08: messaging remains explicitly deferred from v1.
-2. Phase 14: post-launch handoff and operations if needed.
-3. Manual operational checks: Reverb/browser notification flow, `queue:work`, Mailpit/Mailhog capture, and authenticated mobile/accessibility lab testing.
-4. Phase 12 and Phase 13 are skipped for the current requested scope.
+1. Phase 15: implement public request intake and reference-number tracking. This supersedes the old requestor-facing student-registration workflow.
+2. Manual operational checks: public request submission, admin/SuperAdmin validation, private file previews, `queue:work`, and Mailpit/Mailhog capture.
+3. Phase 08 remains explicitly deferred from v1 unless messaging is reactivated.
+4. Phase 14 post-launch handoff and operations after the new intake workflow is implemented.
+5. Phase 12 and Phase 13 are skipped for the current requested scope.
 
 ## How To Use These Plans
 

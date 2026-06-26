@@ -144,7 +144,7 @@ Applies at the `release` stage of every request:
   approval), not at submission.
 - Admin can mark `sla_paused_at` with a reason (enrollment period, graduation
   week, board exams) per §13.2 notes. Elapsed time resumes on `sla_resumed_at`.
-- The student dashboard and admin queues render `expected_release_on` as
+- The public tracking page, legacy student dashboard, and admin queues render `expected_release_on` as
   `sla_start_at + sla_days (working)`.
 
 ## 7. Claim Slip Lifecycle

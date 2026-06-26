@@ -20,7 +20,6 @@ Legend:
 
 1. Fresh install with `php artisan migrate:fresh --seed`.
 2. Test accounts (seeded):
-   - Student: `student@example.com` / `password`
    - Admin (Registrar): `admin@example.com` / `password`
    - Dean, Accounting, SAO, Teacher: `dean@example.com`, `accounting@example.com`, `sao@example.com`, `teacher@example.com` (all `password`)
    - Superadmin: from `.env` (`SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD`)
@@ -28,24 +27,25 @@ Legend:
 
 ---
 
-## 1. Student Onboarding & Profile
+## 1. Public Request Intake
 
 | # | Step | Policy | Expected | Auto |
 |---|------|--------|----------|------|
-| 1.1 | Register, receive verification email, verify, login | §19 privacy | Verified + active | [M] |
-| 1.2 | Complete profile (course, year, ID) | §1 | Required for requesting | [M] |
+| 1.1 | Open `/request-document` from public landing page | §19 privacy | Form loads without login or password fields | [M] |
+| 1.2 | Submit without receipt | §13.1 | Blocked with receipt validation error | [A] planned `PublicRequestSubmissionTest` |
+| 1.3 | Submit with requestor details, document item, required attachments, payment method/reference, and receipt | §13.1 | Request is created, payment is `pending_approval`, reference number is shown | [A] planned `PublicRequestSubmissionTest` |
+| 1.4 | Confirm no hidden student user is created | Phase 15 | `document_requests.user_id` and `payments.user_id` are null for public request | [A] planned `PublicRequestSubmissionTest` |
 
 ---
 
-## 2. Student Request Submission (Wizard) — Policy-Initial Flow
+## 2. Public Request Submission Rules
 
-> **Policy-initial flow:** Admin approves the request *first*; payment unlocks only after approval.
-> 1. Submit multi-doc request → 2. Admin reviews and approves → 3. Student sees payment details → 4. Student pays and uploads receipt → 5. Admin verifies payment → 6. Processing continues.
+> **Public intake flow:** Requestor submits details, requirements, and receipt together. Admin validates the whole package.
 
 | # | Step | Policy | Expected | Auto |
 |---|------|--------|----------|------|
-| 2.0 | Submit request **without Purpose** | Policy-Initial plan | Blocked – "purpose is required" | [A] `WizardPolicyTest::test_purpose_is_required_for_wizard_submission` |
-| 2.0b | Submit request with **no items selected** | Policy-Initial plan | Blocked – "items field is required" | [A] `WizardPolicyTest::test_items_are_required_for_wizard_submission` |
+| 2.0 | Submit request **without Purpose** | Phase 15 | Blocked – "purpose is required" | [A] planned `PublicRequestSubmissionTest` |
+| 2.0b | Submit request with **no items selected** | Phase 15 | Blocked – "items field is required" | [A] planned `PublicRequestSubmissionTest` |
 | 2.1 | Select **TOR** (3 pages, admin-set) and **Diploma (2 copies)** in one request | §3, §4, §13.1 | Both appear in the cart; line totals and grand total computed in real time | [A] `WizardPolicyTest` |
 | 2.2 | Request **TOR** with per-page fee | §3, §13.1 | `line_total = fee_per_page × page_count × copies`; `fee_snapshot = sum of line totals` | [A] `WizardPolicyTest::test_wizard_computes_per_page_fee_for_tor` |
 | 2.3 | Add more copies of a document via the stepper | §13.1 | Copies capped at 20; total updates live | [M] |
@@ -57,39 +57,33 @@ Legend:
 | 2.9 | Request **Diploma Re-issuance** | §4 | Requirements seeded: Affidavit of Loss + Valid ID | [A] `test_wizard_seeds_policy_requirements` |
 | 2.10 | Request **CAV** (single) | §7 | Requires authenticated TOR attachment | [M] |
 | 2.11 | Request **Records Verification** | §11 | Channel = email; requires request + authorization letters | [M] |
-| 2.12 | After submission, payment card shows `pending` and no bank details yet | Policy-Initial plan | Bank details and upload button hidden until request is approved | [M] |
+| 2.12 | After submission, confirmation page shows reference number | Phase 15 | Requestor can save reference and use tracking page | [M] |
 
 ---
 
-## 3. Admin (Registrar) – Request Triage
+## 3. Admin (Registrar) – Request And Payment Triage
 
-> **Policy-initial:** Admin reviews and approves the request *before* the student can pay.
-> No payment gate is enforced on the admin side — the payment step opens for the student only after the request is approved.
+> Admin reviews requestor details, attachments, and uploaded receipt on the request detail page.
 
 | # | Step | Policy | Expected | Auto |
 |---|------|--------|----------|------|
 | 3.1 | Review a pending request; see itemized breakdown (doc, pages, per-page fee, copies, line total) | §13.2 | Table shows each document item with computed line total and grand total | [A] `RequestManagementTest::test_admin_can_view_request_details` |
 | 3.2 | Validate requirement attachment | §13.2 | Status flips to `validated` | [A] `PolicyLifecycleTest::test_admin_can_validate_requirement` |
 | 3.3 | Reject requirement with notes | §13.2 | Status = `rejected`, notes stored | [A] `test_admin_can_reject_requirement_with_notes` |
-| 3.4 | **Approve** a regular request directly (no payment needed first) | §13.1 | `status = approved`; `sla_start_at` set; student notified; payment step unlocks on student side | [A] `PolicyLifecycleTest::test_approve_non_hd_request_starts_sla_clock` |
+| 3.4 | **Approve** a regular request after validating attachments and receipt | §13.1 | Request `status = approved`, payment `status = approved`, SLA starts, requestor emailed if email exists | [A] planned `PublicRequestValidationTest` |
 | 3.5 | **Approve** a TOR-for-Transfer request | §3.2 | SLA clock **does not** start until HD returns | [A] `test_approve_hd_required_request_defers_sla_clock` |
-| 3.6 | **Deny** request with reason | §13 | Request = `denied`, reason stored, student notified | [A] `RequestManagementTest::test_admin_can_deny_request_with_reason` |
+| 3.6 | **Deny** request with reason | §13 | Request = `denied`, payment = `denied`, reason visible in tracking | [A] planned `PublicRequestValidationTest` |
 
 ---
 
-## 4. Student Payment – Upload Receipt After Approval
-
-> After the admin approves the request, the **Payments** page unlocks school bank/QR details and the receipt upload form.
+## 4. Public Tracking
 
 | # | Step | Policy | Expected | Auto |
 |---|------|--------|----------|------|
-| 4.0 | Visit **Payments** page *before* request is approved | Policy-Initial plan | Upload button is locked; message says "Your request is awaiting admin approval" | [A] `PaymentUploadTest::test_student_cannot_upload_receipt_while_request_is_pending` |
-| 4.1 | Visit **Payments** page *after* request is approved | Policy-Initial plan | School bank details (name, account number, QR) and itemized totals visible; upload form enabled | [M] |
-| 4.2 | View **Request detail page** after approval | Policy-Initial plan | Itemized breakdown table shows each document item with page count, copies, and line total | [M] |
-| 4.3 | Upload payment receipt with method & reference | §13.1 | Payment becomes `pending_approval`; admin is notified | [A] `PaymentUploadTest::test_student_can_upload_payment_receipt` |
-| 4.4 | Upload Affidavit of Loss for Diploma Re-issue | §4 | Requirement status → `submitted` | [M] |
-| 4.5 | Cancel request **while pending** (no payment yet) | §13 | Allowed | [A] `RequestSubmissionTest::test_student_can_cancel_pending_request_without_receipt` |
-| 4.6 | Attempt cancel after receipt uploaded | §13 | Blocked | [A] `test_student_cannot_cancel_when_receipt_exists` |
+| 4.0 | Open `/track-document` | Phase 15 | Reference-number field is visible; no login required | [M] |
+| 4.1 | Enter unknown reference | Phase 15 | Generic not-found state; no stack trace or data leak | [A] planned `PublicTrackingTest` |
+| 4.2 | Enter valid reference | Phase 15 | Shows request status, payment status, stage, dates, and denial reason if denied | [A] planned `PublicTrackingTest` |
+| 4.3 | Inspect response/page source | §19 | No uploaded file URLs, email, contact number, internal IDs, or staff notes exposed | [A] planned `PublicTrackingTest` |
 
 ---
 
@@ -97,22 +91,22 @@ Legend:
 
 | # | Step | Policy | Expected | Auto |
 |---|------|--------|----------|------|
-| 5.1 | Visit **Admin → Payment Settings** | Policy-Initial plan | Form shows current bank name, account name, account number, QR, instructions | [M] |
-| 5.2 | Update account details and save | Policy-Initial plan | Changes reflect on student payment page immediately | [M] |
-| 5.3 | Upload QR code image | Policy-Initial plan | QR image appears in the current profile preview; displayed to students after approval | [M] |
-| 5.4 | Remove QR code | Policy-Initial plan | QR removed; students see "QR not yet configured" placeholder | [M] |
+| 5.1 | Visit **Admin → Payment Settings** | Phase 15 | Form shows current bank name, account name, account number, QR, instructions | [M] |
+| 5.2 | Update account details and save | Phase 15 | Changes reflect on public request page immediately | [M] |
+| 5.3 | Upload QR code image | Phase 15 | QR image appears in the current profile preview; displayed during public request intake | [M] |
+| 5.4 | Remove QR code | Phase 15 | QR removed; requestors see "QR not yet configured" placeholder | [M] |
 
 ---
 
 ## 6. Admin – Payment Verification Queue
 
-> Admin reviews uploaded payment receipts *after* the student has uploaded them.
+> Public request payments are validated from the request detail page. The standalone payment queue may remain for legacy authenticated-student records and reporting.
 
 | # | Step | Policy | Expected | Auto |
 |---|------|--------|----------|------|
-| 6.1 | Navigate to **Admin → Payments** | Policy-Initial plan | Uploaded receipts appear with status `pending_approval`; itemized breakdown visible per payment | [M] |
-| 6.2 | Approve a payment receipt | §13.1 | Status → `approved`; clearance records created for clearance-required doc types | [M] |
-| 6.3 | Deny a payment receipt with reason | §13.1 | Status → `denied`; student notified and prompted to re-upload | [M] |
+| 6.1 | Navigate to **Admin → Payments** | Legacy queue | Existing records still load; no public intake regression | [M] |
+| 6.2 | Approve public request from request detail | §13.1 | Payment status → `approved`; clearance records created for clearance-required doc types | [A] planned `PublicRequestValidationTest` |
+| 6.3 | Deny public request from request detail | §13.1 | Payment status → `denied`; request reason stored for tracking | [A] planned `PublicRequestValidationTest` |
 
 ---
 
@@ -203,10 +197,10 @@ Legend:
 
 | # | Step | Policy | Expected | Auto |
 |---|------|--------|----------|------|
-| 15.1 | Unverified student cannot request | §19 | Blocked by `verified` middleware | [M] |
+| 15.1 | Public request tracking brute-force attempt is rate limited | §19 | Excess lookups receive throttle response | [A] planned `PublicTrackingTest` |
 | 15.2 | Non-admin cannot hit admin routes | §19 | 403 | [A] `RequestManagementTest::test_non_admin_cannot_access_admin_request_routes` |
 | 15.3 | Uploaded receipts not publicly enumerable | §19 | Served via signed route or private disk | [M] |
-| 15.4 | Student cannot upload receipt before request is approved | Policy-Initial plan | 403 Forbidden | [A] `PaymentUploadTest::test_student_cannot_upload_receipt_while_request_is_pending`, `RequestManagementTest::test_student_cannot_upload_receipt_before_request_is_approved` |
+| 15.4 | Public request attachments are not served through `/storage/request-requirements/...` | §19 | Direct public path fails; authorized file route works for staff | [A] planned `SecurityHardeningTest` |
 | 15.5 | Deletion respects soft-delete + audit trail | §19 | Row soft-deleted, log entry created | [M] |
 
 ---

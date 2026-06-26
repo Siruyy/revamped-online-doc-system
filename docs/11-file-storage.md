@@ -22,7 +22,7 @@
 | Disk | Purpose | Access |
 |------|---------|--------|
 | `public` | Avatars only | Direct URL via `storage` symlink |
-| `local` | Receipts, signatures, clearance files, generated PDFs | Authenticated controller route |
+| `local` | Payment receipts, request requirements, signatures, clearance files, generated PDFs | Authorized controller route |
 
 ## Folder Structure
 
@@ -34,7 +34,12 @@ storage/app/
 │           └── {uuid}.{ext}
 └── private/
     ├── payment-receipts/
-    │   └── {userId}/
+    │   ├── {userId}/
+    │   └── public/{requestId}/
+    │       └── {uuid}.{ext}
+    ├── request-requirements/
+    │   ├── {userId}/{requestId}/
+    │   └── public/{requestId}/
     │       └── {uuid}.{ext}
     ├── signatures/
     │   └── {userId}/
@@ -53,6 +58,7 @@ storage/app/
 |-----------|-------------------|------------|----------|
 | Avatar | `jpg, jpeg, png, webp` | `image/jpeg, image/png, image/webp` | 2 MB |
 | Payment receipt | `jpg, jpeg, png, pdf` | `image/jpeg, image/png, application/pdf` | 5 MB |
+| Request requirement | `jpg, jpeg, png, pdf` | `image/jpeg, image/png, application/pdf` | 5 MB |
 | Signature | `png` (transparent) | `image/png` | 1 MB |
 | Clearance file | `jpg, jpeg, png, pdf` | (same) | 5 MB |
 
@@ -96,6 +102,8 @@ $payment->update(['receipt_path' => $path]);
 Route::middleware(['auth'])->group(function () {
     Route::get('/files/payment-receipt/{payment}', [FileController::class, 'paymentReceipt'])
         ->name('files.payment-receipt');
+    Route::get('/files/request-requirements/{requirement}', [FileController::class, 'requestRequirement'])
+        ->name('files.request-requirement');
     Route::get('/files/clearance/{clearance}/pdf', [FileController::class, 'clearancePdf'])
         ->name('files.clearance-pdf');
 });
@@ -111,6 +119,8 @@ public function paymentReceipt(Payment $payment): StreamedResponse
     );
 }
 ```
+
+Do not link request requirement uploads as `/storage/{file_path}`. Requirement files live on the private `local` disk and must be served through `files.request-requirement` after policy checks. This fixes the known 404 from `/storage/request-requirements/...`.
 
 ## Public File Serving (Avatars)
 

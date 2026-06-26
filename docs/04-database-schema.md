@@ -21,6 +21,8 @@ announcements (standalone, authored by users)
 faqs (standalone, authored by users)
 ```
 
+Public document requests may have `document_requests.user_id = NULL` and store requestor details directly on the request. Do not create hidden `student` users for public requestors.
+
 ## Tables
 
 ### `users`
@@ -40,7 +42,7 @@ faqs (standalone, authored by users)
 | contact_number | VARCHAR(30) NULL | |
 | avatar_path | VARCHAR(255) NULL | relative to `storage/app/public` |
 | signature_path | VARCHAR(255) NULL | for department staff |
-| approved_by | BIGINT UNSIGNED NULL FK→users.id | who approved registration |
+| approved_by | BIGINT UNSIGNED NULL FK→users.id | who approved legacy registration or staff account |
 | approved_at | TIMESTAMP NULL | |
 | remember_token | VARCHAR(100) NULL | |
 | timestamps | | |
@@ -66,7 +68,13 @@ faqs (standalone, authored by users)
 |--------|------|-------|
 | id | BIGINT UNSIGNED PK | |
 | reference_no | VARCHAR(20) UNIQUE | human-friendly, e.g., `REQ-2026-000123` |
-| user_id | BIGINT UNSIGNED FK→users.id | |
+| user_id | BIGINT UNSIGNED NULL FK→users.id | nullable for public request intake |
+| requester_name | VARCHAR(150) | public requestor/student full name snapshot |
+| requester_email | VARCHAR(150) NULL | used for email notifications when provided |
+| requester_contact_number | VARCHAR(30) | |
+| requester_student_id | VARCHAR(50) | school-issued ID entered on request |
+| requester_course | VARCHAR(100) | |
+| requester_year_level | TINYINT UNSIGNED | expected 1-8 by validation |
 | document_type_id | BIGINT UNSIGNED FK→document_types.id | |
 | status | ENUM('pending','approved','denied','cancelled','completed') | default `pending` |
 | processing_stage | ENUM('not_started','processing','ready_for_pickup','released') | default `not_started` |
@@ -77,15 +85,15 @@ faqs (standalone, authored by users)
 | purpose | TEXT NULL | student's reason for request |
 | timestamps | | |
 
-**Indexes:** `user_id`, `status`, `processing_stage`, `(user_id, status)`, `created_at`.
+**Indexes:** `user_id`, `reference_no`, `requester_student_id`, `requester_email`, `status`, `processing_stage`, `(user_id, status)`, `(status, created_at)`.
 
 ### `payments`
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | BIGINT UNSIGNED PK | |
-| user_id | BIGINT UNSIGNED FK→users.id | |
-| document_request_id | BIGINT UNSIGNED NULL FK→document_requests.id | nullable for batch payments |
+| user_id | BIGINT UNSIGNED NULL FK→users.id | nullable for public request intake |
+| document_request_id | BIGINT UNSIGNED FK→document_requests.id | required for public request intake |
 | total_amount | DECIMAL(10,2) | |
 | receipt_path | VARCHAR(255) NULL | |
 | payment_method | VARCHAR(50) NULL | e.g., "Cash", "GCash", "Bank Transfer" |
@@ -227,7 +235,8 @@ Use Laravel's built-in `notifications` migration. Columns:
 ## Indexes Worth Highlighting
 
 - `users(role, status)` — used by middleware and admin filters
-- `document_requests(user_id, status)` — student dashboard query
+- `document_requests(reference_no)` — public tracking lookup
+- `document_requests(user_id, status)` — legacy student dashboard query
 - `document_requests(status, created_at)` — admin queue
 - `payments(status)` — pending payments queue
 - `messages(receiver_id, read_at)` — unread count badge
@@ -240,3 +249,4 @@ The Phase 01 implementation is largely aligned with this schema spec, with the f
 - `faqs.role` currently has a default of `all` in migration implementation.
 - `sessions.user_id` remains Laravel default (indexed nullable column, no FK) to preserve framework compatibility and avoid session write friction.
 - `users.year_level` is stored as `UNSIGNED TINYINT` and expected to be 1-4 by application/business-layer validation; a DB-level check constraint is not yet enforced in the current migration set.
+- Phase 15 changes the requestor-facing model: public requests should store requestor snapshots on `document_requests`, make request/payment user links nullable, and avoid hidden user creation.

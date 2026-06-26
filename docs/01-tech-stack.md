@@ -16,7 +16,7 @@
 | ORM | Eloquent | bundled | Query builder + models |
 | Real-time | Laravel Reverb | 1.x | Self-hosted WebSocket |
 | Client WS | Laravel Echo + Pusher.js (Reverb-compatible) | latest | Subscribe to broadcasts |
-| Auth scaffolding | Laravel Breeze (Inertia + Vue) | latest | Login, registration boilerplate |
+| Auth scaffolding | Laravel Breeze (Inertia + Vue) | latest | Staff login, password reset, and legacy student-auth pages retained but hidden |
 | Email | Laravel Mail (SMTP driver) | bundled | Transactional emails |
 | PDF | barryvdh/laravel-dompdf | latest | Clearance certificate generation |
 | Excel/CSV export | maatwebsite/laravel-excel | latest | SuperAdmin reports |

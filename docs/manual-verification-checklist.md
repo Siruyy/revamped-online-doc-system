@@ -18,39 +18,37 @@ npm run dev
 
 ## Realtime Notifications
 
-- [ ] Log in with two browser sessions: one student and one admin or SuperAdmin.
-- [ ] Submit a student document request and confirm the admin/SuperAdmin notification bell updates without refresh.
-- [ ] Approve or deny the request as admin/SuperAdmin and confirm the student notification bell updates without refresh.
-- [ ] Upload a payment receipt as student and confirm admin/SuperAdmin receives a realtime notification.
-- [ ] Approve or deny the payment and confirm the student receives a realtime notification.
-- [ ] Complete or deny a department clearance step and confirm the affected student receives a realtime notification.
+- [ ] Open one public browser session and one admin or SuperAdmin session.
+- [ ] Submit a public document request with required attachments and receipt; confirm the admin/SuperAdmin notification bell updates without refresh.
+- [ ] Approve or deny the request as admin/SuperAdmin and confirm email is queued when the requestor provided email.
+- [ ] Complete or deny a department clearance step and confirm staff notifications update as expected.
 - [ ] Stop `php artisan reverb:start`, repeat one notification-triggering action, and confirm polling fallback still shows the notification after refresh or polling delay.
 
 ## Queue And Mail
 
-- [ ] Keep `php artisan queue:work` running while triggering registration, password reset, request, payment, and clearance events.
+- [ ] Keep `php artisan queue:work` running while triggering public request, password reset, request approval/denial, payment approval/denial, and clearance events.
 - [ ] Confirm no failed jobs with `php artisan queue:failed`.
-- [ ] Open Mailpit/Mailhog and confirm expected emails are captured for registration approval/rejection, password reset, and workflow notifications that send mail.
+- [ ] Open Mailpit/Mailhog and confirm expected emails are captured for public request status, password reset, and workflow notifications that send mail.
 - [ ] Confirm email bodies do not expose reset tokens in notification array payloads or on-page debug output.
 
 ## Role Walkthrough
 
-- [ ] Student can register, verify email, wait for approval, submit requests, upload receipts, view clearance, and download completed clearance PDF.
-- [ ] Admin can review requests, validate/reject requirements, approve/deny payments, update stages, release documents, and manage content.
+- [ ] Public requestor can submit a request without an account, receive a reference number, and track status with that reference number.
+- [ ] Admin can review public requests, validate/reject requirements, approve/deny the whole request/payment package, update stages, release documents, and manage content.
 - [ ] Department roles can only sign or deny their own clearance column.
-- [ ] SuperAdmin can access users, pending registrations, logs, reports, requests, document types, announcements, FAQs, notifications, profile, and CSV exports.
+- [ ] SuperAdmin can access users, legacy pending registrations, logs, reports, requests, document types, announcements, FAQs, notifications, profile, and CSV exports.
 - [ ] Non-authorized roles receive `403` or redirect behavior for protected pages.
 
 ## Files And Exports
 
-- [ ] Receipt, signature, clearance supporting file, and PDF downloads are served only through authorized routes.
+- [ ] Receipt, request requirement, signature, clearance supporting file, and PDF downloads are served only through authorized routes.
 - [ ] Direct public access to private storage paths fails.
 - [ ] CSV exports download correctly and preserve active filters for users, requests, payments, and activity logs.
 - [ ] Clearance PDF includes the expected student/request data and only safe signature images.
 
 ## Mobile And Accessibility
 
-- [ ] Test student, admin, department, and SuperAdmin dashboards on mobile viewport widths.
+- [ ] Test public request/tracking pages plus admin, department, and SuperAdmin dashboards on mobile viewport widths.
 - [ ] Check keyboard navigation for menus, forms, dialogs, and action buttons.
 - [ ] Check visible focus states and form validation errors.
 - [ ] Run a screen reader smoke test on the main dashboards and request/clearance detail pages.

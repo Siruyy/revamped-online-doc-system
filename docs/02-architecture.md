@@ -68,25 +68,27 @@
 - **Storage** — Laravel `Storage` facade with `local` and `public` disks
 - **Queue** — database-backed queue for async work
 
-## Request Lifecycle (Example: Student Submits Request)
+## Request Lifecycle (Example: Public Requestor Submits Request)
 
 ```
-1. Browser POST /student/requests (with CSRF + Inertia headers)
-2. Route → StudentRequestController@store
-3. Middleware chain: auth → role:student → approved-account
-4. Form Request validation (StoreRequestRequest)
-5. Controller calls RequestService->createRequest($user, $data)
+1. Browser POST /request-document (with CSRF + Inertia headers)
+2. Route → Public\DocumentRequestController@store
+3. Middleware chain: web, guest-friendly throttles, CSRF
+4. Form Request validation (StorePublicDocumentRequest)
+5. Controller calls PublicDocumentRequestService->create($data)
 6. Service:
    a. Begins DB transaction
-   b. Inserts request rows (one per document)
-   c. Inserts payment row (status: Pending)
-   d. Dispatches RequestSubmitted event
-   e. Commits transaction
+   b. Inserts document_request with requestor snapshot fields and no hidden student user
+   c. Inserts request item rows and required attachment rows
+   d. Stores receipt and requirement files on the private local disk
+   e. Inserts payment row (status: pending_approval)
+   f. Dispatches RequestSubmitted event
+   g. Commits transaction
 7. Listeners react:
    - LogRequestActivity (audit log)
    - NotifyAdminsOfNewRequest (in-app + email + broadcast)
-8. Controller returns Inertia redirect to /student/requests
-9. Vue page receives flash message and re-renders
+8. Controller returns Inertia redirect to confirmation page with reference number
+9. Vue page shows the reference number and tracking instructions
 10. Admin dashboards (open in other browsers) receive Reverb broadcast
     → NotificationBell badge increments live
     → Request table prepends new row
@@ -163,7 +165,7 @@ resources/
 
 routes/
 ├── web.php          (entry, includes role-specific files)
-├── auth.php         (login, register, password reset)
+├── auth.php         (staff login, legacy register, password reset)
 ├── student.php
 ├── admin.php
 ├── department.php
@@ -179,10 +181,11 @@ storage/
 └── app/
     ├── public/
     │   ├── avatars/
-    │   ├── payment-receipts/
-    │   ├── clearance-files/
     │   └── signatures/
     └── private/
+        ├── payment-receipts/
+        ├── request-requirements/
+        ├── clearance-files/
         └── pdfs/
 
 tests/

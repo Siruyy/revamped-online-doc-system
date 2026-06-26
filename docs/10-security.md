@@ -7,6 +7,7 @@ This system handles:
 - Payment receipt images (potentially containing financial data)
 - Identity-related documents (clearance forms, signatures)
 - Authentication credentials
+- Public request lookup by reference number
 
 **Threat actors:** opportunistic attackers (script kiddies), disgruntled students/staff, credential stuffing bots.
 
@@ -24,6 +25,7 @@ This system handles:
 - [x] Secure cookies: `Secure`, `HttpOnly`, `SameSite=Lax`
 - [x] Email verification required for students (optional for staff)
 - [x] Account lockout after 10 failed attempts (24h cooldown via custom middleware)
+- [ ] Phase 15: public request tracking must be rate limited because it uses reference number only.
 
 ### Authorization
 
@@ -71,7 +73,7 @@ This system handles:
 | Stored XSS via SVG | Block SVG uploads |
 | Path traversal | Use `Storage::putFile()` — never construct paths manually |
 | Virus/malware | Out of scope for v1; document as a known risk |
-| Public exposure | Receipts and signatures stored on **`local`** disk (not public); served via authenticated route |
+| Public exposure | Receipts, request requirements, signatures, clearance files, and PDFs stored on **`local`** disk (not public); served via authorized controller routes |
 
 ```php
 // Example validation rule
@@ -80,7 +82,7 @@ This system handles:
 
 ### File Serving
 
-Receipts and signatures are not directly accessible. Files are served through a controller:
+Receipts, request requirements, signatures, clearance files, and PDFs are not directly accessible. Files are served through a controller:
 
 ```php
 // GET /files/payment-receipt/{payment}
@@ -135,22 +137,34 @@ public function paymentReceipt(Payment $payment) {
 |----------|-------|
 | Login | 5 / minute / IP+email |
 | Password reset request | 3 / hour / email |
-| Registration | 3 / hour / IP |
+| Legacy registration | 3 / hour / IP |
+| Public request submission | 5 / hour / IP |
+| Public reference tracking | 20 / hour / IP |
 | File upload | 10 / minute / user |
 | Message send | 30 / minute / user |
 | General API | 60 / minute / user |
 
+### Public Request Workflow
+
+Phase 15 public request intake must not create hidden student users. The requestor submits details, requirement files, and payment receipt in one public form. The system creates:
+
+- a `document_requests` row with requestor snapshot fields,
+- `document_request_items`,
+- `request_requirements`,
+- a `payments` row with `status=pending_approval`.
+
+Admin/SuperAdmin validates the request, attachments, and payment together. If invalid, staff deny the whole request with a requestor-visible reason.
+
+Public tracking uses reference number only by client decision. To reduce exposure:
+
+- Return only status/timeline fields and denial reason.
+- Do not return uploaded file URLs, email, contact number, internal IDs, staff notes, or full audit history.
+- Apply rate limiting to lookups.
+- Keep reference numbers high-entropy enough to resist casual guessing.
+
 ### Account Approval Workflow
 
-Self-registration creates `pending` accounts. They cannot:
-- Log in
-- Access any authenticated route
-- Receive any data
-
-SuperAdmin must explicitly approve. This prevents:
-- Spam account creation
-- Bots scraping the system
-- Unauthorized clearance submissions
+Self-registration is legacy for requestors after Phase 15. Staff account approval and any retained authenticated-student registration still use `pending` accounts blocked from login until SuperAdmin approval.
 
 ### Database
 

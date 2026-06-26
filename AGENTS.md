@@ -7,8 +7,9 @@ Project-scoped instructions for this repository only.
 Build the revamped SVCI Online Document Request and Management System with Laravel 13, Inertia.js, Vue 3, Tailwind CSS, MySQL, and Laravel Reverb.
 
 Core workflows:
-- Student registration with SuperAdmin approval.
-- Student document requests and offline payment receipt upload.
+- Public document requests without student account registration.
+- Requestor details, document requirements, and offline payment receipt submitted in one intake.
+- Reference-number tracking for requestors.
 - Admin request/payment/release management.
 - Department clearance signing by teacher, dean, accounting, and SAO.
 - SuperAdmin user, logs, reports, and system management.
@@ -37,6 +38,7 @@ Core workflows:
 Finished phases are archived in `docs/plan/finished/`.
 
 Active work is in:
+- `docs/plan/phase-15-public-request-intake.md`
 - `docs/plan/phase-08-messaging.md`
 - `docs/plan/phase-14-post-launch.md`
 
@@ -52,6 +54,7 @@ Finished phases 00-07 and 09-11 are archived in `docs/plan/finished/`. Do not tr
 - Phase 07 automated implementation is finished; manual Reverb/browser, `queue:work`, and Mailpit/Mailhog verification remain. See `docs/manual-verification-checklist.md`.
 - Phase 08 messaging is not implemented unless future code changes prove otherwise.
 - Phase 09 PDF/export MVP is implemented and archived; add XLSX/extra export formats only if requested.
+- Client changed the requestor workflow on 2026-06-23: public request intake should replace student self-registration for document requestors. Existing student pages/routes remain in code for now but should be hidden from public navigation until a later removal/refactor.
 - Phase 12 deployment artifacts are skipped for current scope; only dev Docker setup was found during audit.
 - Legacy PHP folders are insecure and should not be reused as-is.
 

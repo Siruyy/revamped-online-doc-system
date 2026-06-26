@@ -30,6 +30,11 @@ require __DIR__.'/superadmin.php';
 | Method | URL | Controller | Page |
 |--------|-----|-----------|------|
 | GET | `/` | `LandingController@index` | `Landing.vue` |
+| GET | `/request-document` | `Public\DocumentRequestController@create` | `Public/RequestDocument.vue` |
+| POST | `/request-document` | `Public\DocumentRequestController@store` | — |
+| GET | `/request-document/submitted/{reference}` | `Public\DocumentRequestController@submitted` | `Public/RequestSubmitted.vue` |
+| GET | `/track-document` | `Public\TrackDocumentController@create` | `Public/TrackDocument.vue` |
+| POST | `/track-document` | `Public\TrackDocumentController@show` | `Public/TrackResult.vue` |
 | GET | `/login` | Breeze | `Auth/Login.vue` |
 | POST | `/login` | Breeze | — |
 | GET | `/register` | Breeze | `Auth/Register.vue` |
@@ -40,7 +45,11 @@ require __DIR__.'/superadmin.php';
 | POST | `/reset-password` | Breeze | — |
 | POST | `/logout` | Breeze | — |
 
+`/register` is retained for the legacy authenticated-student flow and should be hidden from public request navigation during Phase 15.
+
 ## Student Routes (`prefix=student`, middleware=`['auth', 'role:student', 'approved']`)
+
+These routes remain in code for now but are legacy for requestors after Phase 15. Do not delete them during the public intake change unless a separate cleanup phase is approved.
 
 | Method | URL | Controller @ Action | Page |
 |--------|-----|--------------------|------|
@@ -75,6 +84,8 @@ require __DIR__.'/superadmin.php';
 | GET | `/admin/requests/{request}` | `Admin\RequestController@show` | `Admin/Requests/Show.vue` |
 | POST | `/admin/requests/{request}/approve` | `Admin\RequestController@approve` | — |
 | POST | `/admin/requests/{request}/deny` | `Admin\RequestController@deny` | — |
+| POST | `/admin/requests/{request}/approve-with-payment` | `Admin\RequestController@approveWithPayment` | — |
+| POST | `/admin/requests/{request}/deny-with-payment` | `Admin\RequestController@denyWithPayment` | — |
 | POST | `/admin/requests/{request}/stage` | `Admin\RequestController@updateStage` | — |
 | GET | `/admin/payments` | `Admin\PaymentController@index` | `Admin/Payments/Index.vue` |
 | POST | `/admin/payments/{payment}/approve` | `Admin\PaymentController@approve` | — |
@@ -129,6 +140,9 @@ require __DIR__.'/superadmin.php';
 | POST | `/superadmin/users` | `SuperAdmin\UserController@store` | — |
 | GET | `/superadmin/users/export` | `SuperAdmin\UserController@export` | (download) |
 | GET | `/superadmin/requests` | `SuperAdmin\RequestController@index` | `SuperAdmin/Requests/Index.vue` |
+| GET | `/superadmin/requests/{request}` | reuses Admin request controller | shared |
+| POST | `/superadmin/requests/{request}/approve-with-payment` | reuses Admin request controller | — |
+| POST | `/superadmin/requests/{request}/deny-with-payment` | reuses Admin request controller | — |
 | GET | `/superadmin/reports/export` | `SuperAdmin\ReportController@export` | (download) |
 | GET | `/superadmin/logs` | `SuperAdmin\LogController@index` | `SuperAdmin/Logs.vue` |
 | GET | `/superadmin/announcements` | reuses Admin controller | shared |

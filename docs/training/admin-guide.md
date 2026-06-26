@@ -4,15 +4,16 @@
 
 1. Open **Requests**.
 2. Filter or search by reference number, student, or document.
-3. Open a request and review requirements.
-4. Approve, deny, validate requirements, or reject requirements with clear notes.
+3. Open a request and review requestor details, selected documents, required attachments, payment method, payment reference, and receipt.
+4. Validate or reject requirement files.
+5. Approve the request only after request details, attachments, and payment receipt are valid.
+6. Deny the whole request when details, attachments, or payment are invalid; enter a clear reason the requestor can act on.
 
 ## Payment Review
 
-1. Open **Payments**.
-2. Review pending receipts and reference numbers.
-3. Approve valid receipts or deny with a reason the student can act on.
-4. For clearance-required documents, payment approval starts the clearance workflow.
+1. Prefer validating public request receipts from the request detail page.
+2. Use **Payments** for legacy payment records, reporting, and queue review.
+3. For clearance-required documents, payment approval starts the clearance workflow.
 
 ## Release Flow
 

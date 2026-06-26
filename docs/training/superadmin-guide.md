@@ -3,8 +3,9 @@
 ## User Approval
 
 1. Open **Pending Users**.
-2. Review student registration details.
+2. Review staff accounts and any legacy student registration details.
 3. Approve valid accounts or reject invalid submissions with a clear reason.
+4. Public document requestors do not need account approval.
 
 ## Staff Management
 

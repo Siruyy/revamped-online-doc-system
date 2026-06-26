@@ -12,7 +12,7 @@
 ```
          ▲
         ╱ ╲     E2E / Browser tests (~10)
-       ╱   ╲    Critical flows: register, request, payment, clearance
+       ╱   ╲    Critical flows: public request, tracking, admin validation, clearance
       ╱─────╲
      ╱       ╲  Feature / HTTP tests (many)
     ╱         ╲ Controller endpoints, policies, validation
@@ -61,6 +61,10 @@ tests/
 │   │   ├── RegistrationTest.php
 │   │   ├── LoginTest.php
 │   │   └── PasswordResetTest.php
+│   ├── Public/
+│   │   ├── PublicRequestSubmissionTest.php
+│   │   ├── PublicTrackingTest.php
+│   │   └── PublicRequestValidationTest.php
 │   ├── Student/
 │   │   ├── DashboardTest.php
 │   │   ├── RequestSubmissionTest.php
@@ -77,7 +81,7 @@ tests/
 │       └── UserManagementTest.php
 └── Browser/  (Playwright)
     ├── auth.spec.ts
-    ├── student-flow.spec.ts
+    ├── public-request-flow.spec.ts
     └── admin-flow.spec.ts
 ```
 
@@ -122,35 +126,50 @@ it('rejects creating a batch when student has a pending request', function () {
 ## Example: Feature Test (HTTP)
 
 ```php
-// tests/Feature/Student/RequestSubmissionTest.php
+// tests/Feature/Public/PublicRequestSubmissionTest.php
 use App\Models\{User, DocumentType};
 
-it('allows student to submit a request', function () {
-    $student = User::factory()->student()->create();
+it('allows a public requestor to submit a request with receipt', function () {
     $doc = DocumentType::factory()->create(['fee' => 100]);
 
-    $response = $this->actingAs($student)
-        ->post('/student/requests', [
-            'documents' => [$doc->id],
+    $response = $this->post('/request-document', [
+            'requester_name' => 'Juan Dela Cruz',
+            'requester_email' => 'juan@example.test',
+            'requester_contact_number' => '09171234567',
+            'requester_student_id' => 'SVCI-2026-001',
+            'requester_course' => 'BSIT',
+            'requester_year_level' => 4,
+            'items' => [['document_type_id' => $doc->id, 'copies' => 1]],
             'purpose' => 'For employment',
+            'payment_method' => 'GCash',
+            'payment_reference_number' => '123456',
+            'receipt' => UploadedFile::fake()->image('receipt.jpg'),
         ]);
 
     $response->assertRedirect();
     $this->assertDatabaseHas('document_requests', [
-        'user_id' => $student->id,
+        'user_id' => null,
         'document_type_id' => $doc->id,
         'status' => 'pending',
+        'requester_student_id' => 'SVCI-2026-001',
     ]);
 });
 
-it('rejects request submission from unapproved students', function () {
-    $student = User::factory()->student()->create(['status' => 'pending']);
+it('rejects public request submission without a receipt', function () {
     $doc = DocumentType::factory()->create();
 
-    $response = $this->actingAs($student)
-        ->post('/student/requests', ['documents' => [$doc->id]]);
+    $response = $this->post('/request-document', [
+        'requester_name' => 'Juan Dela Cruz',
+        'requester_contact_number' => '09171234567',
+        'requester_student_id' => 'SVCI-2026-001',
+        'requester_course' => 'BSIT',
+        'requester_year_level' => 4,
+        'items' => [['document_type_id' => $doc->id, 'copies' => 1]],
+        'purpose' => 'For employment',
+        'payment_method' => 'GCash',
+    ]);
 
-    $response->assertForbidden();
+    $response->assertSessionHasErrors('receipt');
 });
 ```
 
@@ -240,7 +259,7 @@ it('broadcasts when a payment is approved', function () {
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
-it('accepts valid receipt upload', function () {
+it('accepts valid public request receipt upload', function () {
     Storage::fake('local');
     // ... act
     $response = $this->post(...);
@@ -248,7 +267,7 @@ it('accepts valid receipt upload', function () {
 });
 
 it('rejects executable file uploads', function () {
-    $response = $this->post('/student/payments/1/upload', [
+    $response = $this->post('/request-document', [
         'receipt' => UploadedFile::fake()->create('virus.exe', 100),
     ]);
     $response->assertSessionHasErrors('receipt');

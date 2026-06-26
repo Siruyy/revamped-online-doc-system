@@ -2,94 +2,73 @@
 
 End-to-end workflows showing how actors interact with the system.
 
-## Flow 1 — Student Registration & Approval
+## Flow 1 — Public Document Request Intake
 
 ```
-Student                    System                         SuperAdmin
+Requestor                  System                         Admin/SuperAdmin
    │                          │                                │
-   │ 1. Visits /register      │                                │
-   │ 2. Fills form, submits   │                                │
+   │ 1. Visits /request-document                               │
+   │ 2. Enters student/requestor details                       │
+   │ 3. Selects document(s), uploads requirements + receipt    │
    │ ───────────────────────▶ │                                │
    │                          │ 3. Validate input              │
-   │                          │ 4. Create user (status=pending)│
-   │                          │ 5. Email verification link     │
-   │                          │ 6. Notify SuperAdmin (Reverb + email)
-   │                          │ ─────────────────────────────▶ │
-   │ ◀── Show "pending" page  │                                │
-   │                          │                                │ 7. Reviews queue
-   │                          │                                │ 8. Approves
-   │                          │ ◀───────────────────────────── │
-   │                          │ 9. status=active               │
-   │                          │ 10. Email "approved"           │
-   │ ◀── (email)              │                                │
-   │ 11. Logs in              │                                │
-   │ ───────────────────────▶ │                                │
-   │ ◀── Student dashboard    │                                │
+   │                          │ 4. Store requestor snapshot    │
+   │                          │ 5. Create request + payment    │
+   │                          │ 6. Store files privately       │
+   │                          │ 7. Notify staff                │
+   │ ◀── Show reference no.   │ ─────────────────────────────▶ │
+   │                          │                                │ 8. Reviews in request queue
 ```
 
-## Flow 2 — Submit Document Request
+## Flow 2 — Admin Validates Public Request
 
 ```
-Student → /student/requests/new
-  → Select one or more document types (checkbox UI)
-  → Optional: enter purpose
-  → Vue calculates total fee live
+Admin/SuperAdmin → /admin/requests/{id}
+  → Reviews requestor snapshot details
+  → Opens private requirement files
+  → Opens private payment receipt
+  → Checks payment method, reference number, and amount
+  → If valid:
+     → Validate each requirement
+     → Approve request and payment together
+     → request.status=approved, processing_stage=processing
+     → payment.status=approved
+     → Start clearance if the document type requires it
+     → Email requestor when email is present
+  → If invalid:
+     → Enter denial reason
+     → request.status=denied
+     → payment.status=denied
+     → Public tracking shows the denial reason
+     → Email requestor when email is present
+```
+
+## Flow 3 — Public Reference Tracking
+
+```
+Requestor → /track-document
+  → Enters reference number
   → Submit
-    → POST /student/requests
-    → Validate (max 5 docs, no active pending request)
-    → Begin transaction:
-       - Insert document_requests rows (one per doc)
-       - Insert payments row (status=pending, total)
-       - Generate reference number
-    → Commit
-    → Dispatch RequestSubmitted event
-       → Listener: log activity
-       → Listener: notify all admins (in-app + email + Reverb broadcast)
-    → Inertia redirect to /student/requests/{id}
-  → Student sees confirmation, payment instructions, next steps
+    → Validate reference format
+    → Lookup document_requests.reference_no
+    → Return privacy-safe payload only:
+       - reference number
+       - document names
+       - request status
+       - payment status
+       - processing stage
+       - submitted date
+       - expected release date
+       - denial reason when denied
+  → No uploaded files, contact info, email, internal IDs, or staff-only notes are exposed
 ```
 
-## Flow 3 — Upload Payment Receipt
+## Flow 4 — Legacy Authenticated Student Request Flow
 
 ```
-Student → /student/payments
-  → Sees pending payment for their request
-  → Selects payment method (Cash / GCash / Bank Transfer)
-  → Enters reference number (if applicable)
-  → Uploads receipt image or PDF
-  → Submit
-    → POST /student/payments/{id}/upload
-    → Validate file (jpg/png/pdf, max 5MB)
-    → Store in storage/app/public/payment-receipts/
-    → Update payment row: status=pending_approval, receipt_path, submitted_at
-    → Dispatch PaymentSubmitted event
-       → Notify admins
-    → Inertia redirect with success flash
-```
-
-## Flow 4 — Admin Approves Payment & Request
-
-```
-Admin dashboard
-  → Sees new request in real-time list (via Reverb)
-  → Clicks request → detail page
-  → Reviews payment receipt (inline preview)
-  → Clicks "Approve Payment"
-    → POST /admin/payments/{id}/approve
-    → Update payment: status=approved, approved_by, approved_at
-    → Dispatch PaymentApproved event
-       → Notify student (in-app + email + Reverb)
-       → Initialize clearance row for the student (if document requires clearance)
-  → Clicks "Approve Request"
-    → POST /admin/requests/{id}/approve
-    → Update request: status=approved, processing_stage=processing
-    → Dispatch RequestApproved event
-       → Notify student
-       → Notify all department officers (clearance now visible)
-
-Later (when document is ready):
-  → Admin updates stage to "ready_for_pickup" then "released"
-    → Student receives status updates live
+The existing /student/* pages and account-registration path remain in code for
+now, but they are no longer the desired public requestor workflow. Hide these
+links from public navigation during Phase 15 instead of deleting them.
 ```
 
 ## Flow 5 — Department Clearance Signing
@@ -119,12 +98,12 @@ Department officer (e.g., Teacher) logs in
        → Broadcast to student's channel
 ```
 
-## Flow 6 — Student Tracks Request
+## Flow 6 — Requestor Tracks Request
 
 ```
-Student → /student/requests/{id}
-  → Inertia page renders with all request data
-  → Subscribes to private channel student.{user_id}
+Requestor → /track-document
+  → Enters reference number
+  → Page renders privacy-safe request timeline
   → Sees timeline:
      ┌──────────────────────────────────────┐
      │ ✓ Request submitted (Apr 21 10:00)   │
@@ -140,14 +119,14 @@ Student → /student/requests/{id}
      │ ○ Ready for pickup                   │
      │ ○ Released                           │
      └──────────────────────────────────────┘
-  → As events fire, Vue updates timeline live (no refresh)
+  → Requestor refreshes or re-enters reference number for latest status
 ```
 
-## Flow 7 — SuperAdmin Approves New Registration
+## Flow 7 — SuperAdmin Manages Staff And Legacy Registrations
 
 ```
 SuperAdmin → /superadmin/users?status=pending
-  → Live list (Reverb-updated when new student registers)
+  → Legacy pending student registrations and staff-created accounts may appear here
   → Click student row → review
   → Verify name, email, course, year level
   → Approve OR Reject (with reason)
@@ -208,17 +187,17 @@ Student → /student/requests/{id}
           │                       │
           ├──deny──▶ [denied]     ├──cancel (admin)──▶ [cancelled]
           │
-          └──cancel (student)──▶ [cancelled]
+          └──cancel (legacy student)──▶ [cancelled]
 ```
 
 ### Payment State Machine
 
 ```
-[pending] ──upload receipt──▶ [pending_approval] ──approve──▶ [approved]
+[pending_approval] ──approve──▶ [approved]
                                        │
                                        └──deny──▶ [denied]
-                                                    │
-                                                    └──upload again──▶ [pending_approval]
+
+Public intake creates payment rows directly as `pending_approval` because the receipt is required during request submission. The older `pending → upload receipt` path is legacy authenticated-student behavior.
 ```
 
 ### Clearance Overall Status

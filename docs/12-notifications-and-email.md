@@ -19,7 +19,7 @@ class RequestApprovedNotification extends Notification implements ShouldQueue
             'request_id' => $this->request->id,
             'reference_no' => $this->request->reference_no,
             'message' => "Your request for {$this->request->documentType->name} has been approved.",
-            'url' => route('student.requests.show', $this->request),
+            'url' => route('track-document'),
         ];
     }
 
@@ -27,9 +27,9 @@ class RequestApprovedNotification extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject('Your document request has been approved')
-            ->greeting("Hi {$notifiable->fullname},")
+            ->greeting("Hi {$this->request->requester_name},")
             ->line("Your request {$this->request->reference_no} for {$this->request->documentType->name} has been approved.")
-            ->action('View Request', route('student.requests.show', $this->request));
+            ->action('Track Request', route('track-document'));
     }
 
     public function toBroadcast($notifiable): BroadcastMessage
@@ -51,24 +51,24 @@ class RequestApprovedNotification extends Notification implements ShouldQueue
 | `mail` | Email | SMTP via queue |
 | `broadcast` | Real-time push | Reverb WebSocket |
 
-Most notifications use **all three**.
+Authenticated staff notifications use database and broadcast channels. Public requestors do not have an in-app notification inbox, so they receive email only when they provide an email address and otherwise rely on reference-number tracking.
 
 ## Notification Catalog
 
 | Notification | Recipient | Channels | Trigger |
 |--------------|-----------|----------|---------|
-| `RegistrationSubmittedNotification` | All SuperAdmins | db + mail + broadcast | New self-registration |
-| `RegistrationApprovedNotification` | Student | db + mail | SuperAdmin approves |
-| `RegistrationRejectedNotification` | Student | db + mail | SuperAdmin rejects |
-| `RequestSubmittedNotification` | All Admins | db + mail + broadcast | Student submits request |
-| `RequestApprovedNotification` | Student | db + mail + broadcast | Admin approves |
-| `RequestDeniedNotification` | Student | db + mail + broadcast | Admin denies |
-| `RequestStageUpdatedNotification` | Student | db + broadcast | Admin updates stage |
-| `RequestReadyForPickupNotification` | Student | db + mail + broadcast | Stage = ready_for_pickup |
-| `RequestReleasedNotification` | Student | db + mail + broadcast | Stage = released |
-| `PaymentSubmittedNotification` | All Admins | db + broadcast | Student uploads receipt |
-| `PaymentApprovedNotification` | Student | db + mail + broadcast | Admin approves payment |
-| `PaymentDeniedNotification` | Student | db + mail + broadcast | Admin denies payment |
+| `RegistrationSubmittedNotification` | All SuperAdmins | db + mail + broadcast | Legacy self-registration |
+| `RegistrationApprovedNotification` | Authenticated student | db + mail | SuperAdmin approves legacy registration |
+| `RegistrationRejectedNotification` | Authenticated student | db + mail | SuperAdmin rejects legacy registration |
+| `RequestSubmittedNotification` | All Admins/SuperAdmins | db + mail + broadcast | Public requestor submits request |
+| `RequestApprovedNotification` | Requestor email if present | mail | Admin approves |
+| `RequestDeniedNotification` | Requestor email if present | mail | Admin denies |
+| `RequestStageUpdatedNotification` | Requestor email if present | mail | Admin updates stage |
+| `RequestReadyForPickupNotification` | Requestor email if present | mail | Stage = ready_for_pickup |
+| `RequestReleasedNotification` | Requestor email if present | mail | Stage = released |
+| `PaymentSubmittedNotification` | All Admins/SuperAdmins | db + broadcast | Receipt submitted with public request |
+| `PaymentApprovedNotification` | Requestor email if present | mail | Admin approves public-request payment |
+| `PaymentDeniedNotification` | Requestor email if present | mail | Admin denies public-request payment |
 | `ClearanceCreatedNotification` | All Department officers | db + broadcast | Clearance row initialized |
 | `ClearanceSignedNotification` | Student + Admins | db + broadcast | Officer signs |
 | `ClearanceDeniedNotification` | Student | db + mail + broadcast | Officer denies |

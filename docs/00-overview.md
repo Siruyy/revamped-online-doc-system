@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The **St. Vincent College Incorporated (SVCI) Online Document Request and Management System** allows students and alumni to request academic documents (e.g., transcripts, good moral certificates, certificates of enrollment) online, complete an online clearance process across multiple departments, upload payment receipts, and track their requests in real time — without setting foot on campus until they pick up the documents.
+The **St. Vincent College Incorporated (SVCI) Online Document Request and Management System** allows students and alumni to request academic documents (e.g., transcripts, good moral certificates, certificates of enrollment) online without creating a student account, upload required attachments and payment receipts during request intake, and track their requests by reference number until pickup.
 
 This document set covers a **full rewrite** of the legacy vanilla-PHP system into a modern Laravel 13 + Inertia + Vue stack.
 
@@ -26,16 +26,16 @@ This document set covers a **full rewrite** of the legacy vanilla-PHP system int
 
 | Stakeholder | Role |
 |-------------|------|
-| **Students / Alumni** | Submit requests, upload payment, track, complete online clearance |
+| **Requestors / Students / Alumni** | Submit public document requests, upload payment and requirement files, track by reference number |
 | **Admin** | Approve/deny requests and payments, manage announcements, FAQ, document types |
 | **Department Officers** (Teacher, Dean, Accounting, SAO) | Sign off on student clearance |
-| **SuperAdmin** | Full system control — users, reports, logs, account approvals |
+| **SuperAdmin** | Full system control — staff users, reports, logs, request/payment validation |
 
 ## Success Criteria
 
-- Student can submit a request and pay in **under 3 minutes**.
+- Requestor can submit a request with receipt and receive a reference number in **under 3 minutes**.
 - Admin sees new requests **in real time** with no page refresh.
-- Clearance status updates broadcast to the student dashboard live.
+- Requestors can track non-sensitive status with a reference number.
 - Zero SQL injection vulnerabilities (verified via static scan).
 - All forms protected with CSRF tokens.
 - Mobile-responsive across iOS Safari, Chrome Mobile, Firefox Mobile.

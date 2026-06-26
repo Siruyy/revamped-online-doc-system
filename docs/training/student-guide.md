@@ -1,32 +1,24 @@
-# Student Guide
-
-## Register And Wait For Approval
-
-1. Open the registration page.
-2. Enter your full name, school email, course, year level, student ID, contact number, and password.
-3. Submit the form and wait for SuperAdmin approval.
-4. After approval, log in and complete email verification if prompted.
+# Requestor Guide
 
 ## Request Documents
 
-1. Go to **My Requests** and choose **New Request**.
-2. Select the needed document type and continue.
-3. Enter the purpose of the request.
-4. Review fees and submit.
+1. Open the public document request page.
+2. Enter your full name, email for notifications, student ID, course, year level, and contact number.
+3. Select the document type or types you need and set the number of copies.
+4. Enter the purpose of the request.
+5. Upload every required attachment shown for the selected document type.
+6. Enter the payment method and payment reference number, then upload the payment receipt image or PDF.
+7. Submit the form and save the reference number shown on the confirmation page.
 
-## Upload Payment Receipt
+## Track Status
 
-1. Go to **Payments**.
-2. Choose the pending payment for the request.
-3. Select the payment method, enter the reference number, and upload the receipt image or PDF.
-4. Submit and wait for admin review.
+1. Open **Track Document**.
+2. Enter your reference number.
+3. Review the request status, payment status, processing stage, expected release date, and any denial reason.
 
-## Track Status And Files
+## Important Notes
 
-- Use **My Requests** to track processing stage.
-- Use **Notifications** for updates and links to related records.
-- Download available clearance or claim documents only from your own account.
-
-## Messaging
-
-Messaging is not available in the current scope. Use the official support channel if help is needed.
+- No student account or password is needed for the public request flow.
+- Keep the reference number private enough for normal use; anyone with the reference number can view the limited tracking status.
+- Uploaded receipts and requirement files are private and are reviewed by staff only.
+- If a request is denied, submit a new request with corrected details or files.
