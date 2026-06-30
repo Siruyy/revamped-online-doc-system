@@ -19,6 +19,11 @@
 </head>
 <body>
     @php($signatureImages = $signatureImages ?? [])
+    @php($request = $clearance->documentRequest)
+    @php($studentName = $clearance->user?->fullname ?? $request?->requester_name ?? 'N/A')
+    @php($studentId = $clearance->user?->student_id ?? $request?->requester_student_id ?? 'N/A')
+    @php($course = $clearance->user?->course ?? $request?->requester_course ?? 'N/A')
+    @php($yearLevel = $clearance->user?->year_level ?? $request?->requester_year_level ?? 'N/A')
 
     <h1>Saint Vincent's College Incorporated</h1>
     <p class="center muted">Online Document Request and Management System</p>
@@ -28,15 +33,15 @@
         <table>
             <tr>
                 <th>Student</th>
-                <td>{{ $clearance->user->fullname }}</td>
+                <td>{{ $studentName }}</td>
                 <th>Student ID</th>
-                <td>{{ $clearance->user->student_id ?? 'N/A' }}</td>
+                <td>{{ $studentId }}</td>
             </tr>
             <tr>
                 <th>Course / Year</th>
-                <td>{{ $clearance->user->course ?? 'N/A' }} / {{ $clearance->user->year_level ?? 'N/A' }}</td>
+                <td>{{ $course }} / {{ $yearLevel }}</td>
                 <th>Request Ref</th>
-                <td>{{ $clearance->documentRequest->reference_no ?? 'N/A' }}</td>
+                <td>{{ $request->reference_no ?? 'N/A' }}</td>
             </tr>
             <tr>
                 <th>Status</th>

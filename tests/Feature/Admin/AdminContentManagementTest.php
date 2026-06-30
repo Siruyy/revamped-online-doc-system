@@ -110,6 +110,36 @@ class AdminContentManagementTest extends TestCase
         $this->actingAs($admin)->get(route('admin.reports.index'))->assertOk();
     }
 
+    public function test_admin_clearance_monitor_filters_include_public_request_snapshot_fields(): void
+    {
+        $admin = $this->createAdmin();
+        $request = DocumentRequest::factory()->approved()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'requester_name' => 'Public Clearance Requestor',
+            'requester_student_id' => 'PUBLIC-CLEAR-001',
+            'requester_course' => 'BSBA',
+            'requester_year_level' => 2,
+        ]);
+        $clearance = Clearance::factory()->for($request, 'documentRequest')->create([
+            'user_id' => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.clearances.index', [
+                'course' => 'BSBA',
+                'year' => 2,
+                'search' => 'PUBLIC-CLEAR-001',
+            ]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Admin/Clearances/Index')
+                ->has('clearances.data', 1)
+                ->where('clearances.data.0.id', $clearance->id)
+                ->where('clearances.data.0.document_request.requester_name', 'Public Clearance Requestor')
+                ->where('filters.search', 'PUBLIC-CLEAR-001'));
+    }
+
     public function test_admin_notifications_page_and_mark_read_work(): void
     {
         $admin = $this->createAdmin();

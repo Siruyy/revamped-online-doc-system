@@ -15,7 +15,7 @@ class ClearanceCompleted implements ShouldBroadcast
 
     public function __construct(
         public int $clearanceId,
-        public int $studentId,
+        public ?int $studentId,
     ) {}
 
     /**
@@ -23,6 +23,10 @@ class ClearanceCompleted implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
+        if ($this->studentId === null) {
+            return [new PrivateChannel('role.admin')];
+        }
+
         return [new PrivateChannel('user.'.$this->studentId)];
     }
 

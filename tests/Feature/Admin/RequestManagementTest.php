@@ -132,6 +132,50 @@ class RequestManagementTest extends TestCase
         $this->actingAs($student)->post(route('admin.requests.approve', $request))->assertForbidden();
     }
 
+    public function test_admin_request_search_finds_public_snapshot_fields(): void
+    {
+        $admin = $this->createAdmin();
+        $publicRequest = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'requester_name' => 'Public Search Requestor',
+            'requester_student_id' => 'PUBLIC-SEARCH-001',
+            'requester_course' => 'BSIT',
+            'requester_year_level' => 4,
+        ]);
+
+        foreach (['Public Search', 'PUBLIC-SEARCH-001'] as $search) {
+            $this->actingAs($admin)
+                ->get(route('admin.requests.index', ['search' => $search]))
+                ->assertOk()
+                ->assertInertia(fn ($page) => $page
+                    ->component('Admin/Requests/Index')
+                    ->has('requests.data', 1)
+                    ->where('requests.data.0.id', $publicRequest->id));
+        }
+    }
+
+    public function test_admin_request_filters_include_public_snapshot_course_and_year(): void
+    {
+        $admin = $this->createAdmin();
+        $publicRequest = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'requester_name' => 'Public Filter Requestor',
+            'requester_student_id' => 'PUBLIC-FILTER-001',
+            'requester_course' => 'BSN',
+            'requester_year_level' => 3,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.requests.index', ['course' => 'BSN', 'year' => 3]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Admin/Requests/Index')
+                ->has('requests.data', 1)
+                ->where('requests.data.0.id', $publicRequest->id));
+    }
+
     private function createAdmin(): User
     {
         return User::factory()->admin()->create([

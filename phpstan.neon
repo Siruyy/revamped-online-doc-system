@@ -36,9 +36,6 @@ parameters:
             identifier: argument.type
             path: app/Services/ClearanceService.php
         -
-            identifier: method.notFound
-            path: app/Services/ClearanceService.php
-        -
             identifier: property.notFound
             path: app/Services/PaymentService.php
         -

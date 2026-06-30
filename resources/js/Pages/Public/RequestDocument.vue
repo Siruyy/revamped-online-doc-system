@@ -55,9 +55,6 @@ const form = useForm({
     requester_name: '',
     requester_email: '',
     requester_contact_number: '',
-    requester_student_id: '',
-    requester_course: '',
-    requester_year_level: '',
     items: [],
     purpose: '',
     requirements: {},
@@ -99,14 +96,7 @@ function submit() {
 function canContinue() {
     if (step.value === 1) return cartItems.value.length > 0;
     if (step.value === 2) {
-        return (
-            form.requester_name &&
-            form.requester_contact_number &&
-            form.requester_student_id &&
-            form.requester_course &&
-            form.requester_year_level &&
-            form.purpose.trim().length >= 5
-        );
+        return form.requester_name && form.requester_contact_number && form.purpose.trim().length >= 5;
     }
     return true;
 }
@@ -262,45 +252,6 @@ function canContinue() {
                     />
                     <p v-if="form.errors.requester_contact_number" class="mt-1 text-sm text-rose-600">
                         {{ form.errors.requester_contact_number }}
-                    </p>
-                </div>
-                <div>
-                    <label class="text-sm font-semibold text-slate-700" for="requester_student_id">Student ID *</label>
-                    <input
-                        id="requester_student_id"
-                        v-model="form.requester_student_id"
-                        class="mt-2 w-full rounded-xl border-slate-300"
-                        required
-                    />
-                    <p v-if="form.errors.requester_student_id" class="mt-1 text-sm text-rose-600">
-                        {{ form.errors.requester_student_id }}
-                    </p>
-                </div>
-                <div>
-                    <label class="text-sm font-semibold text-slate-700" for="requester_course">Course *</label>
-                    <input
-                        id="requester_course"
-                        v-model="form.requester_course"
-                        class="mt-2 w-full rounded-xl border-slate-300"
-                        required
-                    />
-                    <p v-if="form.errors.requester_course" class="mt-1 text-sm text-rose-600">
-                        {{ form.errors.requester_course }}
-                    </p>
-                </div>
-                <div>
-                    <label class="text-sm font-semibold text-slate-700" for="requester_year_level">Year level *</label>
-                    <input
-                        id="requester_year_level"
-                        v-model="form.requester_year_level"
-                        type="number"
-                        min="1"
-                        max="8"
-                        class="mt-2 w-full rounded-xl border-slate-300"
-                        required
-                    />
-                    <p v-if="form.errors.requester_year_level" class="mt-1 text-sm text-rose-600">
-                        {{ form.errors.requester_year_level }}
                     </p>
                 </div>
                 <div class="md:col-span-2">

@@ -2,7 +2,9 @@
 
 > **Goal:** Replace requestor-facing student account registration with public document request submission, upfront receipt upload, admin validation, and reference-number tracking.
 
-**Status:** Not started. Client feedback on 2026-06-23 requests that students/requestors go directly to a request page, fill student/request details, upload required attachments and payment receipt, then receive a reference number. Existing student routes/pages should be hidden for now but not deleted.
+**Status:** Partially implemented. Client feedback on 2026-06-23 requests that students/requestors go directly to a request page, fill request details, upload required attachments and payment receipt, then receive a reference number. Existing student routes/pages remain in code for now but are hidden from public navigation.
+
+**Latest closeout note:** Public intake, reference tracking, private file serving, package validation, public clearance compatibility, `/register` redirect, staff public-snapshot search fallbacks, and the cached-config CSP fix are implemented in code. Keep this phase open only for manual browser/realtime/email verification and any later cleanup of legacy authenticated-student pages/routes.
 
 **Supersedes for requestors:** Phase 02 student self-registration and Phase 03 authenticated student request/payment pages remain historical implementation, but they are no longer the desired public request workflow.
 
@@ -30,16 +32,16 @@
 - `tests/Feature/Public/PublicRequestSubmissionTest.php`
 
 **Steps:**
-- [ ] Add failing tests proving a document request can exist without a `users` row.
-- [ ] Add nullable requestor snapshot fields to `document_requests`: full name, email, contact number, student ID, course, year level.
-- [ ] Make `document_requests.user_id` nullable while preserving existing authenticated-student records.
-- [ ] Make `payments.user_id` nullable and keep `document_request_id` required for the public flow.
-- [ ] Add useful indexes for public tracking and admin search: `reference_no`, `requester_student_id`, `requester_email`, `status`.
+- [x] Add failing tests proving a document request can exist without a `users` row.
+- [x] Add nullable requestor snapshot fields to `document_requests`: full name, email, contact number, student ID, course, year level.
+- [x] Make `document_requests.user_id` nullable while preserving existing authenticated-student records.
+- [x] Make `payments.user_id` nullable and keep `document_request_id` required for the public flow.
+- [x] Add useful indexes for public tracking and admin search: `reference_no`, `requester_student_id`, `requester_email`, `status`.
 
 **Acceptance:**
-- [ ] Public requests persist without creating hidden student users.
-- [ ] Existing staff/admin/student model relationships still work for old records.
-- [ ] `php artisan test tests/Feature/Public/PublicRequestSubmissionTest.php` passes.
+- [x] Public requests persist without creating hidden student users.
+- [x] Existing staff/admin/student model relationships still work for old records.
+- [x] `php artisan test tests/Feature/Public/PublicRequestSubmissionTest.php` passes.
 
 ## Agent Task 15.2 — Public Request Submission Backend
 
@@ -63,19 +65,19 @@
 - `tests/Feature/Public/PublicRequestSubmissionTest.php`
 
 **Steps:**
-- [ ] Add public GET/POST routes for `/request-document`.
-- [ ] Validate requestor details, selected document items, purpose, required receipt, payment method/reference, and requirement files.
-- [ ] Store receipts under `payment-receipts/public/{requestId}/` and requirements under `request-requirements/public/{requestId}/` on the private `local` disk.
-- [ ] Create `DocumentRequest`, `DocumentRequestItem`, `RequestRequirement`, and `Payment` in one DB transaction.
-- [ ] Start payment as `pending_approval` because receipt is uploaded upfront.
-- [ ] Notify active admins and SuperAdmins after submission.
-- [ ] Redirect to a confirmation page showing only the generated `reference_no`.
+- [x] Add public GET/POST routes for `/request-document`.
+- [x] Validate requestor details, selected document items, purpose, required receipt, payment method/reference, and requirement files.
+- [x] Store receipts under `payment-receipts/public/{requestId}/` and requirements under `request-requirements/public/{requestId}/` on the private `local` disk.
+- [x] Create `DocumentRequest`, `DocumentRequestItem`, `RequestRequirement`, and `Payment` in one DB transaction.
+- [x] Start payment as `pending_approval` because receipt is uploaded upfront.
+- [x] Notify active admins and SuperAdmins after submission.
+- [x] Redirect to a confirmation page showing only the generated `reference_no`.
 
 **Acceptance:**
-- [ ] A public request cannot be submitted without a receipt.
-- [ ] A public request cannot be submitted without document-type required attachments.
-- [ ] Receipt and requirement files are private and exist on disk.
-- [ ] No `users` row is created for the requestor.
+- [x] A public request cannot be submitted without a receipt.
+- [x] A public request cannot be submitted without document-type required attachments.
+- [x] Receipt and requirement files are private and exist on disk.
+- [x] No `users` row is created for the requestor.
 
 ## Agent Task 15.3 — Public Tracking Backend
 
@@ -96,16 +98,16 @@
 - `tests/Feature/Public/PublicTrackingTest.php`
 
 **Steps:**
-- [ ] Add public `GET /track-document` page.
-- [ ] Add reference-number lookup using only `reference_no`.
-- [ ] Return a privacy-safe status payload: reference number, document names, request status, payment status, processing stage, submitted date, expected release date, and denial reason when denied.
-- [ ] Do not expose uploaded file URLs, email, contact number, internal IDs, department signer names, or staff-only notes.
-- [ ] Rate limit tracking lookups to slow reference-number guessing.
+- [x] Add public `GET /track-document` page.
+- [x] Add reference-number lookup using only `reference_no`.
+- [x] Return a privacy-safe status payload: reference number, document names, request status, payment status, processing stage, submitted date, expected release date, and denial reason when denied.
+- [x] Do not expose uploaded file URLs, email, contact number, internal IDs, department signer names, or staff-only notes.
+- [x] Rate limit tracking lookups to slow reference-number guessing.
 
 **Acceptance:**
-- [ ] Requestor can track with only the reference number.
-- [ ] Unknown references return a generic not-found state.
-- [ ] Public tracking never returns private file URLs or PII beyond the requestor-entered reference context.
+- [x] Requestor can track with only the reference number.
+- [x] Unknown references return a generic not-found state.
+- [x] Public tracking never returns private file URLs or PII beyond the requestor-entered reference context.
 
 ## Agent Task 15.4 — Admin/SuperAdmin Combined Validation
 
@@ -129,17 +131,17 @@
 - `tests/Feature/Admin/PublicRequestValidationTest.php`
 
 **Steps:**
-- [ ] Show requestor snapshot details on admin request detail.
-- [ ] Show requirement attachments with validate/reject actions.
-- [ ] Show payment receipt, amount, method, and reference on the same request detail page.
-- [ ] Add a single approve action that validates the request and approves the payment when requirements are valid and payment is `pending_approval`.
-- [ ] Add a deny-whole-request action with a required denial reason; set request to `denied` and payment to `denied`.
-- [ ] Expose equivalent SuperAdmin request validation routes/actions.
+- [x] Show requestor snapshot details on admin request detail.
+- [x] Show requirement attachments with validate/reject actions.
+- [x] Show payment receipt, amount, method, and reference on the same request detail page.
+- [x] Add a single approve action that validates the request and approves the payment when requirements are valid and payment is `pending_approval`.
+- [x] Add a deny-whole-request action with a required denial reason; set request to `denied` and payment to `denied`.
+- [x] Expose equivalent SuperAdmin request validation routes/actions.
 
 **Acceptance:**
-- [ ] Admin can validate attachments and payment from request detail without visiting a separate payment queue.
-- [ ] Denying the request stores a request-level reason visible in public tracking.
-- [ ] Payment approval still starts clearance when the document type requires clearance.
+- [x] Admin can validate attachments and payment from request detail without visiting a separate payment queue.
+- [x] Denying the request stores a request-level reason visible in public tracking.
+- [x] Payment approval still starts clearance when the document type requires clearance.
 
 ## Agent Task 15.5 — Private File Serving Fix
 
@@ -159,15 +161,15 @@
 - `tests/Feature/Auth/SecurityHardeningTest.php`
 
 **Steps:**
-- [ ] Add an authenticated route for request requirement files, e.g. `/files/request-requirements/{requirement}`.
-- [ ] Authorize admin/SuperAdmin and, only for legacy authenticated student records, the owning student.
-- [ ] Enforce path prefixes: `request-requirements/{userId}/...` for legacy student records and `request-requirements/public/{requestId}/...` for public records.
-- [ ] Replace `/storage/${req.file_path}` links with the private file route.
-- [ ] Add tests proving direct `/storage/request-requirements/...` access is not used and private route blocks unrelated users.
+- [x] Add an authenticated route for request requirement files, e.g. `/files/request-requirements/{requirement}`.
+- [x] Authorize admin/SuperAdmin and, only for legacy authenticated student records, the owning student.
+- [x] Enforce path prefixes: `request-requirements/{userId}/...` for legacy student records and `request-requirements/public/{requestId}/...` for public records.
+- [x] Replace `/storage/${req.file_path}` links with the private file route.
+- [x] Add tests proving direct `/storage/request-requirements/...` access is not used and private route blocks unrelated users.
 
 **Acceptance:**
-- [ ] Admin can open request requirement images/PDFs without 404.
-- [ ] Private request files are not publicly enumerable.
+- [x] Admin can open request requirement images/PDFs without 404.
+- [x] Private request files are not publicly enumerable.
 
 ## Agent Task 15.6 — Public Frontend And Navigation
 
@@ -189,17 +191,18 @@
 - `resources/js/Components/Public/FileUploadField.vue`
 
 **Steps:**
-- [ ] Replace public `Create account` and `Start a request` links with `Request Document`.
-- [ ] Add `Track Document` as the secondary public action.
-- [ ] Build public request form with requestor details, document selector, copies, purpose, requirement uploads, payment method/reference, and receipt upload.
-- [ ] Show payment instructions before receipt upload when an active payment profile exists.
-- [ ] Show confirmation page with reference number and next-step copy.
-- [ ] Hide student self-service links from public navigation; do not delete student pages/routes.
+- [x] Replace public `Create account` and `Start a request` links with `Request Document`.
+- [x] Add `Track Document` as the secondary public action.
+- [x] Build public request form with requestor details, document selector, copies, purpose, requirement uploads, payment method/reference, and receipt upload.
+- [x] Show payment instructions before receipt upload when an active payment profile exists.
+- [x] Show confirmation page with reference number and next-step copy.
+- [x] Hide student self-service links from public navigation; do not delete student pages/routes.
+- [x] Redirect direct `/register` GET/POST traffic to the public request page.
 
 **Acceptance:**
 - [ ] Mobile request submission works at 375px width.
-- [ ] The public form does not ask for a password.
-- [ ] Login remains available for staff/admin/SuperAdmin.
+- [x] The public form does not ask for a password.
+- [x] Login remains available for staff/admin/SuperAdmin.
 
 ## Agent Task 15.7 — Notifications, Docs, And Training
 
@@ -218,15 +221,36 @@
 - `docs/manual-verification-checklist.md`
 
 **Steps:**
-- [ ] Send public request submitted emails to admins/SuperAdmins.
-- [ ] Send request status emails to requestor email when present.
-- [ ] Keep in-app/database notifications for authenticated staff users.
+- [x] Send public request submitted emails to admins/SuperAdmins.
+- [x] Send request status emails to requestor email when present.
+- [x] Keep in-app/database notifications for authenticated staff users.
 - [ ] Update training docs for public request and reference tracking.
-- [ ] Update manual verification checklist for the new guest flow.
+- [x] Update manual verification checklist for the new guest flow.
+- [x] Send public clearance status/completion emails when requestor email is present.
 
 **Acceptance:**
-- [ ] Requestor receives email status updates when email is provided.
-- [ ] Staff notification behavior remains queued and test-covered.
+- [x] Requestor receives email status updates when email is provided.
+- [x] Staff notification behavior remains queued and test-covered.
+
+## Agent Task 15.9 — Public Clearance And Staff Search Compatibility
+
+**Delegate to:** backend-patterns + frontend-patterns + security-review
+
+**Status:** Implemented.
+
+**Steps:**
+- [x] Redirect public `/register` GET/POST traffic to `/request-document` without creating student accounts.
+- [x] Allow public `clearances.user_id = NULL` records to be signed/denied by department staff without a separate student-uploaded clearance file.
+- [x] Generate private public-clearance PDFs from requestor snapshot fields under `pdfs/clearance/public/{requestId}/`.
+- [x] Restrict public-clearance PDF downloads to Admin/SuperAdmin authenticated file routes.
+- [x] Include public requestor snapshot fields in admin request search, department clearance search/filtering, and admin clearance monitor filtering.
+- [x] Replace runtime `env()` usage in `SecurityHeaders` with cached config lookup.
+
+**Acceptance:**
+- [x] Public requests that require clearance can complete without hidden users.
+- [x] Public requestor private files and clearance PDFs are not exposed in public tracking.
+- [x] Staff queues show public requestor names instead of blank student relationship fields.
+- [x] PHPStan no longer reports `env()` usage in middleware.
 
 ## Agent Task 15.8 — Verification And Closeout
 

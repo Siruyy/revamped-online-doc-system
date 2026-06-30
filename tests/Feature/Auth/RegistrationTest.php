@@ -2,32 +2,23 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Events\RegistrationSubmitted as RegistrationSubmittedBroadcast;
 use App\Models\User;
-use App\Notifications\RegistrationSubmittedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_registration_screen_can_be_rendered(): void
+    public function test_registration_screen_redirects_to_public_request_form(): void
     {
         $response = $this->get('/register');
 
-        $response->assertStatus(200);
+        $response->assertRedirect(route('public.requests.create'));
     }
 
-    public function test_new_users_register_as_pending_students_and_notify_superadmins(): void
+    public function test_registration_post_redirects_to_public_request_form_without_creating_user(): void
     {
-        Notification::fake();
-        Event::fake([RegistrationSubmittedBroadcast::class]);
-
-        $superAdmin = User::factory()->superadmin()->create();
-
         $response = $this->post('/register', [
             'name' => 'Test Student',
             'email' => 'test@example.com',
@@ -40,24 +31,10 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertGuest();
-        $response->assertRedirect(route('registration.pending'));
-
-        $this->assertDatabaseHas('users', [
+        $response->assertRedirect(route('public.requests.create'));
+        $this->assertDatabaseMissing('users', [
             'email' => 'test@example.com',
-            'role' => 'student',
-            'status' => 'pending',
         ]);
-
-        Notification::assertSentTo($superAdmin, RegistrationSubmittedNotification::class);
-        Event::assertDispatched(RegistrationSubmittedBroadcast::class, function (RegistrationSubmittedBroadcast $event): bool {
-            $payload = $event->broadcastWith();
-
-            $this->assertArrayHasKey('user_id', $payload);
-            $this->assertArrayNotHasKey('email', $payload);
-            $this->assertArrayNotHasKey('student_id', $payload);
-            $this->assertArrayNotHasKey('fullname', $payload);
-
-            return true;
-        });
+        $this->assertSame(0, User::query()->where('role', 'student')->count());
     }
 }

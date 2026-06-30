@@ -28,9 +28,6 @@ class PublicRequestSubmissionTest extends TestCase
             'requester_name' => 'Public Requestor',
             'requester_email' => 'requestor@example.test',
             'requester_contact_number' => '09171234567',
-            'requester_student_id' => 'SVCI-2026-0001',
-            'requester_course' => 'BSIT',
-            'requester_year_level' => 3,
             'status' => 'pending',
             'processing_stage' => 'not_started',
             'purpose' => 'For employment',
@@ -53,9 +50,9 @@ class PublicRequestSubmissionTest extends TestCase
         $this->assertSame('Public Requestor', $request->requester_name);
         $this->assertSame('requestor@example.test', $request->requester_email);
         $this->assertSame('09171234567', $request->requester_contact_number);
-        $this->assertSame('SVCI-2026-0001', $request->requester_student_id);
-        $this->assertSame('BSIT', $request->requester_course);
-        $this->assertSame(3, $request->requester_year_level);
+        $this->assertNull($request->requester_student_id);
+        $this->assertNull($request->requester_course);
+        $this->assertNull($request->requester_year_level);
     }
 
     public function test_public_request_requires_requestor_details_items_and_receipt(): void
@@ -66,9 +63,6 @@ class PublicRequestSubmissionTest extends TestCase
         $response->assertSessionHasErrors([
             'requester_name',
             'requester_contact_number',
-            'requester_student_id',
-            'requester_course',
-            'requester_year_level',
             'items',
             'purpose',
             'payment_method',
@@ -136,7 +130,9 @@ class PublicRequestSubmissionTest extends TestCase
         $this->assertSame('public', $documentRequest->intake_mode);
         $this->assertSame('pending', $documentRequest->status);
         $this->assertSame('Public Requestor', $documentRequest->requester_name);
-        $this->assertSame('SVCI-2026-0001', $documentRequest->requester_student_id);
+        $this->assertNull($documentRequest->requester_student_id);
+        $this->assertNull($documentRequest->requester_course);
+        $this->assertNull($documentRequest->requester_year_level);
         $this->assertSame(150.0, (float) $documentRequest->fee_snapshot);
 
         $this->assertNull($payment->user_id);
@@ -217,7 +213,7 @@ class PublicRequestSubmissionTest extends TestCase
         $this->assertCount(1, Storage::disk('local')->allFiles("request-requirements/public/{$documentRequest->id}"));
     }
 
-    public function test_admin_can_download_public_payment_receipt(): void
+    public function test_admin_can_preview_public_payment_receipt_inline(): void
     {
         Storage::fake('local');
 
@@ -250,7 +246,8 @@ class PublicRequestSubmissionTest extends TestCase
 
         $this->actingAs(User::factory()->admin()->create())
             ->get(route('files.payment-receipt', $payment))
-            ->assertOk();
+            ->assertOk()
+            ->assertHeader('content-disposition', 'inline; filename=receipt.jpg');
     }
 
     public function test_admin_cannot_download_public_payment_receipt_with_traversal_path(): void
@@ -357,9 +354,6 @@ class PublicRequestSubmissionTest extends TestCase
             'requester_name' => 'Public Requestor',
             'requester_email' => 'requestor@example.test',
             'requester_contact_number' => '09171234567',
-            'requester_student_id' => 'SVCI-2026-0001',
-            'requester_course' => 'BSIT',
-            'requester_year_level' => 3,
             'items' => [[
                 'document_type_id' => $documentType->id,
                 'copies' => 1,

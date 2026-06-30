@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 class SecurityHeadersTest extends TestCase
@@ -43,6 +44,18 @@ class SecurityHeadersTest extends TestCase
             $this->assertStringContainsString('http://127.0.0.1:5173', $csp);
             $this->assertStringContainsString('ws://127.0.0.1:5173', $csp);
         });
+    }
+
+    public function test_content_security_policy_uses_configured_reverb_host(): void
+    {
+        Config::set('broadcasting.connections.reverb.options.host', 'reverb.example.test');
+
+        $response = $this->get('/');
+
+        $csp = $response->headers->get('Content-Security-Policy');
+
+        $this->assertStringContainsString('wss://reverb.example.test', $csp);
+        $this->assertStringContainsString('ws://reverb.example.test', $csp);
     }
 
     /**

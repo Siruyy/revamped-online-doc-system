@@ -70,7 +70,7 @@ class PaymentManagementTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_preview_payment_receipt_file(): void
+    public function test_admin_can_preview_payment_receipt_file_inline(): void
     {
         Storage::fake('local');
 
@@ -81,7 +81,10 @@ class PaymentManagementTest extends TestCase
         ]);
         Storage::disk('local')->put($payment->receipt_path, 'pdf-content');
 
-        $this->actingAs($admin)->get(route('files.payment-receipt', $payment))->assertOk();
+        $this->actingAs($admin)
+            ->get(route('files.payment-receipt', $payment))
+            ->assertOk()
+            ->assertHeader('content-disposition', 'inline; filename=receipt.pdf');
     }
 
     private function createAdmin(): User

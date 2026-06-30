@@ -15,11 +15,33 @@ class ClearanceMonitorController extends Controller
         $clearances = Clearance::query()
             ->with([
                 'user:id,fullname,course,year_level,student_id',
-                'documentRequest:id,reference_no,status',
+                'documentRequest:id,reference_no,status,requester_name,requester_student_id,requester_course,requester_year_level',
             ])
             ->when($request->string('overall_status')->toString(), fn ($query, $status) => $query->where('overall_status', $status))
-            ->when($request->string('course')->toString(), fn ($query, $course) => $query->whereHas('user', fn ($q) => $q->where('course', $course)))
-            ->when($request->string('year')->toString(), fn ($query, $year) => $query->whereHas('user', fn ($q) => $q->where('year_level', $year)))
+            ->when($request->string('course')->toString(), function ($query, $course) {
+                $query->where(function ($inner) use ($course) {
+                    $inner->whereHas('user', fn ($q) => $q->where('course', $course))
+                        ->orWhereHas('documentRequest', fn ($q) => $q->where('requester_course', $course));
+                });
+            })
+            ->when($request->string('year')->toString(), function ($query, $year) {
+                $query->where(function ($inner) use ($year) {
+                    $inner->whereHas('user', fn ($q) => $q->where('year_level', $year))
+                        ->orWhereHas('documentRequest', fn ($q) => $q->where('requester_year_level', $year));
+                });
+            })
+            ->when($request->string('search')->toString(), function ($query, $search) {
+                $query->where(function ($inner) use ($search) {
+                    $inner->whereHas('user', function ($q) use ($search) {
+                        $q->where('fullname', 'like', "%{$search}%")
+                            ->orWhere('student_id', 'like', "%{$search}%");
+                    })->orWhereHas('documentRequest', function ($q) use ($search) {
+                        $q->where('requester_name', 'like', "%{$search}%")
+                            ->orWhere('requester_student_id', 'like', "%{$search}%")
+                            ->orWhere('reference_no', 'like', "%{$search}%");
+                    });
+                });
+            })
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -30,6 +52,7 @@ class ClearanceMonitorController extends Controller
                 'overall_status' => $request->string('overall_status')->toString(),
                 'course' => $request->string('course')->toString(),
                 'year' => $request->string('year')->toString(),
+                'search' => $request->string('search')->toString(),
             ],
         ]);
     }
@@ -38,7 +61,7 @@ class ClearanceMonitorController extends Controller
     {
         $clearance->load([
             'user:id,fullname,email,course,year_level,student_id',
-            'documentRequest:id,reference_no,status,processing_stage,purpose',
+            'documentRequest:id,reference_no,status,processing_stage,purpose,requester_name,requester_email,requester_student_id,requester_course,requester_year_level',
             'teacherSigner:id,fullname',
             'deanSigner:id,fullname',
             'accountingSigner:id,fullname',

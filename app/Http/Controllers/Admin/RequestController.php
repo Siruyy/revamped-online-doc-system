@@ -26,8 +26,18 @@ class RequestController extends Controller
                 'requirements:id,document_request_id,status',
             ])
             ->when($request->string('status')->toString(), fn ($query, $status) => $query->where('status', $status))
-            ->when($request->string('course')->toString(), fn ($query, $course) => $query->whereHas('user', fn ($q) => $q->where('course', $course)))
-            ->when($request->string('year')->toString(), fn ($query, $year) => $query->whereHas('user', fn ($q) => $q->where('year_level', $year)))
+            ->when($request->string('course')->toString(), function ($query, $course) {
+                $query->where(function ($inner) use ($course) {
+                    $inner->whereHas('user', fn ($q) => $q->where('course', $course))
+                        ->orWhere('requester_course', $course);
+                });
+            })
+            ->when($request->string('year')->toString(), function ($query, $year) {
+                $query->where(function ($inner) use ($year) {
+                    $inner->whereHas('user', fn ($q) => $q->where('year_level', $year))
+                        ->orWhere('requester_year_level', $year);
+                });
+            })
             ->when($request->string('document_type')->toString(), fn ($query, $typeId) => $query->where('document_type_id', $typeId))
             ->when($request->string('from')->toString(), fn ($query, $from) => $query->whereDate('created_at', '>=', $from))
             ->when($request->string('to')->toString(), fn ($query, $to) => $query->whereDate('created_at', '<=', $to))
@@ -35,6 +45,9 @@ class RequestController extends Controller
                 $query->where(function ($inner) use ($search) {
                     $inner->where('reference_no', 'like', "%{$search}%")
                         ->orWhereHas('user', fn ($q) => $q->where('fullname', 'like', "%{$search}%")->orWhere('student_id', 'like', "%{$search}%"))
+                        ->orWhere('requester_name', 'like', "%{$search}%")
+                        ->orWhere('requester_student_id', 'like', "%{$search}%")
+                        ->orWhere('requester_course', 'like', "%{$search}%")
                         ->orWhereHas('documentType', fn ($q) => $q->where('name', 'like', "%{$search}%"));
                 });
             })

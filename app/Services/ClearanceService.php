@@ -5,11 +5,13 @@ namespace App\Services;
 use App\Events\ClearanceCompleted;
 use App\Events\ClearanceUpdated;
 use App\Models\Clearance;
+use App\Models\DocumentRequest;
 use App\Models\User;
 use App\Notifications\ClearanceCompletedNotification;
 use App\Notifications\WorkflowStatusNotification;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -97,7 +99,7 @@ class ClearanceService
                 throw new \RuntimeException('This department clearance is no longer pending.');
             }
 
-            if (! $locked->uploaded_file_path) {
+            if ($locked->user_id !== null && ! $locked->uploaded_file_path) {
                 throw new \RuntimeException('Student must upload the clearance supporting file before department signing.');
             }
 
@@ -130,7 +132,7 @@ class ClearanceService
                 $currentOverallStatus
             );
 
-            $locked->user->notify(new WorkflowStatusNotification([
+            $this->notifyRequestor($locked, [
                 'type' => 'clearance_updated',
                 'title' => 'Clearance updated',
                 'message' => "Your {$department} clearance was signed.",
@@ -138,13 +140,13 @@ class ClearanceService
                 'department' => $department,
                 'action' => 'signed',
                 'overall_status' => $currentOverallStatus,
-            ]));
+            ]);
 
             if ($currentOverallStatus === 'completed') {
                 $this->pdfService->generateClearancePdf($locked);
                 $locked->refresh();
                 ClearanceCompleted::dispatch($locked->id, $locked->user_id);
-                $locked->user->notify(new ClearanceCompletedNotification($locked));
+                $this->notifyClearanceCompleted($locked);
             }
 
             return $locked;
@@ -194,7 +196,7 @@ class ClearanceService
                 $locked->overall_status
             );
 
-            $locked->user->notify(new WorkflowStatusNotification([
+            $this->notifyRequestor($locked, [
                 'type' => 'clearance_updated',
                 'title' => 'Clearance denied',
                 'message' => "Your {$department} clearance was denied.",
@@ -202,7 +204,7 @@ class ClearanceService
                 'department' => $department,
                 'action' => 'denied',
                 'overall_status' => $locked->overall_status,
-            ]));
+            ]);
 
             return $locked->refresh();
         });
@@ -212,6 +214,66 @@ class ClearanceService
     {
         if ($officer->role !== $department) {
             throw new \InvalidArgumentException('Officer role does not match the clearance department.');
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function notifyRequestor(Clearance $clearance, array $data): void
+    {
+        $clearance->loadMissing('user', 'documentRequest');
+
+        if ($clearance->user instanceof User) {
+            $clearance->user->notify(new WorkflowStatusNotification($data));
+
+            return;
+        }
+
+        $documentRequest = $clearance->documentRequest;
+
+        if (! $documentRequest instanceof DocumentRequest) {
+            return;
+        }
+
+        $email = $documentRequest->requester_email;
+
+        if (is_string($email) && $email !== '') {
+            Notification::route('mail', $email)->notify(new WorkflowStatusNotification([
+                ...$data,
+                'url' => route('track-document', ['reference_no' => $documentRequest->reference_no]),
+            ]));
+        }
+    }
+
+    private function notifyClearanceCompleted(Clearance $clearance): void
+    {
+        $clearance->loadMissing('user', 'documentRequest');
+
+        if ($clearance->user instanceof User) {
+            $clearance->user->notify(new ClearanceCompletedNotification($clearance));
+
+            return;
+        }
+
+        $documentRequest = $clearance->documentRequest;
+
+        if (! $documentRequest instanceof DocumentRequest) {
+            return;
+        }
+
+        $email = $documentRequest->requester_email;
+
+        if (is_string($email) && $email !== '') {
+            Notification::route('mail', $email)->notify(new WorkflowStatusNotification([
+                'type' => 'clearance_completed',
+                'title' => 'Clearance completed',
+                'message' => "Clearance for request {$documentRequest->reference_no} was completed.",
+                'clearance_id' => $clearance->id,
+                'document_request_id' => $clearance->document_request_id,
+                'overall_status' => $clearance->overall_status,
+                'url' => route('track-document', ['reference_no' => $documentRequest->reference_no]),
+            ]));
         }
     }
 }

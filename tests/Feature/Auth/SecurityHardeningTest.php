@@ -225,7 +225,7 @@ class SecurityHardeningTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_admin_can_download_public_request_requirement_file(): void
+    public function test_admin_can_preview_public_request_requirement_file_inline(): void
     {
         Storage::fake('local');
 
@@ -234,7 +234,8 @@ class SecurityHardeningTest extends TestCase
 
         $this->actingAs($admin)
             ->get(route('files.request-requirement', $requirement))
-            ->assertOk();
+            ->assertOk()
+            ->assertHeader('content-disposition', 'inline; filename=valid-id.pdf');
     }
 
     public function test_superadmin_can_download_public_request_requirement_file(): void

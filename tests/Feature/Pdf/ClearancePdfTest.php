@@ -3,6 +3,7 @@
 namespace Tests\Feature\Pdf;
 
 use App\Models\Clearance;
+use App\Models\DocumentRequest;
 use App\Models\User;
 use App\Services\PdfService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -67,6 +68,60 @@ class ClearancePdfTest extends TestCase
         $this->assertStringContainsString('Accounting Signer', $html);
         $this->assertStringContainsString('SAO Signer', $html);
         $this->assertStringNotContainsString('signatures/1/private-signature.png', $html);
+    }
+
+    public function test_clearance_pdf_view_uses_public_request_snapshot_when_user_is_absent(): void
+    {
+        $request = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'requester_name' => 'Public PDF Requestor',
+            'requester_student_id' => 'PUBLIC-999',
+            'requester_course' => 'BSIT',
+            'requester_year_level' => 4,
+        ]);
+        $clearance = Clearance::factory()->for($request, 'documentRequest')->completed()->create([
+            'user_id' => null,
+        ]);
+
+        $html = view('pdf.clearance', [
+            'clearance' => $clearance->loadMissing([
+                'user',
+                'documentRequest',
+                'teacherSigner',
+                'deanSigner',
+                'accountingSigner',
+                'saoSigner',
+            ]),
+            'generatedAt' => now(),
+            'signatureImages' => [],
+        ])->render();
+
+        $this->assertStringContainsString('Public PDF Requestor', $html);
+        $this->assertStringContainsString('PUBLIC-999', $html);
+        $this->assertStringContainsString('BSIT / 4', $html);
+    }
+
+    public function test_pdf_service_generates_public_clearance_pdf_under_public_request_path(): void
+    {
+        Storage::fake('local');
+        $request = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'requester_name' => 'Public PDF Requestor',
+            'requester_student_id' => 'PUBLIC-999',
+            'requester_course' => 'BSIT',
+            'requester_year_level' => 4,
+        ]);
+        $clearance = Clearance::factory()->for($request, 'documentRequest')->completed()->create([
+            'user_id' => null,
+        ]);
+
+        $path = app(PdfService::class)->generateClearancePdf($clearance);
+
+        $this->assertSame("pdfs/clearance/public/{$request->id}/clearance-{$clearance->id}.pdf", $path);
+        $this->assertSame($path, $clearance->fresh()->pdf_path);
+        Storage::disk('local')->assertExists($path);
     }
 
     public function test_pdf_service_embeds_only_safe_private_signatures(): void
@@ -146,6 +201,44 @@ class ClearancePdfTest extends TestCase
         Storage::disk('local')->put($clearance->pdf_path, '%PDF-1.4 test');
 
         $this->actingAs($other)
+            ->get(route('files.clearance-pdf', $clearance))
+            ->assertForbidden();
+    }
+
+    public function test_admin_and_superadmin_can_download_public_clearance_pdf(): void
+    {
+        Storage::fake('local');
+        $request = DocumentRequest::factory()->create(['user_id' => null, 'intake_mode' => 'public']);
+        $clearance = Clearance::factory()->for($request, 'documentRequest')->completed()->create([
+            'user_id' => null,
+            'pdf_path' => "pdfs/clearance/public/{$request->id}/clearance-1.pdf",
+        ]);
+        Storage::disk('local')->put($clearance->pdf_path, '%PDF-1.4 test');
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('files.clearance-pdf', $clearance))
+            ->assertOk();
+
+        $this->actingAs(User::factory()->superadmin()->create())
+            ->get(route('files.clearance-pdf', $clearance))
+            ->assertOk();
+    }
+
+    public function test_student_and_department_cannot_download_public_clearance_pdf(): void
+    {
+        Storage::fake('local');
+        $request = DocumentRequest::factory()->create(['user_id' => null, 'intake_mode' => 'public']);
+        $clearance = Clearance::factory()->for($request, 'documentRequest')->completed()->create([
+            'user_id' => null,
+            'pdf_path' => "pdfs/clearance/public/{$request->id}/clearance-1.pdf",
+        ]);
+        Storage::disk('local')->put($clearance->pdf_path, '%PDF-1.4 test');
+
+        $this->actingAs(User::factory()->student()->create())
+            ->get(route('files.clearance-pdf', $clearance))
+            ->assertForbidden();
+
+        $this->actingAs(User::factory()->teacher()->create())
             ->get(route('files.clearance-pdf', $clearance))
             ->assertForbidden();
     }

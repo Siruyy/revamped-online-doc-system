@@ -9,6 +9,18 @@ const props = defineProps({
 });
 
 const canDownloadPdf = computed(() => props.clearance.overall_status === 'completed' && props.clearance.pdf_path);
+const requestorName = computed(
+    () => props.clearance.user?.fullname || props.clearance.document_request?.requester_name || 'Public requestor',
+);
+const requestorEmail = computed(
+    () => props.clearance.user?.email || props.clearance.document_request?.requester_email || 'No email provided',
+);
+const requestorCourse = computed(
+    () => props.clearance.user?.course || props.clearance.document_request?.requester_course || 'N/A',
+);
+const requestorYear = computed(
+    () => props.clearance.user?.year_level || props.clearance.document_request?.requester_year_level || 'N/A',
+);
 
 const statusTone = (status) => {
     if (['cleared', 'completed', 'approved'].includes(status)) return 'success';
@@ -43,10 +55,8 @@ const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
         <div class="mx-auto max-w-6xl space-y-6 px-4 sm:px-6 lg:px-8">
             <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">Student</h3>
-                <p class="mt-2 text-sm text-slate-700">{{ clearance.user?.fullname }} ({{ clearance.user?.email }})</p>
-                <p class="text-sm text-slate-700">
-                    Course: {{ clearance.user?.course }} | Year {{ clearance.user?.year_level }}
-                </p>
+                <p class="mt-2 text-sm text-slate-700">{{ requestorName }} ({{ requestorEmail }})</p>
+                <p class="text-sm text-slate-700">Course: {{ requestorCourse }} | Year {{ requestorYear }}</p>
                 <p class="text-sm text-slate-700">Request stage: {{ clearance.document_request?.processing_stage }}</p>
                 <p class="text-sm text-slate-700">Purpose: {{ clearance.document_request?.purpose || 'N/A' }}</p>
             </section>

@@ -17,7 +17,7 @@ class ClearanceUpdated implements ShouldBroadcast
 
     public function __construct(
         public int $clearanceId,
-        public int $studentId,
+        public ?int $studentId,
         public string $department,
         public string $action,
         public ?string $overallStatus = null,
@@ -28,11 +28,16 @@ class ClearanceUpdated implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
-        return [
-            new PrivateChannel('user.'.$this->studentId),
+        $channels = [
             new PrivateChannel('role.admin'),
             new PrivateChannel('role.department.'.$this->department),
         ];
+
+        if ($this->studentId !== null) {
+            $channels[] = new PrivateChannel('user.'.$this->studentId);
+        }
+
+        return $channels;
     }
 
     /**

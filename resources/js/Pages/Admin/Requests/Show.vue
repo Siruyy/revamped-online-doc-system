@@ -1,9 +1,10 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
+import Modal from '@/Components/Modal.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import {
-    ArrowDownTrayIcon,
+    ArrowTopRightOnSquareIcon,
     ArrowUturnLeftIcon,
     BoltIcon,
     CheckCircleIcon,
@@ -12,11 +13,13 @@ import {
     CreditCardIcon,
     DocumentTextIcon,
     ExclamationTriangleIcon,
+    EyeIcon,
     PauseCircleIcon,
     PlayCircleIcon,
     TicketIcon,
     UserCircleIcon,
     XCircleIcon,
+    XMarkIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -62,6 +65,21 @@ const canRelease = computed(
 const showDeny = ref(false);
 const showPause = ref(false);
 const rejectReqId = ref(null);
+const previewFile = ref(null);
+
+const previewIsImage = computed(() => {
+    if (!previewFile.value?.path) return false;
+
+    return /\.(jpe?g|png|gif|webp)$/i.test(previewFile.value.path);
+});
+
+function openFilePreview(file) {
+    previewFile.value = file;
+}
+
+function closeFilePreview() {
+    previewFile.value = null;
+}
 
 function approve() {
     router.post(route(`${routeBase.value}.requests.approve`, props.request.id));
@@ -221,21 +239,19 @@ function fmtDateOnly(value) {
                                 {{ request.requester_email || 'No email provided' }} ·
                                 {{ request.requester_contact_number }}
                             </p>
-                            <dl class="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-xs sm:grid-cols-3">
-                                <div>
-                                    <dt class="text-slate-500">Student ID</dt>
-                                    <dd class="font-mono text-slate-900">
-                                        {{ isPublicRequest ? request.requester_student_id : request.user?.student_id }}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt class="text-slate-500">Course / Year</dt>
-                                    <dd class="text-slate-900">
-                                        {{ isPublicRequest ? request.requester_course : request.user?.course }} · Y{{
-                                            isPublicRequest ? request.requester_year_level : request.user?.year_level
-                                        }}
-                                    </dd>
-                                </div>
+                            <dl class="mt-3 grid grid-cols-1 gap-x-6 gap-y-1 text-xs sm:grid-cols-3">
+                                <template v-if="!isPublicRequest">
+                                    <div>
+                                        <dt class="text-slate-500">Student ID</dt>
+                                        <dd class="font-mono text-slate-900">{{ request.user?.student_id }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-slate-500">Course / Year</dt>
+                                        <dd class="text-slate-900">
+                                            {{ request.user?.course }} · Y{{ request.user?.year_level }}
+                                        </dd>
+                                    </div>
+                                </template>
                                 <div v-if="!isPublicRequest">
                                     <dt class="text-slate-500">Academic status</dt>
                                     <dd class="capitalize text-slate-900">
@@ -332,14 +348,20 @@ function fmtDateOnly(value) {
                                     <p v-if="req.notes" class="mt-1 text-xs italic text-slate-500">
                                         Notes: {{ req.notes }}
                                     </p>
-                                    <a
+                                    <button
                                         v-if="req.file_path"
-                                        :href="route('files.request-requirement', req.id)"
-                                        target="_blank"
+                                        type="button"
                                         class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
+                                        @click="
+                                            openFilePreview({
+                                                title: req.label,
+                                                url: route('files.request-requirement', req.id),
+                                                path: req.file_path,
+                                            })
+                                        "
                                     >
-                                        <ArrowDownTrayIcon class="h-3.5 w-3.5" /> Open file
-                                    </a>
+                                        <EyeIcon class="h-3.5 w-3.5" /> Preview file
+                                    </button>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span
@@ -661,13 +683,20 @@ function fmtDateOnly(value) {
                             <dd class="font-mono">{{ payment.reference_number }}</dd>
                         </div>
                     </dl>
-                    <Link
+                    <button
                         v-if="payment.receipt_path"
-                        :href="route('files.payment-receipt', payment.id)"
+                        type="button"
                         class="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
+                        @click="
+                            openFilePreview({
+                                title: 'Payment receipt',
+                                url: route('files.payment-receipt', payment.id),
+                                path: payment.receipt_path,
+                            })
+                        "
                     >
-                        Open receipt →
-                    </Link>
+                        <EyeIcon class="h-3.5 w-3.5" /> Preview receipt
+                    </button>
                 </section>
 
                 <!-- Claim slip -->
@@ -690,5 +719,54 @@ function fmtDateOnly(value) {
                 </section>
             </aside>
         </div>
+
+        <Modal :show="!!previewFile" max-width="2xl" @close="closeFilePreview">
+            <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                <div class="min-w-0">
+                    <h3 class="truncate font-display text-lg font-semibold text-slate-900">
+                        {{ previewFile?.title }}
+                    </h3>
+                    <p class="text-xs text-slate-500">Private file preview</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a
+                        v-if="previewFile"
+                        :href="previewFile.url"
+                        target="_blank"
+                        rel="noopener"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                        aria-label="Open preview in a new tab"
+                    >
+                        <ArrowTopRightOnSquareIcon class="h-4 w-4" />
+                    </a>
+                    <button
+                        type="button"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                        aria-label="Close preview"
+                        @click="closeFilePreview"
+                    >
+                        <XMarkIcon class="h-4 w-4" />
+                    </button>
+                </div>
+            </div>
+            <div class="bg-slate-100 p-4">
+                <div
+                    class="flex min-h-[70vh] items-center justify-center overflow-hidden rounded-xl bg-white ring-1 ring-slate-200"
+                >
+                    <img
+                        v-if="previewFile && previewIsImage"
+                        :src="previewFile.url"
+                        :alt="previewFile.title"
+                        class="max-h-[70vh] w-auto max-w-full object-contain"
+                    />
+                    <iframe
+                        v-else-if="previewFile"
+                        :src="previewFile.url"
+                        :title="previewFile.title"
+                        class="h-[70vh] w-full border-0"
+                    />
+                </div>
+            </div>
+        </Modal>
     </StaffLayout>
 </template>

@@ -7,6 +7,7 @@ use App\Models\Clearance;
 use App\Models\DocumentRequest;
 use App\Models\User;
 use App\Notifications\ClearanceCompletedNotification;
+use App\Notifications\WorkflowStatusNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
@@ -35,6 +36,27 @@ class ClearanceWorkflowTest extends TestCase
 
         $this->actingAs($student)->get(route('department.clearances.index'))->assertForbidden();
         $this->actingAs($student)->get(route('department.clearances.show', $clearance))->assertForbidden();
+    }
+
+    public function test_department_clearance_filters_include_public_request_snapshot_fields(): void
+    {
+        $teacher = $this->makeOfficer('teacher');
+        $clearance = $this->makePublicClearance();
+
+        $this->actingAs($teacher)
+            ->get(route('department.clearances.index', [
+                'status' => 'pending',
+                'course' => 'BSIT',
+                'year' => 3,
+                'search' => 'PUBLIC-001',
+            ]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Department/Clearances/Index')
+                ->has('clearances.data', 1)
+                ->where('clearances.data.0.id', $clearance->id)
+                ->where('clearances.data.0.document_request.requester_name', 'Public Requestor')
+                ->where('clearances.data.0.document_request.requester_student_id', 'PUBLIC-001'));
     }
 
     public function test_teacher_can_sign_pending_clearance(): void
@@ -306,6 +328,103 @@ class ClearanceWorkflowTest extends TestCase
         Notification::assertSentTo($student, ClearanceCompletedNotification::class);
     }
 
+    public function test_each_department_role_can_sign_public_clearance_without_supporting_file(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
+
+        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
+            $officer = $this->makeOfficer($role);
+            $clearance = $this->makePublicClearance();
+
+            $this->actingAs($officer)->post(route('department.clearances.sign', $clearance), [
+                'remarks' => "{$role} verified",
+            ])->assertRedirect()->assertSessionHasNoErrors();
+
+            $clearance->refresh();
+            $this->assertSame('cleared', $clearance->getAttribute("{$role}_status"));
+            $this->assertSame($officer->id, $clearance->getAttribute("{$role}_signed_by"));
+
+            Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event): bool => $event->clearanceId === $clearance->id
+                && $event->studentId === null
+                && $event->department === $role
+                && $event->action === 'signed');
+        }
+    }
+
+    public function test_each_department_role_can_deny_public_clearance_without_student_user(): void
+    {
+        Event::fake([ClearanceUpdated::class]);
+        Notification::fake();
+
+        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
+            $officer = $this->makeOfficer($role);
+            $clearance = $this->makePublicClearance();
+
+            $this->actingAs($officer)->post(route('department.clearances.deny', $clearance), [
+                'remarks' => "{$role} public requirement missing",
+            ])->assertRedirect()->assertSessionHasNoErrors();
+
+            $clearance->refresh();
+            $this->assertSame('denied', $clearance->getAttribute("{$role}_status"));
+            $this->assertSame('denied', $clearance->overall_status);
+            $this->assertSame($officer->id, $clearance->getAttribute("{$role}_signed_by"));
+
+            Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event): bool => $event->clearanceId === $clearance->id
+                && $event->studentId === null
+                && $event->department === $role
+                && $event->action === 'denied');
+        }
+    }
+
+    public function test_public_clearance_completion_generates_pdf_and_emails_requestor(): void
+    {
+        Storage::fake('local');
+        Event::fake();
+        Notification::fake();
+
+        $clearance = $this->makePublicClearance('public-requestor@example.test');
+
+        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
+            $this->actingAs($this->makeOfficer($role))
+                ->post(route('department.clearances.sign', $clearance), [])
+                ->assertRedirect()
+                ->assertSessionHasNoErrors();
+            $clearance->refresh();
+        }
+
+        $this->assertSame('completed', $clearance->overall_status);
+        $this->assertSame("pdfs/clearance/public/{$clearance->document_request_id}/clearance-{$clearance->id}.pdf", $clearance->pdf_path);
+        Storage::disk('local')->assertExists($clearance->pdf_path);
+
+        Notification::assertSentOnDemand(
+            WorkflowStatusNotification::class,
+            fn (WorkflowStatusNotification $notification, array $channels, object $notifiable): bool => $channels === ['mail']
+                && ($notifiable->routes['mail'] ?? null) === 'public-requestor@example.test'
+                && ($notification->toArray($notifiable)['type'] ?? null) === 'clearance_completed',
+        );
+    }
+
+    public function test_public_clearance_completion_skips_requestor_email_when_absent(): void
+    {
+        Storage::fake('local');
+        Event::fake();
+        Notification::fake();
+
+        $clearance = $this->makePublicClearance(null);
+
+        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
+            $this->actingAs($this->makeOfficer($role))
+                ->post(route('department.clearances.sign', $clearance), [])
+                ->assertRedirect()
+                ->assertSessionHasNoErrors();
+            $clearance->refresh();
+        }
+
+        $this->assertSame('completed', $clearance->overall_status);
+        Notification::assertSentOnDemandTimes(WorkflowStatusNotification::class, 0);
+    }
+
     public function test_department_can_download_supporting_file(): void
     {
         Storage::fake('local');
@@ -351,6 +470,29 @@ class ClearanceWorkflowTest extends TestCase
         return User::factory()->{$role}()->create([
             'status' => 'active',
             'email_verified_at' => now(),
+        ]);
+    }
+
+    private function makePublicClearance(?string $requesterEmail = 'public-requestor@example.test'): Clearance
+    {
+        $docRequest = DocumentRequest::factory()->approved()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'requester_name' => 'Public Requestor',
+            'requester_email' => $requesterEmail,
+            'requester_contact_number' => '09171234567',
+            'requester_student_id' => 'PUBLIC-001',
+            'requester_course' => 'BSIT',
+            'requester_year_level' => 3,
+        ]);
+
+        return Clearance::factory()->for($docRequest, 'documentRequest')->create([
+            'user_id' => null,
+            'teacher_status' => 'pending',
+            'dean_status' => 'pending',
+            'accounting_status' => 'pending',
+            'sao_status' => 'pending',
+            'uploaded_file_path' => null,
         ]);
     }
 }

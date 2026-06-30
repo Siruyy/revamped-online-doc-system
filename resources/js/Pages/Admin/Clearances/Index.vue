@@ -17,6 +17,7 @@ const form = reactive({
     overall_status: props.filters.overall_status || '',
     course: props.filters.course || '',
     year: props.filters.year || '',
+    search: props.filters.search || '',
 });
 
 const applyFilters = () => {
@@ -32,6 +33,13 @@ const statusTone = (status) => {
 };
 
 const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
+const requestorName = (item) => item.user?.fullname || item.document_request?.requester_name || 'Public requestor';
+const requestorCourseYear = (item) => {
+    const course = item.user?.course || item.document_request?.requester_course || 'N/A';
+    const year = item.user?.year_level || item.document_request?.requester_year_level || 'N/A';
+
+    return `${course} · Y${year}`;
+};
 </script>
 
 <template>
@@ -43,7 +51,7 @@ const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
         </template>
 
         <div class="mx-auto max-w-7xl space-y-4 px-4 sm:px-6 lg:px-8">
-            <div class="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4">
+            <div class="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-5">
                 <select v-model="form.overall_status" class="rounded-md border-slate-300 text-sm shadow-sm">
                     <option value="">All statuses</option>
                     <option value="in_progress">In Progress</option>
@@ -63,6 +71,13 @@ const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
                     max="8"
                     placeholder="Year"
                     class="rounded-md border-slate-300 text-sm shadow-sm"
+                />
+                <input
+                    v-model="form.search"
+                    type="text"
+                    placeholder="Name, student ID, or ref"
+                    class="rounded-md border-slate-300 text-sm shadow-sm"
+                    @keyup.enter="applyFilters"
                 />
                 <button
                     type="button"
@@ -91,7 +106,7 @@ const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
                     >
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <h3 class="truncate text-sm font-semibold text-slate-950">{{ item.user?.fullname }}</h3>
+                                <h3 class="truncate text-sm font-semibold text-slate-950">{{ requestorName(item) }}</h3>
                                 <p class="mt-0.5 truncate font-mono text-xs text-slate-500">
                                     {{ item.document_request?.reference_no }}
                                 </p>
@@ -165,7 +180,10 @@ const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
                             <tbody class="divide-y divide-slate-200">
                                 <tr v-for="item in clearances.data" :key="item.id">
                                     <td class="px-4 py-3">{{ item.document_request?.reference_no }}</td>
-                                    <td class="px-4 py-3">{{ item.user?.fullname }}</td>
+                                    <td class="px-4 py-3">
+                                        <p class="font-semibold text-slate-900">{{ requestorName(item) }}</p>
+                                        <p class="text-xs text-slate-500">{{ requestorCourseYear(item) }}</p>
+                                    </td>
                                     <td class="px-4 py-3">
                                         <StatusBadge
                                             :tone="statusTone(item.teacher_status)"

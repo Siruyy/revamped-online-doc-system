@@ -28,16 +28,21 @@ class FileController extends Controller
             404
         );
 
-        return Storage::disk('local')->download($payment->receipt_path);
+        return Storage::disk('local')->response($payment->receipt_path);
     }
 
     public function clearancePdf(Clearance $clearance): StreamedResponse
     {
         $this->authorize('downloadPdf', $clearance);
 
+        $expectedPrefix = $clearance->user_id !== null
+            ? "pdfs/clearance/{$clearance->user_id}/"
+            : "pdfs/clearance/public/{$clearance->document_request_id}/";
+
         abort_if(
             empty($clearance->pdf_path)
-                || ! str_starts_with($clearance->pdf_path, "pdfs/clearance/{$clearance->user_id}/")
+                || ! str_starts_with($clearance->pdf_path, $expectedPrefix)
+                || str_contains($clearance->pdf_path, '..')
                 || ! Storage::disk('local')->exists($clearance->pdf_path),
             404
         );
@@ -79,7 +84,7 @@ class FileController extends Controller
             404
         );
 
-        return Storage::disk('local')->download($requirement->file_path);
+        return Storage::disk('local')->response($requirement->file_path);
     }
 
     public function publicPaymentQr(PaymentProfile $paymentProfile): StreamedResponse

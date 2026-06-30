@@ -11,20 +11,18 @@ class PdfService
 {
     public function generateClearancePdf(Clearance $clearance): string
     {
-        if (! $clearance->user_id) {
-            throw new \RuntimeException('Clearance missing user.');
-        }
-
         $clearance->loadMissing([
             'user:id,fullname,email,student_id,course,year_level',
-            'documentRequest:id,reference_no,purpose,status',
+            'documentRequest:id,reference_no,purpose,status,requester_name,requester_email,requester_student_id,requester_course,requester_year_level',
             'teacherSigner:id,fullname,signature_path',
             'deanSigner:id,fullname,signature_path',
             'accountingSigner:id,fullname,signature_path',
             'saoSigner:id,fullname,signature_path',
         ]);
 
-        $relativePath = 'pdfs/clearance/'.$clearance->user_id.'/clearance-'.$clearance->id.'.pdf';
+        $relativePath = $clearance->user_id !== null
+            ? 'pdfs/clearance/'.$clearance->user_id.'/clearance-'.$clearance->id.'.pdf'
+            : 'pdfs/clearance/public/'.$clearance->document_request_id.'/clearance-'.$clearance->id.'.pdf';
 
         $pdf = Pdf::loadView('pdf.clearance', [
             'clearance' => $clearance,

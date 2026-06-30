@@ -53,6 +53,15 @@ function badge(status) {
         }[status] ?? 'bg-slate-100 text-slate-600'
     );
 }
+
+const requestorName = (row) => row.user?.fullname || row.document_request?.requester_name || 'Public requestor';
+const requestorCourseYear = (row) => {
+    const course = row.user?.course || row.document_request?.requester_course || 'N/A';
+    const year = row.user?.year_level || row.document_request?.requester_year_level || 'N/A';
+
+    return `${course} · Y${year}`;
+};
+const requestorStudentId = (row) => row.user?.student_id || row.document_request?.requester_student_id || '—';
 </script>
 
 <template>
@@ -136,9 +145,9 @@ function badge(status) {
                     >
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <h3 class="truncate text-sm font-semibold text-slate-950">{{ row.user?.fullname }}</h3>
+                                <h3 class="truncate text-sm font-semibold text-slate-950">{{ requestorName(row) }}</h3>
                                 <p class="mt-0.5 truncate text-xs text-slate-500">
-                                    {{ row.user?.course }} · Y{{ row.user?.year_level }}
+                                    {{ requestorCourseYear(row) }}
                                 </p>
                             </div>
                             <span
@@ -172,7 +181,7 @@ function badge(status) {
                             </div>
                             <div>
                                 <dt class="font-medium text-slate-500">Student ID</dt>
-                                <dd class="mt-0.5 text-slate-800">{{ row.user?.student_id || '—' }}</dd>
+                                <dd class="mt-0.5 text-slate-800">{{ requestorStudentId(row) }}</dd>
                             </div>
                         </dl>
 
@@ -209,9 +218,9 @@ function badge(status) {
                                         {{ row.document_request?.reference_no }}
                                     </td>
                                     <td class="px-5 py-3">
-                                        <p class="font-semibold text-slate-900">{{ row.user?.fullname }}</p>
+                                        <p class="font-semibold text-slate-900">{{ requestorName(row) }}</p>
                                         <p class="text-xs text-slate-500">
-                                            {{ row.user?.course }} · Y{{ row.user?.year_level }}
+                                            {{ requestorCourseYear(row) }}
                                         </p>
                                     </td>
                                     <td class="px-5 py-3">
