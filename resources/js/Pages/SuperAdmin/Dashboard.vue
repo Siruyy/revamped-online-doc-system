@@ -11,7 +11,6 @@ import { computed } from 'vue';
 defineProps({
     userCountsByRole: { type: Object, required: true },
     userCountsByStatus: { type: Object, required: true },
-    pendingRegistrations: { type: Number, required: true },
     requestCounts: { type: Object, required: true },
     paymentCounts: { type: Object, required: true },
     clearanceCounts: { type: Object, required: true },
@@ -39,7 +38,7 @@ const roleLabels = {
         <template #header>
             <PageHeader
                 title="SuperAdmin Dashboard"
-                subtitle="Monitor registrations, requests, payments, clearances, and recent system activity."
+                subtitle="Monitor requests, payments, clearances, users, and recent system activity."
             />
         </template>
 
@@ -51,14 +50,7 @@ const roleLabels = {
                 {{ banner }}
             </div>
 
-            <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <StatCard
-                    label="Pending registrations"
-                    :value="pendingRegistrations"
-                    tone="brand"
-                    :href="route('superadmin.users.pending')"
-                    cta="Review queue"
-                />
+            <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <StatCard label="Pending document requests" :value="requestCounts.pending" tone="warning" />
                 <StatCard label="Payments awaiting approval" :value="paymentCounts.pending_approval" tone="warning" />
                 <StatCard label="Completed requests" :value="requestCounts.completed" tone="success" />

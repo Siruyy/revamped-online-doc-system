@@ -41,6 +41,25 @@ const payment = computed(() => props.request.payments?.[0]);
 const clearance = computed(() => props.request.clearances?.[0]);
 const claimSlip = computed(() => props.request.claim_slip);
 const requirements = computed(() => props.request.requirements ?? []);
+const requestItems = computed(() => {
+    const items = props.request.items ?? [];
+
+    if (items.length > 0) return items;
+
+    return [
+        {
+            id: `legacy-${props.request.id}`,
+            document_type: docType.value,
+            copies: props.request.quantity || 1,
+            page_count_snapshot: props.request.page_count || docType.value?.default_page_count || 1,
+            fee_per_page_snapshot: props.request.fee_snapshot || 0,
+            line_total: props.request.fee_snapshot || 0,
+        },
+    ];
+});
+const requestItemsTotal = computed(() =>
+    requestItems.value.reduce((sum, item) => sum + Number(item.line_total || 0), 0),
+);
 const isPublicRequest = computed(() => props.request.intake_mode === 'public');
 const allReqsValidated = computed(
     () => requirements.value.length === 0 || requirements.value.every((r) => r.status === 'validated'),
@@ -185,6 +204,10 @@ function fmtDateOnly(value) {
     if (!value) return '—';
     return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
+
+function fmtPeso(value) {
+    return `₱${Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+}
 </script>
 
 <template>
@@ -273,6 +296,57 @@ function fmtDateOnly(value) {
                         <DocumentTextIcon class="h-5 w-5 text-brand-600" />
                         <h3 class="font-display text-lg font-semibold text-slate-900">Request Details</h3>
                     </div>
+                    <div class="mb-5 overflow-hidden rounded-xl border border-slate-200">
+                        <div class="border-b border-slate-200 bg-slate-50 px-4 py-3">
+                            <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Requested Documents
+                            </h4>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 text-sm">
+                                <thead class="bg-white text-left text-xs uppercase text-slate-500">
+                                    <tr>
+                                        <th class="px-4 py-3 font-semibold">Document</th>
+                                        <th class="px-4 py-3 font-semibold">Qty</th>
+                                        <th class="px-4 py-3 font-semibold">Pages</th>
+                                        <th class="px-4 py-3 text-right font-semibold">Unit fee</th>
+                                        <th class="px-4 py-3 text-right font-semibold">Line total</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 bg-white">
+                                    <tr v-for="item in requestItems" :key="item.id">
+                                        <td class="px-4 py-3 font-medium text-slate-900">
+                                            {{ item.document_type?.name || docType?.name || 'Document request' }}
+                                        </td>
+                                        <td class="px-4 py-3 text-slate-700">{{ item.copies || 1 }}</td>
+                                        <td class="px-4 py-3 text-slate-700">{{ item.page_count_snapshot || '—' }}</td>
+                                        <td class="px-4 py-3 text-right font-medium text-slate-700">
+                                            {{ fmtPeso(item.fee_per_page_snapshot) }}
+                                        </td>
+                                        <td class="px-4 py-3 text-right font-semibold text-slate-900">
+                                            {{ fmtPeso(item.line_total) }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot class="border-t border-slate-200 bg-slate-50">
+                                    <tr>
+                                        <td
+                                            colspan="4"
+                                            class="px-4 py-3 text-right text-xs font-semibold uppercase text-slate-500"
+                                        >
+                                            Total
+                                        </td>
+                                        <td
+                                            class="px-4 py-3 text-right font-display text-base font-bold text-slate-950"
+                                        >
+                                            {{ fmtPeso(requestItemsTotal || request.fee_snapshot) }}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
                     <dl class="grid gap-4 text-sm sm:grid-cols-2">
                         <div>
                             <dt class="text-xs uppercase text-slate-500">Category</dt>
@@ -287,13 +361,7 @@ function fmtDateOnly(value) {
                         </div>
                         <div>
                             <dt class="text-xs uppercase text-slate-500">Fee</dt>
-                            <dd class="font-semibold text-slate-900">
-                                ₱{{
-                                    Number(request.fee_snapshot || 0).toLocaleString('en-PH', {
-                                        minimumFractionDigits: 2,
-                                    })
-                                }}
-                            </dd>
+                            <dd class="font-semibold text-slate-900">{{ fmtPeso(request.fee_snapshot) }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs uppercase text-slate-500">Submitted</dt>

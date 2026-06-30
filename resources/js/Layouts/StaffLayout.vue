@@ -107,7 +107,6 @@ const links = computed(() => {
         return [
             { route: 'superadmin.dashboard', label: 'Dashboard' },
             { route: 'superadmin.users.index', label: 'Users' },
-            { route: 'superadmin.users.pending', label: 'Pending registrations' },
             { route: 'superadmin.users.create', label: 'Create staff' },
             { route: 'superadmin.logs.index', label: 'Activity logs' },
             { route: 'superadmin.requests.index', label: 'Requests' },
