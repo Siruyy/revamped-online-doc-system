@@ -80,6 +80,51 @@ const canUpdateStage = computed(() => props.request.status === 'approved');
 const canRelease = computed(
     () => props.request.status === 'approved' && props.request.processing_stage === 'ready_for_pickup',
 );
+const clearanceReady = computed(() => !clearance.value || clearance.value.overall_status === 'completed');
+const readinessItems = computed(() => [
+    {
+        label: 'Requirements',
+        status: allReqsValidated.value ? 'Ready' : 'Needs validation',
+        ready: allReqsValidated.value,
+        detail:
+            requirements.value.length === 0
+                ? 'No attachments required.'
+                : `${requirements.value.filter((r) => r.status === 'validated').length} of ${requirements.value.length} validated.`,
+        blocker: 'Validate or reject every submitted requirement.',
+    },
+    {
+        label: 'Payment',
+        status: paymentApproved.value
+            ? 'Approved'
+            : paymentPendingApproval.value
+              ? 'Receipt submitted'
+              : 'Needs receipt',
+        ready: Boolean(paymentApproved.value || paymentPendingApproval.value),
+        detail: payment.value
+            ? `${payment.value.status?.replaceAll('_', ' ')} · ${fmtPeso(payment.value.total_amount)}`
+            : 'No payment record.',
+        blocker: 'A submitted payment receipt is required before approval.',
+    },
+    {
+        label: 'Clearance',
+        status: !clearance.value ? 'Not required' : clearance.value.overall_status?.replaceAll('_', ' '),
+        ready: clearanceReady.value,
+        detail: !clearance.value
+            ? 'This request does not have a clearance record.'
+            : 'Department signatures are tracked internally.',
+        blocker: 'Clearance is still in progress.',
+    },
+    {
+        label: 'Stage',
+        status: props.request.processing_stage?.replaceAll('_', ' ') || 'not started',
+        ready: props.request.status !== 'denied',
+        detail: `Request status is ${props.request.status?.replaceAll('_', ' ')}.`,
+        blocker: 'Denied requests cannot continue without a new submission.',
+    },
+]);
+const readinessBlockers = computed(() =>
+    readinessItems.value.filter((item) => !item.ready).map((item) => item.blocker),
+);
 
 const showDeny = ref(false);
 const showPause = ref(false);
@@ -295,6 +340,53 @@ function fmtPeso(value) {
                                 number.
                             </div>
                         </div>
+                    </div>
+                </section>
+
+                <!-- Readiness -->
+                <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <h3 class="font-display text-lg font-semibold text-slate-900">Readiness</h3>
+                            <p class="mt-1 text-sm text-slate-600">
+                                Check the request package before approval, clearance, pickup, or release actions.
+                            </p>
+                        </div>
+                        <span
+                            class="inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold"
+                            :class="
+                                readinessBlockers.length
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : 'bg-emerald-100 text-emerald-800'
+                            "
+                        >
+                            {{ readinessBlockers.length ? `${readinessBlockers.length} blocker(s)` : 'Ready' }}
+                        </span>
+                    </div>
+                    <div class="mt-5 grid gap-3 md:grid-cols-4">
+                        <article
+                            v-for="item in readinessItems"
+                            :key="item.label"
+                            class="rounded-xl border p-4 text-sm"
+                            :class="
+                                item.ready
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                                    : 'border-amber-200 bg-amber-50 text-amber-900'
+                            "
+                        >
+                            <p class="text-xs font-semibold uppercase tracking-wide opacity-75">{{ item.label }}</p>
+                            <p class="mt-2 font-semibold capitalize">{{ item.status }}</p>
+                            <p class="mt-1 text-xs leading-5">{{ item.detail }}</p>
+                        </article>
+                    </div>
+                    <div
+                        v-if="readinessBlockers.length"
+                        class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-100"
+                    >
+                        <p class="font-semibold">Approval blockers</p>
+                        <ul class="mt-2 list-disc space-y-1 pl-5">
+                            <li v-for="blocker in readinessBlockers" :key="blocker">{{ blocker }}</li>
+                        </ul>
                     </div>
                 </section>
 
@@ -535,7 +627,7 @@ function fmtPeso(value) {
             <!-- Side panel -->
             <aside class="space-y-6">
                 <!-- Quick actions -->
-                <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 lg:sticky lg:top-24">
                     <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Decision</h3>
                     <div
                         v-if="isPublicRequest"

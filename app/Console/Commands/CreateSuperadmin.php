@@ -8,9 +8,10 @@ use Illuminate\Console\Command;
 class CreateSuperadmin extends Command
 {
     protected $signature = 'user:create-superadmin {email} {name} {password}';
+
     protected $description = 'Create a superadmin user';
 
-    public function handle()
+    public function handle(): int
     {
         $user = User::create([
             'name' => $this->argument('name'),
@@ -20,5 +21,7 @@ class CreateSuperadmin extends Command
             'role' => 'superadmin',
         ]);
         $this->info("Created superadmin: {$user->id} - {$user->email}");
+
+        return self::SUCCESS;
     }
 }

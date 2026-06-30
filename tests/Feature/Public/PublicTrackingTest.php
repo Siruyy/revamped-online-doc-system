@@ -85,6 +85,15 @@ class PublicTrackingTest extends TestCase
                 ->where('reference_no', 'REQ-2026-123456')
                 ->where('result.status', 'approved')
                 ->where('result.processing_stage', 'processing')
+                ->where('result.stage_label', 'Processing')
+                ->where('result.stage_description', 'School staff are completing the required clearance steps internally.')
+                ->where('result.timeline.0.label', 'Submitted')
+                ->where('result.timeline.0.state', 'complete')
+                ->where('result.timeline.1.label', 'Staff review')
+                ->where('result.timeline.2.label', 'Processing')
+                ->where('result.timeline.2.state', 'active')
+                ->where('result.timeline.3.label', 'Ready for pickup')
+                ->where('result.timeline.4.label', 'Released')
                 ->where('result.documents.0.name', 'Transcript of Records')
                 ->where('result.documents.0.copies', 2)
                 ->where('result.documents.0.line_total', '450.00')
@@ -138,6 +147,9 @@ class PublicTrackingTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Public/TrackResult', false)
                 ->where('result.status', 'denied')
+                ->where('result.stage_label', 'Staff review')
+                ->where('result.stage_description', 'The request was reviewed and could not be approved as submitted.')
+                ->where('result.timeline.1.state', 'denied')
                 ->where('result.denial_reason', 'Receipt is unreadable.')
                 ->where('result.next_step', 'This request was denied. Review the reason shown here and contact the registrar if you need help resubmitting.')
             );
@@ -157,6 +169,8 @@ class PublicTrackingTest extends TestCase
         ])->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Public/TrackResult', false)
+                ->where('result.stage_label', 'Staff review')
+                ->where('result.stage_description', 'Office staff are checking the submitted requirements and payment receipt.')
                 ->where('result.next_step', 'Your request package is under staff review. Keep this reference number and check this page for updates.')
             );
     }
@@ -213,6 +227,8 @@ class PublicTrackingTest extends TestCase
                 ->component('Public/TrackResult', false)
                 ->where('result.claim_slip.claim_number', 'CLS-2026-123456')
                 ->where('result.claim_slip.claim_date', now()->addDay()->toDateString())
+                ->where('result.stage_label', 'Ready for pickup')
+                ->where('result.stage_description', 'Bring your reference number and follow the registrar pickup instructions.')
                 ->where('result.next_step', 'Your document is ready for pickup. Bring this reference number and any claim instructions from the registrar.')
             );
     }
@@ -231,6 +247,8 @@ class PublicTrackingTest extends TestCase
         ])->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Public/TrackResult', false)
+                ->where('result.stage_label', 'Released')
+                ->where('result.stage_description', 'The request has been released. Keep the reference number for your records.')
                 ->where('result.next_step', 'This request has been released. Keep the reference number for your records.')
             );
     }

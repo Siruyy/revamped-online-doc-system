@@ -63,6 +63,9 @@ class TrackDocumentController extends Controller
             'reference_no' => $documentRequest->reference_no,
             'status' => $documentRequest->status,
             'processing_stage' => $documentRequest->processing_stage,
+            'stage_label' => $this->stageLabel($documentRequest),
+            'stage_description' => $this->stageDescription($documentRequest, $clearance),
+            'timeline' => $this->timelinePayload($documentRequest),
             'submitted_at' => $documentRequest->created_at?->toDateString(),
             'expected_release_on' => $this->formatDate($documentRequest->expected_release_on),
             'next_step' => $this->nextStep($documentRequest, $clearance, $claimSlip),
@@ -88,6 +91,110 @@ class TrackDocumentController extends Controller
         }
 
         return $payload;
+    }
+
+    private function stageLabel(DocumentRequest $documentRequest): string
+    {
+        if ($documentRequest->processing_stage === 'ready_for_pickup') {
+            return 'Ready for pickup';
+        }
+
+        if ($documentRequest->processing_stage === 'released') {
+            return 'Released';
+        }
+
+        if ($documentRequest->processing_stage === 'processing') {
+            return 'Processing';
+        }
+
+        return 'Staff review';
+    }
+
+    private function stageDescription(DocumentRequest $documentRequest, ?Clearance $clearance): string
+    {
+        if ($documentRequest->status === 'denied') {
+            return 'The request was reviewed and could not be approved as submitted.';
+        }
+
+        if ($documentRequest->processing_stage === 'ready_for_pickup') {
+            return 'Bring your reference number and follow the registrar pickup instructions.';
+        }
+
+        if ($documentRequest->processing_stage === 'released') {
+            return 'The request has been released. Keep the reference number for your records.';
+        }
+
+        if ($clearance && $clearance->overall_status !== 'completed') {
+            return 'School staff are completing the required clearance steps internally.';
+        }
+
+        if ($documentRequest->processing_stage === 'processing') {
+            return 'Registrar staff are preparing the requested document.';
+        }
+
+        return 'Office staff are checking the submitted requirements and payment receipt.';
+    }
+
+    /**
+     * @return list<array{key: string, label: string, description: string, state: string}>
+     */
+    private function timelinePayload(DocumentRequest $documentRequest): array
+    {
+        $stages = [
+            [
+                'key' => 'submitted',
+                'label' => 'Submitted',
+                'description' => 'The request package was received.',
+            ],
+            [
+                'key' => 'staff_review',
+                'label' => 'Staff review',
+                'description' => 'Staff check requirements, receipt, and request details.',
+            ],
+            [
+                'key' => 'processing',
+                'label' => 'Processing',
+                'description' => 'The requested document is being prepared.',
+            ],
+            [
+                'key' => 'ready_for_pickup',
+                'label' => 'Ready for pickup',
+                'description' => 'Pickup instructions are available when the document is ready.',
+            ],
+            [
+                'key' => 'released',
+                'label' => 'Released',
+                'description' => 'The document has been released.',
+            ],
+        ];
+
+        $currentIndex = match ($documentRequest->processing_stage) {
+            'processing' => 2,
+            'ready_for_pickup' => 3,
+            'released' => 4,
+            default => 1,
+        };
+
+        if ($documentRequest->status === 'denied') {
+            $currentIndex = 1;
+        }
+
+        return array_map(function (array $stage, int $index) use ($currentIndex, $documentRequest): array {
+            $state = 'upcoming';
+
+            if ($index < $currentIndex) {
+                $state = 'complete';
+            } elseif ($index === $currentIndex) {
+                $state = $documentRequest->status === 'denied' && $stage['key'] === 'staff_review'
+                    ? 'denied'
+                    : 'active';
+            }
+
+            return [
+                ...$stage,
+                'state' => $state,
+            ];
+        }, $stages, array_keys($stages));
     }
 
     private function nextStep(DocumentRequest $documentRequest, ?Clearance $clearance, ?ClaimSlip $claimSlip): string

@@ -10,10 +10,19 @@ defineProps({
     result: { type: Object, default: null },
 });
 
-const stages = ['not_started', 'processing', 'ready_for_pickup', 'released'];
-
 function statusLabel(value) {
     return String(value || '').replaceAll('_', ' ');
+}
+
+function timelineTone(state) {
+    return (
+        {
+            complete: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+            active: 'border-brand-200 bg-brand-50 text-brand-800',
+            denied: 'border-rose-200 bg-rose-50 text-rose-800',
+            upcoming: 'border-slate-200 bg-slate-50 text-slate-500',
+        }[state] ?? 'border-slate-200 bg-slate-50 text-slate-500'
+    );
 }
 </script>
 
@@ -49,7 +58,10 @@ function statusLabel(value) {
                             </h1>
                             <p class="mt-2 text-sm text-slate-600">
                                 Current stage:
-                                <strong class="capitalize">{{ statusLabel(result.processing_stage) }}</strong>
+                                <strong>{{ result.stage_label || statusLabel(result.processing_stage) }}</strong>
+                            </p>
+                            <p v-if="result.stage_description" class="mt-1 text-sm leading-6 text-slate-600">
+                                {{ result.stage_description }}
                             </p>
                             <p v-if="result.expected_release_on" class="mt-1 text-sm text-slate-600">
                                 Expected release: {{ result.expected_release_on }}
@@ -60,35 +72,61 @@ function statusLabel(value) {
                         </div>
                     </div>
 
-                    <div class="rounded-2xl bg-sky-50 p-4 text-sm leading-6 text-sky-900 ring-1 ring-sky-100">
+                    <div class="rounded-2xl bg-brand-50 p-5 text-sm leading-6 text-brand-900 ring-1 ring-brand-100">
                         <p class="font-semibold">What happens next</p>
                         <p class="mt-1">{{ result.next_step }}</p>
                     </div>
 
-                    <p
-                        v-if="result.denial_reason"
-                        class="rounded-2xl bg-rose-50 p-4 text-sm leading-6 text-rose-700 ring-1 ring-rose-100"
+                    <div
+                        v-if="result.clearance && result.clearance.overall_status !== 'completed'"
+                        class="rounded-2xl bg-sky-50 p-4 text-sm leading-6 text-sky-900 ring-1 ring-sky-100"
                     >
-                        <strong>Denied reason:</strong> {{ result.denial_reason }}
-                    </p>
+                        <p class="font-semibold">No action needed from you</p>
+                        <p class="mt-1">
+                            School staff are handling clearance from the request attachments you already submitted.
+                        </p>
+                    </div>
 
-                    <ol class="grid gap-3 sm:grid-cols-4">
+                    <div
+                        v-if="result.denial_reason"
+                        class="rounded-2xl bg-rose-50 p-4 text-sm leading-6 text-rose-800 ring-1 ring-rose-100"
+                    >
+                        <p class="font-semibold">Request denied</p>
+                        <p class="mt-1"><strong>Reason:</strong> {{ result.denial_reason }}</p>
+                        <p class="mt-2">Review the reason above and contact the registrar if you need to resubmit.</p>
+                    </div>
+
+                    <div
+                        v-if="result.claim_slip"
+                        class="rounded-2xl bg-emerald-50 p-4 text-sm leading-6 text-emerald-900 ring-1 ring-emerald-100"
+                    >
+                        <p class="font-semibold">Ready for pickup</p>
+                        <p class="mt-1">
+                            Claim number: <strong>{{ result.claim_slip.claim_number }}</strong>
+                        </p>
+                        <p v-if="result.claim_slip.claim_date">Pickup date: {{ result.claim_slip.claim_date }}</p>
+                    </div>
+
+                    <div
+                        v-if="result.processing_stage === 'released'"
+                        class="rounded-2xl bg-emerald-50 p-4 text-sm leading-6 text-emerald-900 ring-1 ring-emerald-100"
+                    >
+                        <p class="font-semibold">Completed</p>
+                        <p class="mt-1">This request has been released. Keep the reference number for your records.</p>
+                    </div>
+
+                    <ol class="grid gap-3 md:grid-cols-5">
                         <li
-                            v-for="stage in stages"
-                            :key="stage"
+                            v-for="stage in result.timeline"
+                            :key="stage.key"
                             class="rounded-2xl border p-4 text-sm"
-                            :class="
-                                stages.indexOf(result.processing_stage) >= stages.indexOf(stage)
-                                    ? 'border-brand-200 bg-brand-50 text-brand-800'
-                                    : 'border-slate-200 bg-slate-50 text-slate-500'
-                            "
+                            :class="timelineTone(stage.state)"
                         >
-                            <CheckCircleIcon
-                                v-if="stages.indexOf(result.processing_stage) >= stages.indexOf(stage)"
-                                class="mb-2 h-5 w-5"
-                            />
+                            <CheckCircleIcon v-if="['complete', 'active'].includes(stage.state)" class="mb-2 h-5 w-5" />
+                            <XCircleIcon v-else-if="stage.state === 'denied'" class="mb-2 h-5 w-5" />
                             <ClockIcon v-else class="mb-2 h-5 w-5" />
-                            <span class="capitalize">{{ statusLabel(stage) }}</span>
+                            <span class="block font-semibold">{{ stage.label }}</span>
+                            <span class="mt-1 block text-xs leading-5">{{ stage.description }}</span>
                         </li>
                     </ol>
 
