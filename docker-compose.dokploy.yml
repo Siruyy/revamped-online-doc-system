@@ -4,7 +4,7 @@ x-app-build: &app-build
   args:
     VITE_APP_NAME: ${APP_NAME:-SVCI Document System}
     PUBLIC_REVERB_KEY: ${REVERB_APP_KEY:?Set REVERB_APP_KEY in Dokploy}
-    VITE_REVERB_HOST: ${VITE_REVERB_HOST:-docs-ws.siruyy.cloud}
+    VITE_REVERB_HOST: ${VITE_REVERB_HOST:-svci-ws.siruyy.cloud}
     VITE_REVERB_PORT: ${VITE_REVERB_PORT:-443}
     VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
 
@@ -17,7 +17,7 @@ services:
       APP_ENV: production
       APP_KEY: ${APP_KEY:?Set APP_KEY in Dokploy}
       APP_DEBUG: "false"
-      APP_URL: ${APP_URL:-https://docs.siruyy.cloud}
+      APP_URL: ${APP_URL:-https://svci.siruyy.cloud}
       APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Manila}
       LOG_CHANNEL: ${LOG_CHANNEL:-daily}
       LOG_LEVEL: ${LOG_LEVEL:-warning}
@@ -38,9 +38,9 @@ services:
       REVERB_HOST: reverb
       REVERB_PORT: 8080
       REVERB_SCHEME: http
-      REVERB_ALLOWED_ORIGINS: ${REVERB_ALLOWED_ORIGINS:-https://docs.siruyy.cloud}
+      REVERB_ALLOWED_ORIGINS: ${REVERB_ALLOWED_ORIGINS:-https://svci.siruyy.cloud}
       VITE_REVERB_APP_KEY: ${REVERB_APP_KEY:?Set REVERB_APP_KEY in Dokploy}
-      VITE_REVERB_HOST: ${VITE_REVERB_HOST:-docs-ws.siruyy.cloud}
+      VITE_REVERB_HOST: ${VITE_REVERB_HOST:-svci-ws.siruyy.cloud}
       VITE_REVERB_PORT: ${VITE_REVERB_PORT:-443}
       VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
       FILESYSTEM_DISK: local
@@ -70,7 +70,7 @@ services:
       APP_ENV: production
       APP_KEY: ${APP_KEY:?Set APP_KEY in Dokploy}
       APP_DEBUG: "false"
-      APP_URL: ${APP_URL:-https://docs.siruyy.cloud}
+      APP_URL: ${APP_URL:-https://svci.siruyy.cloud}
       APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Manila}
       LOG_CHANNEL: ${LOG_CHANNEL:-daily}
       LOG_LEVEL: ${LOG_LEVEL:-warning}
@@ -90,7 +90,7 @@ services:
       REVERB_HOST: reverb
       REVERB_PORT: 8080
       REVERB_SCHEME: http
-      REVERB_ALLOWED_ORIGINS: ${REVERB_ALLOWED_ORIGINS:-https://docs.siruyy.cloud}
+      REVERB_ALLOWED_ORIGINS: ${REVERB_ALLOWED_ORIGINS:-https://svci.siruyy.cloud}
       FILESYSTEM_DISK: local
       MAIL_MAILER: ${MAIL_MAILER:-log}
       MAIL_HOST: ${MAIL_HOST:-}
@@ -118,7 +118,7 @@ services:
       APP_ENV: production
       APP_KEY: ${APP_KEY:?Set APP_KEY in Dokploy}
       APP_DEBUG: "false"
-      APP_URL: ${APP_URL:-https://docs.siruyy.cloud}
+      APP_URL: ${APP_URL:-https://svci.siruyy.cloud}
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_PORT: 3306
@@ -136,7 +136,7 @@ services:
       REVERB_HOST: reverb
       REVERB_PORT: 8080
       REVERB_SCHEME: http
-      REVERB_ALLOWED_ORIGINS: ${REVERB_ALLOWED_ORIGINS:-https://docs.siruyy.cloud}
+      REVERB_ALLOWED_ORIGINS: ${REVERB_ALLOWED_ORIGINS:-https://svci.siruyy.cloud}
       RUN_MIGRATIONS: "false"
     volumes:
       - app_storage:/var/www/html/storage/app
