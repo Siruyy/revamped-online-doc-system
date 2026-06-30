@@ -21,18 +21,5 @@ class DatabaseSeeder extends Seeder
                 DemoDataSeeder::class,
             ]);
         }
-
-        // Create the dummy superadmin account
-        \App\Models\User::updateOrCreate(
-            ['email' => 'superadmin.dummy@gmail.com'],
-            [
-                'fullname' => 'Superadmin Dummy',
-                'password' => \Illuminate\Support\Facades\Hash::make('password'),
-                'role' => 'superadmin',
-                'status' => 'active',
-                'email_verified_at' => now(),
-                'approved_at' => now(),
-            ]
-        );
     }
 }
