@@ -3,7 +3,7 @@ x-app-build: &app-build
   dockerfile: Dockerfile
   args:
     VITE_APP_NAME: ${APP_NAME:-SVCI Document System}
-    PUBLIC_REVERB_KEY: ${REVERB_APP_KEY:?Set REVERB_APP_KEY in Dokploy}
+    PUBLIC_REVERB_KEY: ${REVERB_APP_KEY:-default_reverb_key}
     VITE_REVERB_HOST: ${VITE_REVERB_HOST:-svci-ws.siruyy.cloud}
     VITE_REVERB_PORT: ${VITE_REVERB_PORT:-443}
     VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
