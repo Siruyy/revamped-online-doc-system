@@ -5,6 +5,7 @@ namespace Tests\Feature\Department;
 use App\Events\ClearanceUpdated;
 use App\Models\Clearance;
 use App\Models\DocumentRequest;
+use App\Models\RequestRequirement;
 use App\Models\User;
 use App\Notifications\ClearanceCompletedNotification;
 use App\Notifications\WorkflowStatusNotification;
@@ -57,6 +58,33 @@ class ClearanceWorkflowTest extends TestCase
                 ->where('clearances.data.0.id', $clearance->id)
                 ->where('clearances.data.0.document_request.requester_name', 'Public Requestor')
                 ->where('clearances.data.0.document_request.requester_student_id', 'PUBLIC-001'));
+    }
+
+    public function test_department_clearance_detail_includes_public_request_snapshot(): void
+    {
+        $teacher = $this->makeOfficer('teacher');
+        $clearance = $this->makePublicClearance();
+        $requirement = RequestRequirement::query()->create([
+            'document_request_id' => $clearance->document_request_id,
+            'requirement_key' => 'valid_id_photocopy_claimant',
+            'label' => 'Valid ID photocopy',
+            'status' => 'submitted',
+            'file_path' => "request-requirements/public/{$clearance->document_request_id}/valid-id.pdf",
+        ]);
+
+        $this->actingAs($teacher)
+            ->get(route('department.clearances.show', $clearance))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Department/Clearances/Show')
+                ->where('clearance.user_id', null)
+                ->where('clearance.document_request.requester_name', 'Public Requestor')
+                ->where('clearance.document_request.requester_student_id', 'PUBLIC-001')
+                ->where('clearance.document_request.requester_course', 'BSIT')
+                ->where('clearance.document_request.requester_year_level', 3)
+                ->where('clearance.document_request.requester_email', 'public-requestor@example.test')
+                ->where('clearance.document_request.requirements.0.id', $requirement->id)
+                ->where('clearance.document_request.requirements.0.label', 'Valid ID photocopy'));
     }
 
     public function test_teacher_can_sign_pending_clearance(): void

@@ -9,6 +9,7 @@ const props = defineProps({
 });
 
 const canDownloadPdf = computed(() => props.clearance.overall_status === 'completed' && props.clearance.pdf_path);
+const isPublicClearance = computed(() => !props.clearance.user_id);
 const requestorName = computed(
     () => props.clearance.user?.fullname || props.clearance.document_request?.requester_name || 'Public requestor',
 );
@@ -54,11 +55,26 @@ const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
 
         <div class="mx-auto max-w-6xl space-y-6 px-4 sm:px-6 lg:px-8">
             <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">Student</h3>
+                <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">Student</h3>
+                    <span
+                        v-if="isPublicClearance"
+                        class="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold text-sky-800"
+                    >
+                        Public requestor
+                    </span>
+                </div>
                 <p class="mt-2 text-sm text-slate-700">{{ requestorName }} ({{ requestorEmail }})</p>
                 <p class="text-sm text-slate-700">Course: {{ requestorCourse }} | Year {{ requestorYear }}</p>
                 <p class="text-sm text-slate-700">Request stage: {{ clearance.document_request?.processing_stage }}</p>
                 <p class="text-sm text-slate-700">Purpose: {{ clearance.document_request?.purpose || 'N/A' }}</p>
+                <div
+                    v-if="isPublicClearance"
+                    class="mt-4 rounded-lg bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-900 ring-1 ring-sky-100"
+                >
+                    This clearance belongs to a no-login public request. Admin and SuperAdmin users may download the
+                    private clearance PDF after completion; public tracking never exposes the PDF link.
+                </div>
             </section>
 
             <section class="grid gap-4 md:grid-cols-2">

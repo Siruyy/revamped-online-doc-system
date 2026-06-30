@@ -91,6 +91,7 @@ class PublicTrackingTest extends TestCase
                 ->where('result.payment.status', 'approved')
                 ->where('result.payment.total_amount', '450.00')
                 ->where('result.clearance.overall_status', 'in_progress')
+                ->where('result.next_step', 'Department clearance is being handled by school staff. No separate student account or clearance upload is needed.')
             );
 
         $content = $response->getContent();
@@ -138,6 +139,25 @@ class PublicTrackingTest extends TestCase
                 ->component('Public/TrackResult', false)
                 ->where('result.status', 'denied')
                 ->where('result.denial_reason', 'Receipt is unreadable.')
+                ->where('result.next_step', 'This request was denied. Review the reason shown here and contact the registrar if you need help resubmitting.')
+            );
+    }
+
+    public function test_tracking_result_explains_under_review_next_step(): void
+    {
+        DocumentRequest::factory()->create([
+            'reference_no' => 'REQ-2026-111222',
+            'user_id' => null,
+            'status' => 'pending',
+            'processing_stage' => 'not_started',
+        ]);
+
+        $this->from('/track-document')->post('/track-document', [
+            'reference_no' => 'REQ-2026-111222',
+        ])->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Public/TrackResult', false)
+                ->where('result.next_step', 'Your request package is under staff review. Keep this reference number and check this page for updates.')
             );
     }
 
@@ -164,6 +184,7 @@ class PublicTrackingTest extends TestCase
                 ->where('result.documents.0.line_total', '120.00')
                 ->where('result.payment', null)
                 ->where('result.clearance', null)
+                ->where('result.next_step', 'Your request package is under staff review. Keep this reference number and check this page for updates.')
             );
     }
 
@@ -192,6 +213,25 @@ class PublicTrackingTest extends TestCase
                 ->component('Public/TrackResult', false)
                 ->where('result.claim_slip.claim_number', 'CLS-2026-123456')
                 ->where('result.claim_slip.claim_date', now()->addDay()->toDateString())
+                ->where('result.next_step', 'Your document is ready for pickup. Bring this reference number and any claim instructions from the registrar.')
+            );
+    }
+
+    public function test_released_tracking_result_explains_completion_next_step(): void
+    {
+        DocumentRequest::factory()->create([
+            'reference_no' => 'REQ-2026-333444',
+            'user_id' => null,
+            'status' => 'completed',
+            'processing_stage' => 'released',
+        ]);
+
+        $this->from('/track-document')->post('/track-document', [
+            'reference_no' => 'REQ-2026-333444',
+        ])->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Public/TrackResult', false)
+                ->where('result.next_step', 'This request has been released. Keep the reference number for your records.')
             );
     }
 

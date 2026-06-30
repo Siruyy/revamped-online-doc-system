@@ -286,6 +286,14 @@ function fmtPeso(value) {
                                     <dd class="capitalize text-slate-900">Public request</dd>
                                 </div>
                             </dl>
+                            <div
+                                v-if="isPublicRequest"
+                                class="mt-4 rounded-lg bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-900 ring-1 ring-sky-100"
+                            >
+                                Public requestors do not need student accounts. Review the submitted request details,
+                                attachments, and payment receipt here; they will track updates with the reference
+                                number.
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -408,7 +416,15 @@ function fmtPeso(value) {
                     >
                         This document type does not require attachments.
                     </div>
-                    <ul v-else class="mt-4 divide-y divide-slate-100">
+                    <div
+                        v-if="requirements.length > 0 && isPublicRequest"
+                        class="mt-4 rounded-lg bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-900 ring-1 ring-sky-100"
+                    >
+                        For public requests, these uploaded requirement files are the clearance review materials.
+                        Department staff should not ask the requestor to create an account or upload a separate
+                        clearance file.
+                    </div>
+                    <ul v-if="requirements.length > 0" class="mt-4 divide-y divide-slate-100">
                         <li v-for="req in requirements" :key="req.id" class="py-3">
                             <div class="flex flex-wrap items-start justify-between gap-2">
                                 <div class="min-w-0 flex-1">
@@ -521,6 +537,14 @@ function fmtPeso(value) {
                 <!-- Quick actions -->
                 <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
                     <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Decision</h3>
+                    <div
+                        v-if="isPublicRequest"
+                        class="mt-3 rounded-lg bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-900 ring-1 ring-sky-100"
+                    >
+                        Approve request + payment only after validating attachments and receipt. If any requested
+                        document requires clearance, approval automatically starts the internal department clearance
+                        workflow.
+                    </div>
                     <div class="mt-3 flex flex-col gap-2">
                         <div
                             v-if="approvePackageForm.hasErrors"

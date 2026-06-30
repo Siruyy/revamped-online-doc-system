@@ -24,6 +24,22 @@ npm run dev
 - [ ] Complete or deny a department clearance step and confirm staff notifications update as expected.
 - [ ] Stop `php artisan reverb:start`, repeat one notification-triggering action, and confirm polling fallback still shows the notification after refresh or polling delay.
 
+## Public No-Login Request Flow
+
+- [ ] Visit `/request-document` as a guest and submit requestor details, document items, required files, and payment receipt in one intake.
+- [ ] Confirm the requestor receives a reference number and no `users` table row is created for that public requestor.
+- [ ] Visit `/track-document`, enter the reference number, and confirm the result shows public-safe status and next-step copy only.
+- [ ] As Admin or SuperAdmin, open the request detail, preview the receipt and requirement files, and confirm the inline help explains that no student account is needed.
+- [ ] Validate all submitted requirements, approve request + payment, and confirm a clearance is created only when the requested document type requires department clearance.
+- [ ] As teacher, dean, accounting, and SAO, open the department clearance detail and confirm the original request attachments are visible for review.
+- [ ] Sign or deny a public clearance without uploading a separate clearance supporting file.
+- [ ] If denied, confirm public tracking shows the denial reason without exposing private file paths, staff-only links, or clearance PDFs.
+- [ ] Complete all department signatures, confirm the private clearance PDF is generated, and confirm Admin/SuperAdmin can download it.
+- [ ] Confirm student and department users cannot download the public clearance PDF.
+- [ ] Move the request to ready for pickup and then released; confirm public tracking shows the correct next-step copy at each stage.
+- [ ] Confirm public requestor email receives public-safe updates when email is present and no email error occurs when email is absent.
+- [ ] Record whether Reverb, queue worker, and Mailpit/Mailhog were running; note any environment limitation instead of marking the item verified.
+
 ## Queue And Mail
 
 - [ ] Keep `php artisan queue:work` running while triggering public request, password reset, request approval/denial, payment approval/denial, and clearance events.

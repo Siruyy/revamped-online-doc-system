@@ -65,6 +65,7 @@ class TrackDocumentController extends Controller
             'processing_stage' => $documentRequest->processing_stage,
             'submitted_at' => $documentRequest->created_at?->toDateString(),
             'expected_release_on' => $this->formatDate($documentRequest->expected_release_on),
+            'next_step' => $this->nextStep($documentRequest, $clearance, $claimSlip),
             'documents' => $this->documentsPayload($documentRequest),
             'payment' => $payment ? [
                 'status' => $payment->status,
@@ -87,6 +88,31 @@ class TrackDocumentController extends Controller
         }
 
         return $payload;
+    }
+
+    private function nextStep(DocumentRequest $documentRequest, ?Clearance $clearance, ?ClaimSlip $claimSlip): string
+    {
+        if ($documentRequest->status === 'denied') {
+            return 'This request was denied. Review the reason shown here and contact the registrar if you need help resubmitting.';
+        }
+
+        if ($documentRequest->processing_stage === 'released') {
+            return 'This request has been released. Keep the reference number for your records.';
+        }
+
+        if ($claimSlip && $claimSlip->state === 'ready') {
+            return 'Your document is ready for pickup. Bring this reference number and any claim instructions from the registrar.';
+        }
+
+        if ($clearance && $clearance->overall_status !== 'completed') {
+            return 'Department clearance is being handled by school staff. No separate student account or clearance upload is needed.';
+        }
+
+        if ($documentRequest->processing_stage === 'processing') {
+            return 'Your document is being processed by the registrar. Keep checking this page for pickup updates.';
+        }
+
+        return 'Your request package is under staff review. Keep this reference number and check this page for updates.';
     }
 
     /**

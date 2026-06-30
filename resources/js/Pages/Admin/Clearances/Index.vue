@@ -33,6 +33,7 @@ const statusTone = (status) => {
 };
 
 const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
+const isPublicClearance = (item) => !item.user_id;
 const requestorName = (item) => item.user?.fullname || item.document_request?.requester_name || 'Public requestor';
 const requestorCourseYear = (item) => {
     const course = item.user?.course || item.document_request?.requester_course || 'N/A';
@@ -51,6 +52,11 @@ const requestorCourseYear = (item) => {
         </template>
 
         <div class="mx-auto max-w-7xl space-y-4 px-4 sm:px-6 lg:px-8">
+            <div class="rounded-lg bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-900 ring-1 ring-sky-100">
+                Public request clearances are handled internally by staff. Completed public clearance PDFs are private
+                staff downloads only and are not exposed through public tracking.
+            </div>
+
             <div class="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-5">
                 <select v-model="form.overall_status" class="rounded-md border-slate-300 text-sm shadow-sm">
                     <option value="">All statuses</option>
@@ -106,7 +112,17 @@ const requestorCourseYear = (item) => {
                     >
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <h3 class="truncate text-sm font-semibold text-slate-950">{{ requestorName(item) }}</h3>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="truncate text-sm font-semibold text-slate-950">
+                                        {{ requestorName(item) }}
+                                    </h3>
+                                    <span
+                                        v-if="isPublicClearance(item)"
+                                        class="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold text-sky-800"
+                                    >
+                                        Public
+                                    </span>
+                                </div>
                                 <p class="mt-0.5 truncate font-mono text-xs text-slate-500">
                                     {{ item.document_request?.reference_no }}
                                 </p>
@@ -181,7 +197,15 @@ const requestorCourseYear = (item) => {
                                 <tr v-for="item in clearances.data" :key="item.id">
                                     <td class="px-4 py-3">{{ item.document_request?.reference_no }}</td>
                                     <td class="px-4 py-3">
-                                        <p class="font-semibold text-slate-900">{{ requestorName(item) }}</p>
+                                        <div class="flex items-center gap-2">
+                                            <p class="font-semibold text-slate-900">{{ requestorName(item) }}</p>
+                                            <span
+                                                v-if="isPublicClearance(item)"
+                                                class="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold text-sky-800"
+                                            >
+                                                Public
+                                            </span>
+                                        </div>
                                         <p class="text-xs text-slate-500">{{ requestorCourseYear(item) }}</p>
                                     </td>
                                     <td class="px-4 py-3">

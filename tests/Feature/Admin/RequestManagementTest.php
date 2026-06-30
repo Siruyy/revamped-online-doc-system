@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Events\RequestDenied;
 use App\Events\RequestStageUpdated;
+use App\Models\Clearance;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\Payment;
@@ -174,6 +175,36 @@ class RequestManagementTest extends TestCase
                 ->component('Admin/Requests/Index')
                 ->has('requests.data', 1)
                 ->where('requests.data.0.id', $publicRequest->id));
+    }
+
+    public function test_admin_request_detail_includes_public_snapshot_and_clearance_state(): void
+    {
+        $admin = $this->createAdmin();
+        $publicRequest = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'requester_name' => 'Public Detail Requestor',
+            'requester_student_id' => 'PUBLIC-DETAIL-001',
+            'requester_course' => 'BSIT',
+            'requester_year_level' => 2,
+        ]);
+        Clearance::factory()->for($publicRequest, 'documentRequest')->create([
+            'user_id' => null,
+            'overall_status' => 'in_progress',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.requests.show', $publicRequest))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Admin/Requests/Show')
+                ->where('request.intake_mode', 'public')
+                ->where('request.requester_name', 'Public Detail Requestor')
+                ->where('request.requester_student_id', 'PUBLIC-DETAIL-001')
+                ->where('request.requester_course', 'BSIT')
+                ->where('request.requester_year_level', 2)
+                ->where('request.clearances.0.user_id', null)
+                ->where('request.clearances.0.overall_status', 'in_progress'));
     }
 
     private function createAdmin(): User

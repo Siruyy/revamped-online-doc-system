@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Clearance;
 use App\Models\DocumentRequest;
 use App\Models\PaymentProfile;
 use App\Models\RequestRequirement;
@@ -294,6 +295,27 @@ class SecurityHardeningTest extends TestCase
         $this->actingAs($teacher)
             ->get(route('files.request-requirement', $requirement))
             ->assertForbidden();
+    }
+
+    public function test_department_user_can_preview_requirement_for_viewable_public_clearance(): void
+    {
+        Storage::fake('local');
+
+        $teacher = User::factory()->teacher()->create();
+        $requirement = $this->createPublicRequirementFile();
+        Clearance::factory()->for($requirement->documentRequest, 'documentRequest')->create([
+            'user_id' => null,
+            'overall_status' => 'in_progress',
+            'teacher_status' => 'pending',
+            'dean_status' => 'pending',
+            'accounting_status' => 'pending',
+            'sao_status' => 'pending',
+        ]);
+
+        $this->actingAs($teacher)
+            ->get(route('files.request-requirement', $requirement))
+            ->assertOk()
+            ->assertHeader('content-disposition', 'inline; filename=valid-id.pdf');
     }
 
     public function test_request_requirement_file_route_returns_404_for_missing_or_traversal_path(): void

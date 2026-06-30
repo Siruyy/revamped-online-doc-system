@@ -15,6 +15,8 @@ const banner = computed(() => page.props.flash?.banner ?? null);
 const deptStatusKey = computed(() => `${props.department}_status`);
 const deptRemarksKey = computed(() => `${props.department}_remarks`);
 const canAct = computed(() => props.clearance[deptStatusKey.value] === 'pending');
+const isPublicClearance = computed(() => !props.clearance.user_id);
+const requestRequirements = computed(() => props.clearance.document_request?.requirements ?? []);
 
 const signForm = useForm({ remarks: '' });
 const denyForm = useForm({ remarks: '' });
@@ -77,6 +79,40 @@ const requestorStudentId = computed(
                 <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">Request</h3>
                 <p class="mt-2 text-sm text-slate-700">Reference: {{ clearance.document_request?.reference_no }}</p>
                 <p class="text-sm text-slate-700">Purpose: {{ clearance.document_request?.purpose || '—' }}</p>
+                <div
+                    v-if="isPublicClearance"
+                    class="mt-4 rounded-lg bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-900 ring-1 ring-sky-100"
+                >
+                    Public request clearances use the original request attachments below. The requestor does not need a
+                    student account or a separate clearance upload.
+                </div>
+                <div v-if="isPublicClearance" class="mt-4">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Request attachments</p>
+                    <ul v-if="requestRequirements.length > 0" class="mt-2 divide-y divide-slate-100 rounded-lg border">
+                        <li
+                            v-for="requirement in requestRequirements"
+                            :key="requirement.id"
+                            class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
+                        >
+                            <div>
+                                <p class="font-medium text-slate-800">{{ requirement.label }}</p>
+                                <p class="text-xs capitalize text-slate-500">
+                                    {{ requirement.status?.replaceAll('_', ' ') }}
+                                </p>
+                            </div>
+                            <a
+                                v-if="requirement.file_path"
+                                :href="route('files.request-requirement', requirement.id)"
+                                class="font-semibold text-indigo-600 hover:text-indigo-500"
+                            >
+                                Preview file
+                            </a>
+                        </li>
+                    </ul>
+                    <p v-else class="mt-2 rounded-lg bg-slate-50 p-3 text-sm text-slate-500">
+                        No request attachments were submitted for this document type.
+                    </p>
+                </div>
                 <p v-if="clearance.uploaded_file_path" class="mt-2 text-sm">
                     <a
                         :href="route('files.clearance-supporting', clearance.id)"

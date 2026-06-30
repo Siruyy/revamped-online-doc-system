@@ -82,6 +82,7 @@ class ClearanceController extends Controller
         $clearance->load([
             'user:id,fullname,email,course,year_level,student_id,contact_number',
             'documentRequest:id,reference_no,status,processing_stage,purpose,requester_name,requester_email,requester_contact_number,requester_student_id,requester_course,requester_year_level',
+            'documentRequest.requirements:id,document_request_id,requirement_key,label,status,notes,file_path',
             'teacherSigner:id,fullname',
             'deanSigner:id,fullname',
             'accountingSigner:id,fullname',

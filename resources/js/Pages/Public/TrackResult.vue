@@ -60,6 +60,11 @@ function statusLabel(value) {
                         </div>
                     </div>
 
+                    <div class="rounded-2xl bg-sky-50 p-4 text-sm leading-6 text-sky-900 ring-1 ring-sky-100">
+                        <p class="font-semibold">What happens next</p>
+                        <p class="mt-1">{{ result.next_step }}</p>
+                    </div>
+
                     <p
                         v-if="result.denial_reason"
                         class="rounded-2xl bg-rose-50 p-4 text-sm leading-6 text-rose-700 ring-1 ring-rose-100"
