@@ -12,6 +12,8 @@ RUN apk add --no-cache \
     icu-dev \
     freetype-dev \
     libjpeg-turbo-dev \
+    libxpm-dev \
+    libwebp-dev \
     nodejs \
     npm
 
