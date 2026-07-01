@@ -44,6 +44,8 @@ RUN apk add --no-cache \
     icu-dev \
     libjpeg-turbo-dev \
     libpng-dev \
+    libwebp-dev \
+    libxpm-dev \
     libzip-dev \
     mysql-client \
     nginx \
