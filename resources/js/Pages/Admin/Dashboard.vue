@@ -25,6 +25,8 @@ defineProps({
     missingRequirementsCount: { type: Number, default: 0 },
     readyForPickup: { type: Number, default: 0 },
     pendingQueue: { type: Array, required: true },
+    clearedForProcessing: { type: Array, default: () => [] },
+    ongoingRequests: { type: Array, default: () => [] },
     overdueRequests: { type: Array, default: () => [] },
     claimToday: { type: Array, default: () => [] },
 });
@@ -38,6 +40,17 @@ function relativeAge(value) {
     if (diff === 1) return '1 day';
     if (diff < 7) return `${diff} days`;
     return `${Math.round(diff / 7)} wks`;
+}
+
+function requestorName(item) {
+    return item.user?.fullname || item.requester_name || 'Requestor';
+}
+
+function courseYear(item) {
+    const course = item.user?.course || item.requester_course || '—';
+    const year = item.user?.year_level || item.requester_year_level;
+
+    return year ? `${course} Y${year}` : course;
 }
 </script>
 
@@ -199,8 +212,8 @@ function relativeAge(value) {
                                     </span>
                                 </div>
                                 <p class="truncate text-xs text-slate-500">
-                                    <span class="font-mono">{{ item.reference_no }}</span> · {{ item.user?.fullname }} ·
-                                    {{ item.user?.course || '—' }} Y{{ item.user?.year_level || '?' }}
+                                    <span class="font-mono">{{ item.reference_no }}</span> · {{ requestorName(item) }} ·
+                                    {{ courseYear(item) }}
                                 </p>
                             </div>
                             <div class="flex items-center gap-3">
@@ -249,6 +262,96 @@ function relativeAge(value) {
                 </div>
             </section>
 
+            <section class="grid gap-6 lg:grid-cols-2">
+                <div class="min-w-0 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+                    <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <CheckBadgeIcon class="h-5 w-5 text-emerald-600" />
+                            <h3 class="font-display text-lg font-semibold text-slate-900">Cleared for Processing</h3>
+                        </div>
+                        <Link
+                            :href="route('admin.requests.index', { status: 'approved' })"
+                            class="text-xs font-semibold text-brand-700 hover:underline"
+                        >
+                            View all →
+                        </Link>
+                    </div>
+                    <EmptyState
+                        v-if="clearedForProcessing.length === 0"
+                        title="No completed clearances"
+                        description="Requests with completed clearance will appear here for next-step processing."
+                        :icon="CheckBadgeIcon"
+                        compact
+                        class="m-6"
+                    />
+                    <ul v-else class="divide-y divide-slate-100">
+                        <li
+                            v-for="item in clearedForProcessing"
+                            :key="item.id"
+                            class="flex items-center justify-between gap-3 px-6 py-3 transition hover:bg-emerald-50/50"
+                        >
+                            <div class="min-w-0">
+                                <p class="truncate font-semibold text-slate-900">{{ requestorName(item) }}</p>
+                                <p class="truncate text-xs text-slate-500">
+                                    <span class="font-mono">{{ item.reference_no }}</span> ·
+                                    {{ item.document_type?.name }} · {{ courseYear(item) }}
+                                </p>
+                            </div>
+                            <Link
+                                :href="route('admin.requests.show', item.id)"
+                                class="inline-flex shrink-0 items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
+                            >
+                                Open <ArrowRightIcon class="h-3.5 w-3.5" />
+                            </Link>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="min-w-0 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+                    <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <ClockIcon class="h-5 w-5 text-brand-600" />
+                            <h3 class="font-display text-lg font-semibold text-slate-900">Ongoing Requests</h3>
+                        </div>
+                        <Link
+                            :href="route('admin.requests.index', { status: 'approved' })"
+                            class="text-xs font-semibold text-brand-700 hover:underline"
+                        >
+                            View all →
+                        </Link>
+                    </div>
+                    <EmptyState
+                        v-if="ongoingRequests.length === 0"
+                        title="No ongoing requests"
+                        description="Approved requests in processing or pickup preparation will appear here."
+                        :icon="ClockIcon"
+                        compact
+                        class="m-6"
+                    />
+                    <ul v-else class="divide-y divide-slate-100">
+                        <li
+                            v-for="item in ongoingRequests"
+                            :key="item.id"
+                            class="flex items-center justify-between gap-3 px-6 py-3 transition hover:bg-brand-50/40"
+                        >
+                            <div class="min-w-0">
+                                <p class="truncate font-semibold text-slate-900">{{ requestorName(item) }}</p>
+                                <p class="truncate text-xs text-slate-500">
+                                    <span class="font-mono">{{ item.reference_no }}</span> ·
+                                    {{ item.document_type?.name }} · {{ item.processing_stage?.replaceAll('_', ' ') }}
+                                </p>
+                            </div>
+                            <Link
+                                :href="route('admin.requests.show', item.id)"
+                                class="inline-flex shrink-0 items-center gap-1 rounded-lg bg-brand-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-brand-500"
+                            >
+                                Open <ArrowRightIcon class="h-3.5 w-3.5" />
+                            </Link>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
             <!-- Overdue table -->
             <section class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
@@ -291,7 +394,7 @@ function relativeAge(value) {
                                         <td class="px-6 py-3 font-mono text-xs text-slate-700">
                                             {{ item.reference_no }}
                                         </td>
-                                        <td class="px-6 py-3 text-slate-900">{{ item.user?.fullname }}</td>
+                                        <td class="px-6 py-3 text-slate-900">{{ requestorName(item) }}</td>
                                         <td class="px-6 py-3 text-slate-700">{{ item.document_type?.name }}</td>
                                         <td class="px-6 py-3 text-rose-700 font-semibold">
                                             {{

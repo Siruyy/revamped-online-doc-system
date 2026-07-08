@@ -53,6 +53,7 @@ class PublicRequestSubmissionTest extends TestCase
         $this->assertNull($request->requester_student_id);
         $this->assertNull($request->requester_course);
         $this->assertNull($request->requester_year_level);
+        $this->assertNull($request->requester_graduation_or_last_sem);
     }
 
     public function test_public_request_requires_requestor_details_items_and_receipt(): void
@@ -62,7 +63,11 @@ class PublicRequestSubmissionTest extends TestCase
         $response->assertRedirect('/request-document');
         $response->assertSessionHasErrors([
             'requester_name',
+            'requester_email',
             'requester_contact_number',
+            'requester_course',
+            'requester_year_level',
+            'requester_graduation_or_last_sem',
             'items',
             'purpose',
             'payment_method',
@@ -130,9 +135,11 @@ class PublicRequestSubmissionTest extends TestCase
         $this->assertSame('public', $documentRequest->intake_mode);
         $this->assertSame('pending', $documentRequest->status);
         $this->assertSame('Public Requestor', $documentRequest->requester_name);
+        $this->assertSame('requestor@example.test', $documentRequest->requester_email);
         $this->assertNull($documentRequest->requester_student_id);
-        $this->assertNull($documentRequest->requester_course);
-        $this->assertNull($documentRequest->requester_year_level);
+        $this->assertSame('BSIT', $documentRequest->requester_course);
+        $this->assertSame(3, $documentRequest->requester_year_level);
+        $this->assertSame('2nd Sem 2025-2026', $documentRequest->requester_graduation_or_last_sem);
         $this->assertSame(150.0, (float) $documentRequest->fee_snapshot);
 
         $this->assertNull($payment->user_id);
@@ -354,6 +361,10 @@ class PublicRequestSubmissionTest extends TestCase
             'requester_name' => 'Public Requestor',
             'requester_email' => 'requestor@example.test',
             'requester_contact_number' => '09171234567',
+            'requester_student_id' => null,
+            'requester_course' => 'BSIT',
+            'requester_year_level' => 3,
+            'requester_graduation_or_last_sem' => '2nd Sem 2025-2026',
             'items' => [[
                 'document_type_id' => $documentType->id,
                 'copies' => 1,

@@ -48,6 +48,12 @@ const requestorYear = computed(
 const requestorStudentId = computed(
     () => props.clearance.user?.student_id || props.clearance.document_request?.requester_student_id || 'N/A',
 );
+const signingSummary = computed(() => ({
+    reference: props.clearance.document_request?.reference_no || 'N/A',
+    purpose: props.clearance.document_request?.purpose || 'N/A',
+    requestor: requestorName.value,
+    intake: isPublicClearance.value ? 'Public no-login request' : 'Legacy student clearance',
+}));
 </script>
 
 <template>
@@ -69,7 +75,15 @@ const requestorStudentId = computed(
             </div>
 
             <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">Student</h3>
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">Requestor</h3>
+                    <span
+                        class="rounded-full px-3 py-1 text-xs font-semibold"
+                        :class="isPublicClearance ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-700'"
+                    >
+                        {{ isPublicClearance ? 'Public no-login request' : 'Legacy student clearance' }}
+                    </span>
+                </div>
                 <p class="mt-2 text-sm text-slate-700">{{ requestorName }} ({{ requestorEmail }})</p>
                 <p class="text-sm text-slate-700">Course: {{ requestorCourse }} · Year {{ requestorYear }}</p>
                 <p class="text-sm text-slate-700">Student ID: {{ requestorStudentId }}</p>
@@ -85,33 +99,6 @@ const requestorStudentId = computed(
                 >
                     Public request clearances use the original request attachments below. The requestor does not need a
                     student account or a separate clearance upload.
-                </div>
-                <div v-if="isPublicClearance" class="mt-4">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Request attachments</p>
-                    <ul v-if="requestRequirements.length > 0" class="mt-2 divide-y divide-slate-100 rounded-lg border">
-                        <li
-                            v-for="requirement in requestRequirements"
-                            :key="requirement.id"
-                            class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
-                        >
-                            <div>
-                                <p class="font-medium text-slate-800">{{ requirement.label }}</p>
-                                <p class="text-xs capitalize text-slate-500">
-                                    {{ requirement.status?.replaceAll('_', ' ') }}
-                                </p>
-                            </div>
-                            <a
-                                v-if="requirement.file_path"
-                                :href="route('files.request-requirement', requirement.id)"
-                                class="font-semibold text-indigo-600 hover:text-indigo-500"
-                            >
-                                Preview file
-                            </a>
-                        </li>
-                    </ul>
-                    <p v-else class="mt-2 rounded-lg bg-slate-50 p-3 text-sm text-slate-500">
-                        No request attachments were submitted for this document type.
-                    </p>
                 </div>
                 <p v-if="clearance.uploaded_file_path" class="mt-2 text-sm">
                     <a
@@ -170,6 +157,54 @@ const requestorStudentId = computed(
                 <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">
                     Your department ({{ department }})
                 </h3>
+                <div class="rounded-xl bg-slate-50 p-4 text-sm text-slate-700 ring-1 ring-slate-100">
+                    <p class="font-semibold text-slate-950">What you are signing</p>
+                    <dl class="mt-3 grid gap-3 sm:grid-cols-2">
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-slate-500">Reference</dt>
+                            <dd class="font-mono text-slate-900">{{ signingSummary.reference }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-slate-500">Intake</dt>
+                            <dd class="text-slate-900">{{ signingSummary.intake }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-slate-500">Requestor</dt>
+                            <dd class="text-slate-900">{{ signingSummary.requestor }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-slate-500">Purpose</dt>
+                            <dd class="text-slate-900">{{ signingSummary.purpose }}</dd>
+                        </div>
+                    </dl>
+                </div>
+                <div v-if="isPublicClearance" class="rounded-xl border border-slate-200 p-4">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Request attachments</p>
+                    <ul v-if="requestRequirements.length > 0" class="mt-2 divide-y divide-slate-100 rounded-lg border">
+                        <li
+                            v-for="requirement in requestRequirements"
+                            :key="requirement.id"
+                            class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
+                        >
+                            <div>
+                                <p class="font-medium text-slate-800">{{ requirement.label }}</p>
+                                <p class="text-xs capitalize text-slate-500">
+                                    {{ requirement.status?.replaceAll('_', ' ') }}
+                                </p>
+                            </div>
+                            <a
+                                v-if="requirement.file_path"
+                                :href="route('files.request-requirement', requirement.id)"
+                                class="font-semibold text-indigo-600 hover:text-indigo-500"
+                            >
+                                Preview file
+                            </a>
+                        </li>
+                    </ul>
+                    <p v-else class="mt-2 rounded-lg bg-slate-50 p-3 text-sm text-slate-500">
+                        No request attachments were submitted for this document type.
+                    </p>
+                </div>
                 <p class="text-sm text-slate-600">
                     Current status:
                     <StatusBadge
@@ -205,6 +240,10 @@ const requestorStudentId = computed(
                     <label class="text-xs font-semibold uppercase text-slate-500"
                         >Deny (remarks required, min 10 characters)</label
                     >
+                    <p class="text-xs leading-5 text-slate-500">
+                        Denial remarks are visible through public tracking and may stop the request until registrar
+                        staff follow up.
+                    </p>
                     <textarea
                         v-model="denyForm.remarks"
                         rows="2"

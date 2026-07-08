@@ -147,6 +147,7 @@ class ClearanceService
                 $locked->refresh();
                 ClearanceCompleted::dispatch($locked->id, $locked->user_id);
                 $this->notifyClearanceCompleted($locked);
+                $this->notifyStaffClearanceCompleted($locked);
             }
 
             return $locked;
@@ -275,5 +276,39 @@ class ClearanceService
                 'url' => route('track-document', ['reference_no' => $documentRequest->reference_no]),
             ]));
         }
+    }
+
+    private function notifyStaffClearanceCompleted(Clearance $clearance): void
+    {
+        $clearance->loadMissing('documentRequest');
+
+        $documentRequest = $clearance->documentRequest;
+
+        if (! $documentRequest instanceof DocumentRequest) {
+            return;
+        }
+
+        if ($documentRequest->status === 'approved' && $documentRequest->processing_stage === 'not_started') {
+            $documentRequest->update(['processing_stage' => 'processing']);
+        }
+
+        User::query()
+            ->whereIn('role', ['admin', 'superadmin'])
+            ->where('status', 'active')
+            ->get()
+            ->each(function (User $staff) use ($clearance, $documentRequest): void {
+                $routeName = $staff->role === 'superadmin' ? 'superadmin.requests.show' : 'admin.requests.show';
+
+                $staff->notify(new WorkflowStatusNotification([
+                    'type' => 'clearance_completed_for_processing',
+                    'title' => 'Clearance completed',
+                    'message' => "Clearance for request {$documentRequest->reference_no} is complete and ready for processing.",
+                    'clearance_id' => $clearance->id,
+                    'document_request_id' => $documentRequest->id,
+                    'overall_status' => $clearance->overall_status,
+                    'processing_stage' => $documentRequest->processing_stage,
+                    'url' => route($routeName, $documentRequest),
+                ]));
+            });
     }
 }

@@ -96,6 +96,17 @@ function relativeAge(value) {
     if (diff < 7) return `${diff}d`;
     return `${Math.round(diff / 7)}w`;
 }
+
+function requestorName(item) {
+    return item.user?.fullname || item.requester_name || 'Requestor';
+}
+
+function courseYear(item) {
+    const course = item.user?.course || item.requester_course || '—';
+    const year = item.user?.year_level || item.requester_year_level;
+
+    return year ? `${course} Y${year}` : course;
+}
 </script>
 
 <template>
@@ -222,7 +233,7 @@ function relativeAge(value) {
                     >
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <h3 class="truncate text-sm font-semibold text-slate-950">{{ item.user?.fullname }}</h3>
+                                <h3 class="truncate text-sm font-semibold text-slate-950">{{ requestorName(item) }}</h3>
                                 <p class="mt-0.5 truncate text-xs text-slate-500">
                                     {{ item.document_type?.name }} · {{ item.reference_no }}
                                 </p>
@@ -243,9 +254,7 @@ function relativeAge(value) {
                             </div>
                             <div>
                                 <dt class="font-medium text-slate-500">Student</dt>
-                                <dd class="mt-0.5 text-slate-800">
-                                    {{ item.user?.course || '—' }} Y{{ item.user?.year_level || '?' }}
-                                </dd>
+                                <dd class="mt-0.5 text-slate-800">{{ courseYear(item) }}</dd>
                             </div>
                             <div>
                                 <dt class="font-medium text-slate-500">SLA</dt>
@@ -287,7 +296,7 @@ function relativeAge(value) {
                                     <th class="px-5 py-3 text-left">Document</th>
                                     <th class="px-5 py-3 text-left">Status</th>
                                     <th class="px-5 py-3 text-left">Payment</th>
-                                    <th class="px-5 py-3 text-left">Age</th>
+                                    <th class="px-5 py-3 text-left">Submitted</th>
                                     <th class="px-5 py-3 text-left">SLA</th>
                                     <th class="px-5 py-3"></th>
                                 </tr>
@@ -300,10 +309,8 @@ function relativeAge(value) {
                                 >
                                     <td class="px-5 py-3 font-mono text-xs text-slate-700">{{ item.reference_no }}</td>
                                     <td class="px-5 py-3">
-                                        <p class="font-semibold text-slate-900">{{ item.user?.fullname }}</p>
-                                        <p class="text-xs text-slate-500">
-                                            {{ item.user?.course || '—' }} Y{{ item.user?.year_level || '?' }}
-                                        </p>
+                                        <p class="font-semibold text-slate-900">{{ requestorName(item) }}</p>
+                                        <p class="text-xs text-slate-500">{{ courseYear(item) }}</p>
                                     </td>
                                     <td class="px-5 py-3">
                                         <p class="font-medium text-slate-900">{{ item.document_type?.name }}</p>

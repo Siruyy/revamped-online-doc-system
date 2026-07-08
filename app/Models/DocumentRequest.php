@@ -26,6 +26,7 @@ class DocumentRequest extends Model
         'requester_student_id',
         'requester_course',
         'requester_year_level',
+        'requester_graduation_or_last_sem',
         'document_type_id',
         'quantity',
         'page_count',
