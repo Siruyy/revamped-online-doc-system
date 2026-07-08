@@ -20,11 +20,12 @@ class StorePublicDocumentRequest extends FormRequest
     {
         return [
             'requester_name' => ['required', 'string', 'max:150'],
-            'requester_email' => ['nullable', 'email', 'max:150'],
+            'requester_email' => ['required', 'email', 'max:150'],
             'requester_contact_number' => ['required', 'string', 'max:30'],
             'requester_student_id' => ['nullable', 'string', 'max:50'],
-            'requester_course' => ['nullable', 'string', 'max:100'],
-            'requester_year_level' => ['nullable', 'integer', 'min:1', 'max:8'],
+            'requester_course' => ['required', 'string', 'max:100'],
+            'requester_year_level' => ['required', 'integer', 'min:1', 'max:8'],
+            'requester_graduation_or_last_sem' => ['required', 'string', 'max:100'],
             'items' => ['required', 'array', 'min:1', 'max:10'],
             'items.*.document_type_id' => ['required', 'integer', 'exists:document_types,id'],
             'items.*.copies' => ['required', 'integer', 'min:1', 'max:20'],

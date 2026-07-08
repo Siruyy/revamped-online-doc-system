@@ -61,6 +61,28 @@ class DashboardController extends Controller
             ->limit(20)
             ->get();
 
+        $activeDashboardRequests = DocumentRequest::query()
+            ->with(['user:id,fullname,course,year_level,academic_status', 'documentType:id,name,category,processing_days'])
+            ->where('status', 'approved')
+            ->withExists(['clearances as has_completed_clearance' => fn ($query) => $query->where('overall_status', 'completed')])
+            ->where(function ($query) {
+                $query->whereIn('processing_stage', ['processing', 'ready_for_pickup'])
+                    ->orWhereHas('clearances', fn ($clearanceQuery) => $clearanceQuery->where('overall_status', 'completed'));
+            })
+            ->latest()
+            ->limit(20)
+            ->get();
+
+        $clearedForProcessing = $activeDashboardRequests
+            ->filter(fn (DocumentRequest $request): bool => (bool) $request->getAttribute('has_completed_clearance'))
+            ->take(10)
+            ->values();
+
+        $ongoingRequests = $activeDashboardRequests
+            ->filter(fn (DocumentRequest $request): bool => in_array($request->processing_stage, ['processing', 'ready_for_pickup'], true))
+            ->take(10)
+            ->values();
+
         return Inertia::render('SuperAdmin/Dashboard', [
             'userCountsByRole' => $userCountsByRole,
             'userCountsByStatus' => $userCountsByStatus,
@@ -68,6 +90,8 @@ class DashboardController extends Controller
             'requestCounts' => $requestCounts,
             'paymentCounts' => $paymentCounts,
             'clearanceCounts' => $clearanceCounts,
+            'clearedForProcessing' => $clearedForProcessing,
+            'ongoingRequests' => $ongoingRequests,
             'recentActivity' => $recentActivity,
         ]);
     }

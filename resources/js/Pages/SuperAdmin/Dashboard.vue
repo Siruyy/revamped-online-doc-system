@@ -5,7 +5,14 @@ import PageHeader from '@/Components/UI/PageHeader.vue';
 import StatCard from '@/Components/UI/StatCard.vue';
 import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { ChartBarIcon, ClipboardDocumentListIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline';
+import {
+    ArrowRightIcon,
+    ChartBarIcon,
+    CheckBadgeIcon,
+    ClipboardDocumentListIcon,
+    ClockIcon,
+    ShieldCheckIcon,
+} from '@heroicons/vue/24/outline';
 import { computed } from 'vue';
 
 defineProps({
@@ -14,6 +21,8 @@ defineProps({
     requestCounts: { type: Object, required: true },
     paymentCounts: { type: Object, required: true },
     clearanceCounts: { type: Object, required: true },
+    clearedForProcessing: { type: Array, default: () => [] },
+    ongoingRequests: { type: Array, default: () => [] },
     recentActivity: { type: Array, required: true },
 });
 
@@ -29,6 +38,17 @@ const roleLabels = {
     sao: 'SAO',
     superadmin: 'SuperAdmins',
 };
+
+function requestorName(item) {
+    return item.user?.fullname || item.requester_name || 'Requestor';
+}
+
+function courseYear(item) {
+    const course = item.user?.course || item.requester_course || '—';
+    const year = item.user?.year_level || item.requester_year_level;
+
+    return year ? `${course} Y${year}` : course;
+}
 </script>
 
 <template>
@@ -117,6 +137,100 @@ const roleLabels = {
                         compact
                         class="w-full"
                     />
+                </div>
+            </section>
+
+            <section class="grid gap-6 lg:grid-cols-2">
+                <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <CheckBadgeIcon class="h-5 w-5 text-emerald-600" />
+                            <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">
+                                Cleared for processing
+                            </h3>
+                        </div>
+                        <Link
+                            :href="route('superadmin.requests.index', { status: 'approved' })"
+                            class="text-xs font-semibold text-violet-700 hover:text-violet-600"
+                        >
+                            View all
+                        </Link>
+                    </div>
+                    <EmptyState
+                        v-if="clearedForProcessing.length === 0"
+                        title="No completed clearances"
+                        description="Requests with completed clearance will appear here."
+                        :icon="CheckBadgeIcon"
+                        compact
+                        class="mt-3"
+                    />
+                    <ul v-else class="mt-3 divide-y divide-slate-100">
+                        <li
+                            v-for="item in clearedForProcessing"
+                            :key="item.id"
+                            class="flex items-center justify-between gap-3 py-3 text-sm"
+                        >
+                            <div class="min-w-0">
+                                <p class="truncate font-semibold text-slate-900">{{ requestorName(item) }}</p>
+                                <p class="truncate text-xs text-slate-500">
+                                    <span class="font-mono">{{ item.reference_no }}</span> ·
+                                    {{ item.document_type?.name }} · {{ courseYear(item) }}
+                                </p>
+                            </div>
+                            <Link
+                                :href="route('superadmin.requests.show', item.id)"
+                                class="inline-flex shrink-0 items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
+                            >
+                                Open <ArrowRightIcon class="h-3.5 w-3.5" />
+                            </Link>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <ClockIcon class="h-5 w-5 text-violet-600" />
+                            <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600">
+                                Ongoing requests
+                            </h3>
+                        </div>
+                        <Link
+                            :href="route('superadmin.requests.index', { status: 'approved' })"
+                            class="text-xs font-semibold text-violet-700 hover:text-violet-600"
+                        >
+                            View all
+                        </Link>
+                    </div>
+                    <EmptyState
+                        v-if="ongoingRequests.length === 0"
+                        title="No ongoing requests"
+                        description="Approved requests in processing or pickup preparation will appear here."
+                        :icon="ClockIcon"
+                        compact
+                        class="mt-3"
+                    />
+                    <ul v-else class="mt-3 divide-y divide-slate-100">
+                        <li
+                            v-for="item in ongoingRequests"
+                            :key="item.id"
+                            class="flex items-center justify-between gap-3 py-3 text-sm"
+                        >
+                            <div class="min-w-0">
+                                <p class="truncate font-semibold text-slate-900">{{ requestorName(item) }}</p>
+                                <p class="truncate text-xs text-slate-500">
+                                    <span class="font-mono">{{ item.reference_no }}</span> ·
+                                    {{ item.document_type?.name }} · {{ item.processing_stage?.replaceAll('_', ' ') }}
+                                </p>
+                            </div>
+                            <Link
+                                :href="route('superadmin.requests.show', item.id)"
+                                class="inline-flex shrink-0 items-center gap-1 rounded-lg bg-violet-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-violet-600"
+                            >
+                                Open <ArrowRightIcon class="h-3.5 w-3.5" />
+                            </Link>
+                        </li>
+                    </ul>
                 </div>
             </section>
 

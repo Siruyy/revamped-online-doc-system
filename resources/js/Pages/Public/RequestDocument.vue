@@ -64,6 +64,10 @@ const form = useForm({
     requester_name: '',
     requester_email: '',
     requester_contact_number: '',
+    requester_student_id: '',
+    requester_course: '',
+    requester_year_level: '',
+    requester_graduation_or_last_sem: '',
     items: [],
     purpose: '',
     requirements: {},
@@ -83,6 +87,16 @@ const hasReceipt = computed(() => Boolean(form.receipt));
 const submitErrors = computed(() => Object.entries(form.errors));
 const hasSubmitErrors = computed(() => submitErrors.value.length > 0);
 const firstErrorMessage = computed(() => submitErrors.value[0]?.[1] ?? '');
+const paymentInstructionSteps = computed(() => {
+    const instructions = props.paymentProfile?.instructions || '';
+    if (!instructions) return [];
+
+    const matches = Array.from(instructions.matchAll(/(?:^|\s)(\d+\.\s.*?)(?=\s\d+\.|$)/gs));
+
+    if (matches.length <= 1) return [];
+
+    return matches.map((match) => match[1].trim());
+});
 
 watch(requirementList, (requirements) => {
     const keys = requirements.map((requirement) => requirement.key);
@@ -111,7 +125,19 @@ function formatPeso(value) {
 
 function errorStep(field) {
     if (field === 'items' || field.startsWith('items.')) return 1;
-    if (['requester_name', 'requester_email', 'requester_contact_number', 'purpose'].includes(field)) return 2;
+    if (
+        [
+            'requester_name',
+            'requester_email',
+            'requester_contact_number',
+            'requester_student_id',
+            'requester_course',
+            'requester_year_level',
+            'requester_graduation_or_last_sem',
+            'purpose',
+        ].includes(field)
+    )
+        return 2;
     if (field.startsWith('requirements.')) return 3;
     if (['payment_method', 'payment_reference_number', 'receipt'].includes(field)) return 4;
 
@@ -133,7 +159,15 @@ function submit() {
 function canContinue() {
     if (step.value === 1) return cartItems.value.length > 0;
     if (step.value === 2) {
-        return form.requester_name && form.requester_contact_number && form.purpose.trim().length >= 5;
+        return (
+            form.requester_name &&
+            form.requester_email &&
+            form.requester_contact_number &&
+            form.requester_course &&
+            form.requester_year_level &&
+            form.requester_graduation_or_last_sem &&
+            form.purpose.trim().length >= 5
+        );
     }
     if (step.value === 3) return missingRequirementCount.value === 0;
     if (step.value === 4) return form.payment_method && hasReceipt.value;
@@ -346,12 +380,13 @@ function requirementMissing(requirement) {
                             </p>
                         </div>
                         <div>
-                            <label class="text-sm font-semibold text-slate-700" for="requester_email">Email</label>
+                            <label class="text-sm font-semibold text-slate-700" for="requester_email">Email *</label>
                             <input
                                 id="requester_email"
                                 v-model="form.requester_email"
                                 type="email"
                                 class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
+                                required
                             />
                             <p v-if="form.errors.requester_email" class="mt-1 text-sm text-rose-600">
                                 {{ form.errors.requester_email }}
@@ -369,6 +404,64 @@ function requirementMissing(requirement) {
                             />
                             <p v-if="form.errors.requester_contact_number" class="mt-1 text-sm text-rose-600">
                                 {{ form.errors.requester_contact_number }}
+                            </p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-semibold text-slate-700" for="requester_course">Course *</label>
+                            <input
+                                id="requester_course"
+                                v-model="form.requester_course"
+                                class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
+                                required
+                            />
+                            <p v-if="form.errors.requester_course" class="mt-1 text-sm text-rose-600">
+                                {{ form.errors.requester_course }}
+                            </p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-semibold text-slate-700" for="requester_year_level">
+                                Year level *
+                            </label>
+                            <input
+                                id="requester_year_level"
+                                v-model="form.requester_year_level"
+                                type="number"
+                                min="1"
+                                max="8"
+                                class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
+                                required
+                            />
+                            <p v-if="form.errors.requester_year_level" class="mt-1 text-sm text-rose-600">
+                                {{ form.errors.requester_year_level }}
+                            </p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-semibold text-slate-700" for="requester_student_id">
+                                ID number
+                            </label>
+                            <input
+                                id="requester_student_id"
+                                v-model="form.requester_student_id"
+                                class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
+                                placeholder="Optional"
+                            />
+                            <p v-if="form.errors.requester_student_id" class="mt-1 text-sm text-rose-600">
+                                {{ form.errors.requester_student_id }}
+                            </p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-semibold text-slate-700" for="requester_graduation_or_last_sem">
+                                Date of graduation / last semester attended *
+                            </label>
+                            <input
+                                id="requester_graduation_or_last_sem"
+                                v-model="form.requester_graduation_or_last_sem"
+                                class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
+                                placeholder="e.g. March 2026 or 2nd Sem 2025-2026"
+                                required
+                            />
+                            <p v-if="form.errors.requester_graduation_or_last_sem" class="mt-1 text-sm text-rose-600">
+                                {{ form.errors.requester_graduation_or_last_sem }}
                             </p>
                         </div>
                         <div class="md:col-span-2">
@@ -424,7 +517,14 @@ function requirementMissing(requirement) {
                                     <strong>{{ paymentProfile.bank_name }}</strong>
                                 </p>
                                 <p>{{ paymentProfile.account_name }} · {{ paymentProfile.account_number }}</p>
-                                <p v-if="paymentProfile.instructions">{{ paymentProfile.instructions }}</p>
+                                <ol v-if="paymentInstructionSteps.length" class="list-decimal space-y-1 pl-5 leading-6">
+                                    <li v-for="instruction in paymentInstructionSteps" :key="instruction">
+                                        {{ instruction.replace(/^\d+\.\s*/, '') }}
+                                    </li>
+                                </ol>
+                                <p v-else-if="paymentProfile.instructions" class="whitespace-pre-line">
+                                    {{ paymentProfile.instructions }}
+                                </p>
                                 <img
                                     v-if="paymentProfile.qr_url"
                                     :src="paymentProfile.qr_url"
@@ -494,6 +594,24 @@ function requirementMissing(requirement) {
                                 <div>
                                     <dt class="text-slate-500">Requestor</dt>
                                     <dd class="font-semibold text-slate-900">{{ form.requester_name }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-slate-500">Course / year</dt>
+                                    <dd class="font-semibold text-slate-900">
+                                        {{ form.requester_course }} Y{{ form.requester_year_level }}
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt class="text-slate-500">ID number</dt>
+                                    <dd class="font-semibold text-slate-900">
+                                        {{ form.requester_student_id || 'Not provided' }}
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt class="text-slate-500">Graduation / last semester</dt>
+                                    <dd class="font-semibold text-slate-900">
+                                        {{ form.requester_graduation_or_last_sem }}
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt class="text-slate-500">Requirements</dt>

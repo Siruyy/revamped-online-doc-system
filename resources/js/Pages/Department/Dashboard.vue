@@ -39,6 +39,17 @@ function relativeAge(value) {
     if (diff === 1) return '1 day';
     return `${diff} days`;
 }
+
+function requestorName(row) {
+    return row.user?.fullname || row.document_request?.requester_name || 'Public requestor';
+}
+
+function courseYear(row) {
+    const course = row.user?.course || row.document_request?.requester_course || '—';
+    const year = row.user?.year_level || row.document_request?.requester_year_level;
+
+    return year ? `${course} Y${year}` : course;
+}
 </script>
 
 <template>
@@ -100,10 +111,10 @@ function relativeAge(value) {
                         class="flex items-center justify-between px-6 py-3 transition hover:bg-brand-50/30"
                     >
                         <div class="min-w-0 flex-1">
-                            <p class="font-semibold text-slate-900">{{ row.user?.fullname }}</p>
+                            <p class="font-semibold text-slate-900">{{ requestorName(row) }}</p>
                             <p class="text-xs text-slate-500">
                                 <span class="font-mono">{{ row.document_request?.reference_no }}</span> ·
-                                {{ row.user?.course || '—' }} Y{{ row.user?.year_level || '?' }}
+                                {{ courseYear(row) }}
                             </p>
                         </div>
                         <div class="flex items-center gap-3">

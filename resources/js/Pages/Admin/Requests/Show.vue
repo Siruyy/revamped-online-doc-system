@@ -330,6 +330,28 @@ function fmtPeso(value) {
                                     <dt class="text-slate-500">Intake</dt>
                                     <dd class="capitalize text-slate-900">Public request</dd>
                                 </div>
+                                <template v-if="isPublicRequest">
+                                    <div>
+                                        <dt class="text-slate-500">Student ID</dt>
+                                        <dd class="font-mono text-slate-900">
+                                            {{ request.requester_student_id || 'Optional - not provided' }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-slate-500">Course / Year</dt>
+                                        <dd class="text-slate-900">
+                                            {{ request.requester_course || '—' }} · Y{{
+                                                request.requester_year_level || '?'
+                                            }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-slate-500">Graduation / last semester</dt>
+                                        <dd class="text-slate-900">
+                                            {{ request.requester_graduation_or_last_sem || '—' }}
+                                        </dd>
+                                    </div>
+                                </template>
                             </dl>
                             <div
                                 v-if="isPublicRequest"

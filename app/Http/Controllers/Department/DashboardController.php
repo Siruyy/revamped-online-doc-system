@@ -33,7 +33,7 @@ class DashboardController extends Controller
         $pendingLatest = Clearance::query()
             ->with([
                 'user:id,fullname,course,year_level,student_id',
-                'documentRequest:id,reference_no',
+                'documentRequest:id,reference_no,requester_name,requester_student_id,requester_course,requester_year_level',
             ])
             ->where($statusColumn, 'pending')
             ->latest()

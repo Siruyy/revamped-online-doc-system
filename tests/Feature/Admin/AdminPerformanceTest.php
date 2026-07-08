@@ -35,7 +35,7 @@ class AdminPerformanceTest extends TestCase
                 ->has('requests.data', 15)));
 
         // Keep this close to the measured value so dashboard N+1 regressions fail fast.
-        $this->assertLessThanOrEqual(17, $dashboardQueries, "Admin dashboard used {$dashboardQueries} queries.");
+        $this->assertLessThanOrEqual(20, $dashboardQueries, "Admin dashboard used {$dashboardQueries} queries.");
         $this->assertLessThanOrEqual(8, $requestListQueries, "Admin request list used {$requestListQueries} queries.");
     }
 

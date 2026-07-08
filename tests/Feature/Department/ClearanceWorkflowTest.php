@@ -411,6 +411,8 @@ class ClearanceWorkflowTest extends TestCase
         Event::fake();
         Notification::fake();
 
+        $admin = $this->makeOfficer('admin');
+        $superadmin = $this->makeOfficer('superadmin');
         $clearance = $this->makePublicClearance('public-requestor@example.test');
 
         foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
@@ -430,6 +432,18 @@ class ClearanceWorkflowTest extends TestCase
             fn (WorkflowStatusNotification $notification, array $channels, object $notifiable): bool => $channels === ['mail']
                 && ($notifiable->routes['mail'] ?? null) === 'public-requestor@example.test'
                 && ($notification->toArray($notifiable)['type'] ?? null) === 'clearance_completed',
+        );
+        Notification::assertSentTo(
+            $admin,
+            WorkflowStatusNotification::class,
+            fn (WorkflowStatusNotification $notification): bool => ($notification->toArray($admin)['type'] ?? null) === 'clearance_completed_for_processing'
+                && ($notification->toArray($admin)['document_request_id'] ?? null) === $clearance->document_request_id,
+        );
+        Notification::assertSentTo(
+            $superadmin,
+            WorkflowStatusNotification::class,
+            fn (WorkflowStatusNotification $notification): bool => ($notification->toArray($superadmin)['type'] ?? null) === 'clearance_completed_for_processing'
+                && ($notification->toArray($superadmin)['document_request_id'] ?? null) === $clearance->document_request_id,
         );
     }
 
