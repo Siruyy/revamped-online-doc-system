@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ClearanceSignatories;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,6 +33,26 @@ class Clearance extends Model
         'sao_remarks',
         'sao_signed_by',
         'sao_signed_at',
+        'president_status',
+        'president_remarks',
+        'president_signed_by',
+        'president_signed_at',
+        'librarian_status',
+        'librarian_remarks',
+        'librarian_signed_by',
+        'librarian_signed_at',
+        'student_affairs_status',
+        'student_affairs_remarks',
+        'student_affairs_signed_by',
+        'student_affairs_signed_at',
+        'alumni_status',
+        'alumni_remarks',
+        'alumni_signed_by',
+        'alumni_signed_at',
+        'guidance_status',
+        'guidance_remarks',
+        'guidance_signed_by',
+        'guidance_signed_at',
         'overall_status',
         'completed_at',
         'pdf_path',
@@ -48,6 +69,11 @@ class Clearance extends Model
             'dean_signed_at' => 'datetime',
             'accounting_signed_at' => 'datetime',
             'sao_signed_at' => 'datetime',
+            'president_signed_at' => 'datetime',
+            'librarian_signed_at' => 'datetime',
+            'student_affairs_signed_at' => 'datetime',
+            'alumni_signed_at' => 'datetime',
+            'guidance_signed_at' => 'datetime',
             'completed_at' => 'datetime',
         ];
     }
@@ -82,22 +108,42 @@ class Clearance extends Model
         return $this->belongsTo(User::class, 'sao_signed_by');
     }
 
+    public function presidentSigner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'president_signed_by');
+    }
+
+    public function librarianSigner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'librarian_signed_by');
+    }
+
+    public function studentAffairsSigner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'student_affairs_signed_by');
+    }
+
+    public function alumniSigner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'alumni_signed_by');
+    }
+
+    public function guidanceSigner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'guidance_signed_by');
+    }
+
     public function isComplete(): bool
     {
-        return $this->teacher_status === 'cleared'
-            && $this->dean_status === 'cleared'
-            && $this->accounting_status === 'cleared'
-            && $this->sao_status === 'cleared';
+        return collect(ClearanceSignatories::definitions())
+            ->every(fn (array $signatory): bool => $this->{$signatory['status']} === 'cleared');
     }
 
     public function recomputeOverallStatus(): self
     {
-        $statuses = [
-            $this->teacher_status,
-            $this->dean_status,
-            $this->accounting_status,
-            $this->sao_status,
-        ];
+        $statuses = collect(ClearanceSignatories::definitions())
+            ->map(fn (array $signatory): mixed => $this->{$signatory['status']})
+            ->all();
 
         if (in_array('denied', $statuses, true)) {
             $this->overall_status = 'denied';

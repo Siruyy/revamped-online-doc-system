@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Department;
 
 use App\Http\Controllers\Controller;
 use App\Models\Clearance;
+use App\Support\ClearanceSignatories;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -15,13 +16,9 @@ class DashboardController extends Controller
         $user = $request->user();
         $role = $user->role;
 
-        [$statusColumn, $signedAtColumn] = match ($role) {
-            'teacher' => ['teacher_status', 'teacher_signed_at'],
-            'dean' => ['dean_status', 'dean_signed_at'],
-            'accounting' => ['accounting_status', 'accounting_signed_at'],
-            'sao' => ['sao_status', 'sao_signed_at'],
-            default => ['teacher_status', 'teacher_signed_at'],
-        };
+        $columns = ClearanceSignatories::columns($role);
+        $statusColumn = $columns['status'];
+        $signedAtColumn = $columns['signed_at'];
 
         $pendingCount = Clearance::query()->where($statusColumn, 'pending')->count();
         $signedTodayCount = Clearance::query()
@@ -48,6 +45,7 @@ class DashboardController extends Controller
             ],
             'pendingLatest' => $pendingLatest,
             'department' => $role,
+            'currentSignatory' => $columns,
         ]);
     }
 }

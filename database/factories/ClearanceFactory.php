@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Clearance;
 use App\Models\DocumentRequest;
 use App\Models\User;
+use App\Support\ClearanceSignatories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -24,6 +25,15 @@ class ClearanceFactory extends Factory
      */
     public function definition(): array
     {
+        $signatoryDefaults = collect(ClearanceSignatories::definitions())
+            ->flatMap(fn (array $signatory): array => [
+                $signatory['status'] => 'pending',
+                $signatory['remarks'] => null,
+                $signatory['signed_by'] => null,
+                $signatory['signed_at'] => null,
+            ])
+            ->all();
+
         return [
             'user_id' => User::factory()->student(),
             'document_request_id' => DocumentRequest::factory(),
@@ -43,6 +53,7 @@ class ClearanceFactory extends Factory
             'sao_remarks' => null,
             'sao_signed_by' => null,
             'sao_signed_at' => null,
+            ...$signatoryDefaults,
             'overall_status' => 'in_progress',
             'completed_at' => null,
             'pdf_path' => null,
@@ -59,11 +70,16 @@ class ClearanceFactory extends Factory
 
     public function completed(): static
     {
+        $completedSignatories = collect(ClearanceSignatories::definitions())
+            ->mapWithKeys(fn (array $signatory): array => [$signatory['status'] => 'cleared'])
+            ->all();
+
         return $this->state(fn () => [
             'teacher_status' => 'cleared',
             'dean_status' => 'cleared',
             'accounting_status' => 'cleared',
             'sao_status' => 'cleared',
+            ...$completedSignatories,
             'overall_status' => 'completed',
             'completed_at' => now(),
         ]);
@@ -71,11 +87,16 @@ class ClearanceFactory extends Factory
 
     public function denied(): static
     {
+        $deniedSignatories = collect(ClearanceSignatories::definitions())
+            ->mapWithKeys(fn (array $signatory): array => [$signatory['status'] => fake()->randomElement(['denied', 'cleared'])])
+            ->all();
+
         return $this->state(fn () => [
             'teacher_status' => fake()->randomElement(['denied', 'cleared']),
             'dean_status' => fake()->randomElement(['denied', 'cleared']),
             'accounting_status' => fake()->randomElement(['denied', 'cleared']),
             'sao_status' => fake()->randomElement(['denied', 'cleared']),
+            ...$deniedSignatories,
             'overall_status' => 'denied',
             'completed_at' => null,
         ]);

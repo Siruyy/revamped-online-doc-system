@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Clearance;
+use App\Support\ClearanceSignatories;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -48,6 +49,7 @@ class ClearanceMonitorController extends Controller
 
         return Inertia::render('Admin/Clearances/Index', [
             'clearances' => $clearances,
+            'signatories' => ClearanceSignatories::definitions(),
             'filters' => [
                 'overall_status' => $request->string('overall_status')->toString(),
                 'course' => $request->string('course')->toString(),
@@ -62,14 +64,14 @@ class ClearanceMonitorController extends Controller
         $clearance->load([
             'user:id,fullname,email,course,year_level,student_id',
             'documentRequest:id,reference_no,status,processing_stage,purpose,requester_name,requester_email,requester_student_id,requester_course,requester_year_level',
-            'teacherSigner:id,fullname',
-            'deanSigner:id,fullname',
-            'accountingSigner:id,fullname',
-            'saoSigner:id,fullname',
+            ...collect(ClearanceSignatories::signerRelations())
+                ->map(fn (string $relation): string => "{$relation}:id,fullname")
+                ->all(),
         ]);
 
         return Inertia::render('Admin/Clearances/Show', [
             'clearance' => $clearance,
+            'signatories' => ClearanceSignatories::definitions(),
         ]);
     }
 }

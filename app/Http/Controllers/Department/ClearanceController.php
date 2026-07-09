@@ -7,6 +7,7 @@ use App\Http\Requests\Department\DenyClearanceRequest;
 use App\Http\Requests\Department\SignClearanceRequest;
 use App\Models\Clearance;
 use App\Services\ClearanceService;
+use App\Support\ClearanceSignatories;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -19,13 +20,8 @@ class ClearanceController extends Controller
         $this->authorize('viewAny', Clearance::class);
 
         $user = $request->user();
-        $statusColumn = match ($user->role) {
-            'teacher' => 'teacher_status',
-            'dean' => 'dean_status',
-            'accounting' => 'accounting_status',
-            'sao' => 'sao_status',
-            default => 'teacher_status',
-        };
+        $currentSignatory = ClearanceSignatories::columns($user->role);
+        $statusColumn = $currentSignatory['status'];
 
         $status = $request->string('status')->toString() ?: 'pending';
 
@@ -72,6 +68,8 @@ class ClearanceController extends Controller
                 'search' => $request->string('search')->toString(),
             ],
             'departmentStatusColumn' => $statusColumn,
+            'currentSignatory' => $currentSignatory,
+            'signatories' => ClearanceSignatories::definitions(),
         ]);
     }
 
@@ -83,15 +81,18 @@ class ClearanceController extends Controller
             'user:id,fullname,email,course,year_level,student_id,contact_number',
             'documentRequest:id,reference_no,status,processing_stage,purpose,requester_name,requester_email,requester_contact_number,requester_student_id,requester_course,requester_year_level',
             'documentRequest.requirements:id,document_request_id,requirement_key,label,status,notes,file_path',
-            'teacherSigner:id,fullname',
-            'deanSigner:id,fullname',
-            'accountingSigner:id,fullname',
-            'saoSigner:id,fullname',
+            ...collect(ClearanceSignatories::signerRelations())
+                ->map(fn (string $relation): string => "{$relation}:id,fullname")
+                ->all(),
         ]);
+
+        $currentSignatory = ClearanceSignatories::columns($request->user()->role);
 
         return Inertia::render('Department/Clearances/Show', [
             'clearance' => $clearance,
             'department' => $request->user()->role,
+            'currentSignatory' => $currentSignatory,
+            'signatories' => ClearanceSignatories::definitions(),
         ]);
     }
 

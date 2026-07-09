@@ -2,6 +2,7 @@
 
 use App\Models\Message;
 use App\Models\User;
+use App\Support\ClearanceSignatories;
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('user.{id}', function (User $user, string $id) {
@@ -17,7 +18,7 @@ Broadcast::channel('role.superadmin', function (User $user) {
 });
 
 Broadcast::channel('role.department.{role}', function (User $user, string $role) {
-    $departmentRoles = ['teacher', 'dean', 'accounting', 'sao'];
+    $departmentRoles = ClearanceSignatories::roles();
 
     return in_array($user->role, $departmentRoles, true) && $user->role === $role;
 });

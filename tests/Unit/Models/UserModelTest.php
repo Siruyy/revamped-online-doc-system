@@ -14,7 +14,7 @@ class UserModelTest extends TestCase
     {
         $students = User::factory()->student()->count(2)->create();
         $admin = User::factory()->admin()->create();
-        $pendingTeacher = User::factory()->teacher()->pending()->create();
+        $pendingDean = User::factory()->dean()->pending()->create();
 
         $this->assertCount(
             2,
@@ -22,11 +22,11 @@ class UserModelTest extends TestCase
         );
         $this->assertCount(
             2,
-            User::query()->staff()->whereIn('id', [$admin->id, $pendingTeacher->id])->get()
+            User::query()->staff()->whereIn('id', [$admin->id, $pendingDean->id])->get()
         );
         $this->assertCount(
             1,
-            User::query()->pending()->whereKey($pendingTeacher->id)->get()
+            User::query()->pending()->whereKey($pendingDean->id)->get()
         );
         $this->assertCount(
             3,

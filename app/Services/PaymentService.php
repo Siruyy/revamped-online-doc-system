@@ -11,6 +11,7 @@ use App\Models\DocumentRequest;
 use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\WorkflowStatusNotification;
+use App\Support\ClearanceSignatories;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -202,7 +203,7 @@ class PaymentService
             }
 
             Notification::send(
-                User::query()->whereIn('role', ['teacher', 'dean', 'accounting', 'sao'])->where('status', 'active')->get(),
+                User::query()->whereIn('role', ClearanceSignatories::roles())->where('status', 'active')->get(),
                 new WorkflowStatusNotification([
                     'type' => 'clearance_created',
                     'title' => 'Clearance ready for review',

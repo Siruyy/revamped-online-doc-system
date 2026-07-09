@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\SubmitClearanceFileRequest;
 use App\Models\Clearance;
 use App\Services\ClearanceService;
+use App\Support\ClearanceSignatories;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,10 +19,9 @@ class ClearanceController extends Controller
         $clearance = Clearance::query()
             ->where('user_id', $request->user()->id)
             ->with([
-                'teacherSigner:id,fullname',
-                'deanSigner:id,fullname',
-                'accountingSigner:id,fullname',
-                'saoSigner:id,fullname',
+                ...collect(ClearanceSignatories::signerRelations())
+                    ->map(fn (string $relation): string => "{$relation}:id,fullname")
+                    ->all(),
                 'documentRequest:id,reference_no,status,processing_stage',
             ])
             ->latest()
@@ -29,6 +29,7 @@ class ClearanceController extends Controller
 
         return Inertia::render('Student/Clearance/Show', [
             'clearance' => $clearance,
+            'signatories' => ClearanceSignatories::definitions(),
         ]);
     }
 

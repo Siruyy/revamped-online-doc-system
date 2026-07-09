@@ -42,7 +42,8 @@ const pathways = [
     },
     {
         title: 'Department signatories',
-        description: 'Clear teacher, dean, accounting, and SAO requirements from one secure queue.',
+        description:
+            'Clear Dean, President, Librarian, Student Affairs, Alumni, and Guidance requirements from one queue.',
         icon: BuildingOffice2Icon,
     },
 ];

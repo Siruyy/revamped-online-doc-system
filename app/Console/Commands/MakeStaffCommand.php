@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Support\ClearanceSignatories;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -21,7 +22,7 @@ class MakeStaffCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Create or promote a staff user (admin/teacher/dean/accounting/sao)';
+    protected $description = 'Create or promote a staff user (admin or clearance signatory)';
 
     /**
      * Execute the console command.
@@ -32,7 +33,7 @@ class MakeStaffCommand extends Command
         $role = (string) $this->argument('role');
         $fullname = $this->ask('Full name', 'SVCI Staff');
         $password = $this->secret('Password (min 8 chars)');
-        $allowedRoles = ['admin', 'teacher', 'dean', 'accounting', 'sao'];
+        $allowedRoles = ClearanceSignatories::roleOptions();
 
         $validator = Validator::make(
             ['email' => $email, 'role' => $role, 'password' => $password],

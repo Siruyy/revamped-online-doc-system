@@ -6,6 +6,7 @@ import { computed } from 'vue';
 
 const props = defineProps({
     clearance: { type: Object, required: true },
+    signatories: { type: Array, required: true },
 });
 
 const canDownloadPdf = computed(() => props.clearance.overall_status === 'completed' && props.clearance.pdf_path);
@@ -21,6 +22,15 @@ const requestorCourse = computed(
 );
 const requestorYear = computed(
     () => props.clearance.user?.year_level || props.clearance.document_request?.requester_year_level || 'N/A',
+);
+const signatoryCards = computed(() =>
+    props.signatories.map((signatory) => ({
+        ...signatory,
+        statusValue: props.clearance[signatory.status],
+        remarksValue: props.clearance[signatory.remarks],
+        signedAtValue: props.clearance[signatory.signed_at],
+        signerName: props.clearance[signatory.signer_payload]?.fullname,
+    })),
 );
 
 const statusTone = (status) => {
@@ -78,56 +88,21 @@ const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
             </section>
 
             <section class="grid gap-4 md:grid-cols-2">
-                <article class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                    <p class="text-sm font-semibold text-slate-700">Teacher</p>
+                <article
+                    v-for="signatory in signatoryCards"
+                    :key="signatory.role"
+                    class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                    <p class="text-sm font-semibold text-slate-700">{{ signatory.label }}</p>
                     <StatusBadge
                         class="mt-2"
-                        :tone="statusTone(clearance.teacher_status)"
-                        :label="statusLabel(clearance.teacher_status)"
+                        :tone="statusTone(signatory.statusValue)"
+                        :label="statusLabel(signatory.statusValue)"
                     />
-                    <p class="text-xs text-slate-500">Signer: {{ clearance.teacher_signer?.fullname || 'N/A' }}</p>
-                    <p class="text-xs text-slate-500">Signed at: {{ clearance.teacher_signed_at || 'N/A' }}</p>
-                    <p v-if="clearance.teacher_remarks" class="text-xs text-rose-600">
-                        Remarks: {{ clearance.teacher_remarks }}
-                    </p>
-                </article>
-                <article class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                    <p class="text-sm font-semibold text-slate-700">Dean</p>
-                    <StatusBadge
-                        class="mt-2"
-                        :tone="statusTone(clearance.dean_status)"
-                        :label="statusLabel(clearance.dean_status)"
-                    />
-                    <p class="text-xs text-slate-500">Signer: {{ clearance.dean_signer?.fullname || 'N/A' }}</p>
-                    <p class="text-xs text-slate-500">Signed at: {{ clearance.dean_signed_at || 'N/A' }}</p>
-                    <p v-if="clearance.dean_remarks" class="text-xs text-rose-600">
-                        Remarks: {{ clearance.dean_remarks }}
-                    </p>
-                </article>
-                <article class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                    <p class="text-sm font-semibold text-slate-700">Accounting</p>
-                    <StatusBadge
-                        class="mt-2"
-                        :tone="statusTone(clearance.accounting_status)"
-                        :label="statusLabel(clearance.accounting_status)"
-                    />
-                    <p class="text-xs text-slate-500">Signer: {{ clearance.accounting_signer?.fullname || 'N/A' }}</p>
-                    <p class="text-xs text-slate-500">Signed at: {{ clearance.accounting_signed_at || 'N/A' }}</p>
-                    <p v-if="clearance.accounting_remarks" class="text-xs text-rose-600">
-                        Remarks: {{ clearance.accounting_remarks }}
-                    </p>
-                </article>
-                <article class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                    <p class="text-sm font-semibold text-slate-700">SAO</p>
-                    <StatusBadge
-                        class="mt-2"
-                        :tone="statusTone(clearance.sao_status)"
-                        :label="statusLabel(clearance.sao_status)"
-                    />
-                    <p class="text-xs text-slate-500">Signer: {{ clearance.sao_signer?.fullname || 'N/A' }}</p>
-                    <p class="text-xs text-slate-500">Signed at: {{ clearance.sao_signed_at || 'N/A' }}</p>
-                    <p v-if="clearance.sao_remarks" class="text-xs text-rose-600">
-                        Remarks: {{ clearance.sao_remarks }}
+                    <p class="text-xs text-slate-500">Cleared by: {{ signatory.signerName || 'N/A' }}</p>
+                    <p class="text-xs text-slate-500">Date signed: {{ signatory.signedAtValue || 'N/A' }}</p>
+                    <p v-if="signatory.remarksValue" class="text-xs text-rose-600">
+                        Remarks: {{ signatory.remarksValue }}
                     </p>
                 </article>
             </section>

@@ -57,11 +57,3 @@ parameters:
         -
             identifier: staticMethod.notFound
             path: app/Http/Controllers/ProfileController.php
-        # Role properties are dynamic database values; PHPStan over-narrows them
-        # in these match expressions.
-        -
-            identifier: match.alwaysTrue
-            path: app/Http/Controllers/ProfileController.php
-        -
-            identifier: match.alwaysTrue
-            path: app/Models/User.php

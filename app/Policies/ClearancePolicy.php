@@ -4,12 +4,13 @@ namespace App\Policies;
 
 use App\Models\Clearance;
 use App\Models\User;
+use App\Support\ClearanceSignatories;
 
 class ClearancePolicy
 {
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'superadmin', 'teacher', 'dean', 'accounting', 'sao'], true);
+        return in_array($user->role, ['admin', 'superadmin', ...ClearanceSignatories::roles()], true);
     }
 
     public function view(User $user, Clearance $clearance): bool
@@ -48,13 +49,13 @@ class ClearancePolicy
             return false;
         }
 
-        return match ($user->role) {
-            'teacher' => $clearance->teacher_status === 'pending',
-            'dean' => $clearance->dean_status === 'pending',
-            'accounting' => $clearance->accounting_status === 'pending',
-            'sao' => $clearance->sao_status === 'pending',
-            default => false,
-        };
+        if (! ClearanceSignatories::isSignatoryRole($user->role)) {
+            return false;
+        }
+
+        $columns = ClearanceSignatories::columns($user->role);
+
+        return $clearance->{$columns['status']} === 'pending';
     }
 
     public function signFor(User $user, Clearance $clearance, string $column): bool
@@ -107,13 +108,7 @@ class ClearancePolicy
 
     private function departmentColumn(User $user): ?string
     {
-        return match ($user->role) {
-            'teacher' => 'teacher',
-            'dean' => 'dean',
-            'accounting' => 'accounting',
-            'sao' => 'sao',
-            default => null,
-        };
+        return ClearanceSignatories::isSignatoryRole($user->role) ? $user->role : null;
     }
 
     private function departmentStatusColumn(User $user): ?string

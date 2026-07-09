@@ -9,6 +9,7 @@ use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\PaymentProfile;
 use App\Models\User;
+use App\Support\ClearanceSignatories;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 
@@ -22,10 +23,10 @@ class E2eSeeder extends Seeder
 
         $superAdmin = $this->user('e2e.superadmin@example.com', 'E2E SuperAdmin', 'superadmin', $password);
         $admin = $this->user('e2e.admin@example.com', 'E2E Admin', 'admin', $password);
-        $this->user('e2e.teacher@example.com', 'E2E Teacher', 'teacher', $password);
-        $this->user('e2e.dean@example.com', 'E2E Dean', 'dean', $password);
-        $this->user('e2e.accounting@example.com', 'E2E Accounting', 'accounting', $password);
-        $this->user('e2e.sao@example.com', 'E2E SAO', 'sao', $password);
+
+        foreach (ClearanceSignatories::SIGNATORIES as $role => $signatory) {
+            $this->user("e2e.{$role}@example.com", "E2E {$signatory['label']}", $role, $password);
+        }
 
         $student = $this->student('e2e.student@example.com', 'E2E Student', 'E2E-STUDENT', $password, $superAdmin);
         $paymentStudent = $this->student('e2e.payment.student@example.com', 'E2E Payment Student', 'E2E-PAYMENT', $password, $superAdmin);
@@ -157,10 +158,12 @@ class E2eSeeder extends Seeder
             ['document_request_id' => $clearanceRequest->id],
             [
                 'user_id' => $student->id,
-                'teacher_status' => 'pending',
                 'dean_status' => 'pending',
-                'accounting_status' => 'pending',
-                'sao_status' => 'pending',
+                'president_status' => 'pending',
+                'librarian_status' => 'pending',
+                'student_affairs_status' => 'pending',
+                'alumni_status' => 'pending',
+                'guidance_status' => 'pending',
                 'overall_status' => 'in_progress',
                 'uploaded_file_path' => 'e2e/clearance-supporting.txt',
             ]

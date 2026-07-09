@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Support\ClearanceSignatories;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -97,7 +98,7 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        if (! in_array($user->role, ['teacher', 'dean', 'accounting', 'sao'], true)) {
+        if (! ClearanceSignatories::isSignatoryRole($user->role)) {
             abort(403);
         }
 
@@ -129,7 +130,7 @@ class ProfileController extends Controller
         return match ($user->role) {
             'student' => 'student.profile.edit',
             'admin' => 'admin.profile.edit',
-            'teacher', 'dean', 'accounting', 'sao' => 'department.profile.edit',
+            'dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance' => 'department.profile.edit',
             'superadmin' => 'superadmin.profile.edit',
             default => 'profile.edit',
         };
@@ -140,7 +141,7 @@ class ProfileController extends Controller
         return match ($role) {
             'student' => 'Student/Profile',
             'admin' => 'Admin/Profile',
-            'teacher', 'dean', 'accounting', 'sao' => 'Department/Profile',
+            'dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance' => 'Department/Profile',
             'superadmin' => 'SuperAdmin/Profile',
             default => 'Profile/Edit',
         };

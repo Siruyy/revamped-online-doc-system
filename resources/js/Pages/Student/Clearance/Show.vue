@@ -13,6 +13,7 @@ const props = defineProps({
         type: Object,
         default: null,
     },
+    signatories: { type: Array, required: true },
 });
 
 const form = useForm({
@@ -22,40 +23,14 @@ const form = useForm({
 const statuses = computed(() => {
     if (!props.clearance) return [];
 
-    return [
-        {
-            key: 'teacher',
-            label: 'Teacher',
-            status: props.clearance.teacher_status,
-            signer: props.clearance.teacher_signer?.fullname,
-            signedAt: props.clearance.teacher_signed_at,
-            remarks: props.clearance.teacher_remarks,
-        },
-        {
-            key: 'dean',
-            label: 'Dean',
-            status: props.clearance.dean_status,
-            signer: props.clearance.dean_signer?.fullname,
-            signedAt: props.clearance.dean_signed_at,
-            remarks: props.clearance.dean_remarks,
-        },
-        {
-            key: 'accounting',
-            label: 'Accounting',
-            status: props.clearance.accounting_status,
-            signer: props.clearance.accounting_signer?.fullname,
-            signedAt: props.clearance.accounting_signed_at,
-            remarks: props.clearance.accounting_remarks,
-        },
-        {
-            key: 'sao',
-            label: 'SAO',
-            status: props.clearance.sao_status,
-            signer: props.clearance.sao_signer?.fullname,
-            signedAt: props.clearance.sao_signed_at,
-            remarks: props.clearance.sao_remarks,
-        },
-    ];
+    return props.signatories.map((signatory) => ({
+        key: signatory.role,
+        label: signatory.label,
+        status: props.clearance[signatory.status],
+        signer: props.clearance[signatory.signer_payload]?.fullname,
+        signedAt: props.clearance[signatory.signed_at],
+        remarks: props.clearance[signatory.remarks],
+    }));
 });
 
 const submit = () => {
@@ -101,8 +76,8 @@ const statusLabel = (status) => status?.replaceAll('_', ' ') || 'N/A';
                             Status:
                             <StatusBadge :tone="statusTone(item.status)" :label="statusLabel(item.status)" />
                         </p>
-                        <p class="text-xs text-slate-500">Signer: {{ item.signer || 'N/A' }}</p>
-                        <p class="text-xs text-slate-500">Signed at: {{ item.signedAt || 'N/A' }}</p>
+                        <p class="text-xs text-slate-500">Cleared by: {{ item.signer || 'N/A' }}</p>
+                        <p class="text-xs text-slate-500">Date signed: {{ item.signedAt || 'N/A' }}</p>
                         <p v-if="item.remarks" class="mt-1 text-xs text-rose-600">Remarks: {{ item.remarks }}</p>
                     </article>
                 </section>

@@ -11,6 +11,7 @@ import { reactive } from 'vue';
 const props = defineProps({
     clearances: { type: Object, required: true },
     filters: { type: Object, required: true },
+    signatories: { type: Array, required: true },
 });
 
 const form = reactive({
@@ -145,22 +146,12 @@ const requestorCourseYear = (item) => {
                                 <dt class="font-medium text-slate-500">Updated</dt>
                                 <dd class="mt-0.5 text-slate-800">{{ item.updated_at || '—' }}</dd>
                             </div>
-                            <div>
-                                <dt class="font-medium text-slate-500">Teacher</dt>
+                            <div v-for="signatory in signatories.slice(0, 2)" :key="signatory.role">
+                                <dt class="font-medium text-slate-500">{{ signatory.label }}</dt>
                                 <dd class="mt-0.5">
                                     <StatusBadge
-                                        :tone="statusTone(item.teacher_status)"
-                                        :label="statusLabel(item.teacher_status)"
-                                        size="xs"
-                                    />
-                                </dd>
-                            </div>
-                            <div>
-                                <dt class="font-medium text-slate-500">Dean</dt>
-                                <dd class="mt-0.5">
-                                    <StatusBadge
-                                        :tone="statusTone(item.dean_status)"
-                                        :label="statusLabel(item.dean_status)"
+                                        :tone="statusTone(item[signatory.status])"
+                                        :label="statusLabel(item[signatory.status])"
                                         size="xs"
                                     />
                                 </dd>
@@ -185,10 +176,13 @@ const requestorCourseYear = (item) => {
                                 <tr>
                                     <th class="px-4 py-3 text-left font-semibold text-slate-700">Reference</th>
                                     <th class="px-4 py-3 text-left font-semibold text-slate-700">Student</th>
-                                    <th class="px-4 py-3 text-left font-semibold text-slate-700">Teacher</th>
-                                    <th class="px-4 py-3 text-left font-semibold text-slate-700">Dean</th>
-                                    <th class="px-4 py-3 text-left font-semibold text-slate-700">Accounting</th>
-                                    <th class="px-4 py-3 text-left font-semibold text-slate-700">SAO</th>
+                                    <th
+                                        v-for="signatory in signatories"
+                                        :key="signatory.role"
+                                        class="px-4 py-3 text-left font-semibold text-slate-700"
+                                    >
+                                        {{ signatory.label }}
+                                    </th>
                                     <th class="px-4 py-3 text-left font-semibold text-slate-700">Overall</th>
                                     <th class="px-4 py-3 text-left font-semibold text-slate-700">Action</th>
                                 </tr>
@@ -208,31 +202,10 @@ const requestorCourseYear = (item) => {
                                         </div>
                                         <p class="text-xs text-slate-500">{{ requestorCourseYear(item) }}</p>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td v-for="signatory in signatories" :key="signatory.role" class="px-4 py-3">
                                         <StatusBadge
-                                            :tone="statusTone(item.teacher_status)"
-                                            :label="statusLabel(item.teacher_status)"
-                                            size="xs"
-                                        />
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <StatusBadge
-                                            :tone="statusTone(item.dean_status)"
-                                            :label="statusLabel(item.dean_status)"
-                                            size="xs"
-                                        />
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <StatusBadge
-                                            :tone="statusTone(item.accounting_status)"
-                                            :label="statusLabel(item.accounting_status)"
-                                            size="xs"
-                                        />
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <StatusBadge
-                                            :tone="statusTone(item.sao_status)"
-                                            :label="statusLabel(item.sao_status)"
+                                            :tone="statusTone(item[signatory.status])"
+                                            :label="statusLabel(item[signatory.status])"
                                             size="xs"
                                         />
                                     </td>

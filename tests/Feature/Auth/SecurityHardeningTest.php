@@ -73,7 +73,7 @@ class SecurityHardeningTest extends TestCase
     {
         Storage::fake('local');
 
-        $teacher = User::factory()->teacher()->create();
+        $teacher = User::factory()->dean()->create();
 
         $response = $this->actingAs($teacher)
             ->from(route('department.profile.edit'))
@@ -89,7 +89,7 @@ class SecurityHardeningTest extends TestCase
     {
         Storage::fake('local');
 
-        $teacher = User::factory()->teacher()->create();
+        $teacher = User::factory()->dean()->create();
 
         $response = $this->actingAs($teacher)
             ->from(route('department.profile.edit'))
@@ -105,7 +105,7 @@ class SecurityHardeningTest extends TestCase
     {
         Storage::fake('local');
 
-        $teacher = User::factory()->teacher()->create();
+        $teacher = User::factory()->dean()->create();
 
         $response = $this->actingAs($teacher)
             ->from(route('department.profile.edit'))
@@ -289,7 +289,7 @@ class SecurityHardeningTest extends TestCase
     {
         Storage::fake('local');
 
-        $teacher = User::factory()->teacher()->create();
+        $teacher = User::factory()->dean()->create();
         $requirement = $this->createPublicRequirementFile();
 
         $this->actingAs($teacher)
@@ -301,15 +301,12 @@ class SecurityHardeningTest extends TestCase
     {
         Storage::fake('local');
 
-        $teacher = User::factory()->teacher()->create();
+        $teacher = User::factory()->dean()->create();
         $requirement = $this->createPublicRequirementFile();
         Clearance::factory()->for($requirement->documentRequest, 'documentRequest')->create([
             'user_id' => null,
             'overall_status' => 'in_progress',
-            'teacher_status' => 'pending',
             'dean_status' => 'pending',
-            'accounting_status' => 'pending',
-            'sao_status' => 'pending',
         ]);
 
         $this->actingAs($teacher)

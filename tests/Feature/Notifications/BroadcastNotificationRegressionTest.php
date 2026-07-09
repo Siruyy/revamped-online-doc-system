@@ -27,6 +27,7 @@ use App\Notifications\WorkflowStatusNotification;
 use App\Services\ClearanceService;
 use App\Services\PaymentService;
 use App\Services\RequestService;
+use App\Support\ClearanceSignatories;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -151,10 +152,9 @@ class BroadcastNotificationRegressionTest extends TestCase
     {
         $admin = $this->activeUser('admin');
         $student = $this->activeUser('student');
-        $teacher = $this->activeUser('teacher');
-        $dean = $this->activeUser('dean');
-        $accounting = $this->activeUser('accounting');
-        $sao = $this->activeUser('sao');
+        $officers = collect(ClearanceSignatories::roles())
+            ->map(fn (string $role): User => $this->activeUser($role))
+            ->all();
         $request = DocumentRequest::factory()->for($student)->pending()->create();
         $payment = Payment::factory()->for($student)->for($request)->pendingApproval()->create();
 
@@ -167,7 +167,7 @@ class BroadcastNotificationRegressionTest extends TestCase
         Event::assertDispatched(ClearanceCreated::class, fn (ClearanceCreated $event) => $event->studentId === $student->id && $event->documentRequestId === $request->id);
         $this->assertNotificationSentWithType($student, 'payment_approved');
 
-        foreach ([$teacher, $dean, $accounting, $sao] as $officer) {
+        foreach ($officers as $officer) {
             $this->assertNotificationSentWithType($officer, 'clearance_created');
         }
     }
@@ -190,18 +190,18 @@ class BroadcastNotificationRegressionTest extends TestCase
     public function test_clearance_update_dispatches_event_and_notifies_student(): void
     {
         $student = $this->activeUser('student');
-        $teacher = $this->activeUser('teacher');
+        $dean = $this->activeUser('dean');
         $clearance = Clearance::factory()->for($student)->create([
-            'teacher_status' => 'pending',
+            'dean_status' => 'pending',
             'uploaded_file_path' => 'clearance-files/supporting-file.pdf',
         ]);
 
         Event::fake([ClearanceUpdated::class]);
         NotificationFake::fake();
 
-        app(ClearanceService::class)->signFor($clearance, $teacher, 'teacher', 'Verified');
+        app(ClearanceService::class)->signFor($clearance, $dean, 'dean', 'Verified');
 
-        Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $clearance->id && $event->department === 'teacher');
+        Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $clearance->id && $event->department === 'dean');
         $this->assertNotificationSentWithType($student, 'clearance_updated');
     }
 
@@ -210,10 +210,7 @@ class BroadcastNotificationRegressionTest extends TestCase
         $student = $this->activeUser('student');
         $dean = $this->activeUser('dean');
         $clearance = Clearance::factory()->for($student)->create([
-            'teacher_status' => 'cleared',
             'dean_status' => 'pending',
-            'accounting_status' => 'pending',
-            'sao_status' => 'pending',
         ]);
 
         Event::fake([ClearanceUpdated::class]);
@@ -234,19 +231,21 @@ class BroadcastNotificationRegressionTest extends TestCase
         Storage::fake('local');
         $student = $this->activeUser('student');
         $clearance = Clearance::factory()->for($student)->create([
-            'teacher_status' => 'cleared',
             'dean_status' => 'cleared',
-            'accounting_status' => 'cleared',
-            'sao_status' => 'pending',
+            'president_status' => 'cleared',
+            'librarian_status' => 'cleared',
+            'student_affairs_status' => 'cleared',
+            'alumni_status' => 'cleared',
+            'guidance_status' => 'pending',
             'uploaded_file_path' => 'clearance-files/supporting-file.pdf',
         ]);
 
         Event::fake([ClearanceUpdated::class, ClearanceCompleted::class]);
         NotificationFake::fake();
 
-        app(ClearanceService::class)->signFor($clearance, $this->activeUser('sao'), 'sao');
+        app(ClearanceService::class)->signFor($clearance, $this->activeUser('guidance'), 'guidance');
 
-        Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $clearance->id && $event->department === 'sao');
+        Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $clearance->id && $event->department === 'guidance');
         Event::assertDispatched(ClearanceCompleted::class, fn (ClearanceCompleted $event) => $event->clearanceId === $clearance->id && $event->studentId === $student->id);
         $this->assertNotificationSentWithType($student, 'clearance_updated');
         NotificationFake::assertSentTo(
@@ -351,7 +350,11 @@ class BroadcastNotificationRegressionTest extends TestCase
 
     private function activeUser(string $role): User
     {
-        return User::factory()->{$role}()->create([
+        $factory = ClearanceSignatories::isSignatoryRole($role)
+            ? User::factory()->signatory($role)
+            : User::factory()->{$role}();
+
+        return $factory->create([
             'status' => 'active',
             'email_verified_at' => now(),
         ]);

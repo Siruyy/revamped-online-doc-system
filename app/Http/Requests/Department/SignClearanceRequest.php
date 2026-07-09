@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests\Department;
 
+use App\Support\ClearanceSignatories;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SignClearanceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return in_array($this->user()?->role, ['teacher', 'dean', 'accounting', 'sao'], true);
+        return ClearanceSignatories::isSignatoryRole($this->user()?->role);
     }
 
     /**

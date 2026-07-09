@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Notifications\BrandedResetPasswordNotification;
+use App\Support\ClearanceSignatories;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -95,13 +96,9 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function signedClearances(): HasMany
     {
-        $foreignKey = match ($this->role) {
-            'teacher' => 'teacher_signed_by',
-            'dean' => 'dean_signed_by',
-            'accounting' => 'accounting_signed_by',
-            'sao' => 'sao_signed_by',
-            default => 'teacher_signed_by',
-        };
+        $foreignKey = ClearanceSignatories::isSignatoryRole($this->role)
+            ? ClearanceSignatories::columns($this->role)['signed_by']
+            : 'dean_signed_by';
 
         return $this->hasMany(Clearance::class, $foreignKey);
     }
@@ -113,7 +110,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function scopeStaff(Builder $query): Builder
     {
-        return $query->whereIn('role', ['admin', 'teacher', 'dean', 'accounting', 'sao', 'superadmin']);
+        return $query->whereIn('role', ['admin', ...ClearanceSignatories::roles(), 'superadmin']);
     }
 
     public function scopePending(Builder $query): Builder
@@ -138,7 +135,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isDepartment(): bool
     {
-        return in_array($this->role, ['teacher', 'dean', 'accounting', 'sao'], true);
+        return ClearanceSignatories::isSignatoryRole($this->role);
     }
 
     public function isSuperAdmin(): bool
@@ -156,7 +153,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return match ($this->role) {
             'student' => 'student.dashboard',
             'admin' => 'admin.dashboard',
-            'teacher', 'dean', 'accounting', 'sao' => 'department.dashboard',
+            'dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance' => 'department.dashboard',
             'superadmin' => 'superadmin.dashboard',
             default => 'login',
         };

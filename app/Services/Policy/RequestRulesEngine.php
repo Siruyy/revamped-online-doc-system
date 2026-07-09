@@ -4,6 +4,7 @@ namespace App\Services\Policy;
 
 use App\Models\DocumentType;
 use App\Models\User;
+use App\Support\ClearanceSignatories;
 
 /**
  * Central policy gate for document requests. Reads from config/policy.php and
@@ -116,8 +117,7 @@ class RequestRulesEngine
     }
 
     /**
-     * Offices required for clearance on this type, translated to signer roles
-     * the current schema supports: teacher/dean/accounting/sao.
+     * Required clearance signer roles for this type.
      *
      * Returns an empty array if clearance is not needed.
      *
@@ -129,20 +129,6 @@ class RequestRulesEngine
             return [];
         }
 
-        $offices = $this->rulesFor($type)['offices'];
-        $signers = [];
-
-        foreach ($offices as $office) {
-            $role = config('policy.offices.'.$office.'.signer_role');
-
-            if ($role && ! in_array($role, $signers, true)) {
-                $signers[] = $role;
-            }
-        }
-
-        // Filter to the roles the current clearance table actually supports.
-        $supported = ['teacher', 'dean', 'accounting', 'sao'];
-
-        return array_values(array_intersect($signers, $supported));
+        return ClearanceSignatories::roles();
     }
 }

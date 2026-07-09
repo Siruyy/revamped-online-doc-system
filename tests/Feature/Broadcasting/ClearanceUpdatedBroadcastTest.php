@@ -10,7 +10,7 @@ class ClearanceUpdatedBroadcastTest extends TestCase
 {
     public function test_broadcasts_to_matching_department_channel(): void
     {
-        $event = new ClearanceUpdated(5, 10, 'teacher', 'signed', 'in_progress');
+        $event = new ClearanceUpdated(5, 10, 'librarian', 'signed', 'in_progress');
 
         $channels = collect($event->broadcastOn())
             ->map(fn (PrivateChannel $channel) => $channel->name)
@@ -18,7 +18,7 @@ class ClearanceUpdatedBroadcastTest extends TestCase
 
         $this->assertContains('private-user.10', $channels);
         $this->assertContains('private-role.admin', $channels);
-        $this->assertContains('private-role.department.teacher', $channels);
+        $this->assertContains('private-role.department.librarian', $channels);
         $this->assertTrue($event->afterCommit);
     }
 }

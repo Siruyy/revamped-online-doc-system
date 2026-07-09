@@ -23,7 +23,9 @@ const page = usePage();
 const user = page.props.auth.user;
 const role = computed(() => page.props.auth?.user?.role ?? 'student');
 
-const isDepartmentOfficer = computed(() => ['teacher', 'dean', 'accounting', 'sao'].includes(user?.role));
+const isDepartmentOfficer = computed(() =>
+    ['dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance'].includes(user?.role),
+);
 
 const profileUpdateRoute = computed(() => (isDepartmentOfficer.value ? 'department.profile.update' : 'profile.update'));
 

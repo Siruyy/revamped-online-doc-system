@@ -9,6 +9,7 @@ use App\Models\DocumentRequest;
 use App\Models\User;
 use App\Notifications\ClearanceCompletedNotification;
 use App\Notifications\WorkflowStatusNotification;
+use App\Support\ClearanceSignatories;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -20,37 +21,11 @@ class ClearanceService
     public function __construct(private PdfService $pdfService) {}
 
     /**
-     * @return array{status: string, remarks: string, signed_by: string, signed_at: string}
+     * @return array{status: string, remarks: string, signed_by: string, signed_at: string, signer: string, label: string}
      */
     private function departmentColumns(string $department): array
     {
-        return match ($department) {
-            'teacher' => [
-                'status' => 'teacher_status',
-                'remarks' => 'teacher_remarks',
-                'signed_by' => 'teacher_signed_by',
-                'signed_at' => 'teacher_signed_at',
-            ],
-            'dean' => [
-                'status' => 'dean_status',
-                'remarks' => 'dean_remarks',
-                'signed_by' => 'dean_signed_by',
-                'signed_at' => 'dean_signed_at',
-            ],
-            'accounting' => [
-                'status' => 'accounting_status',
-                'remarks' => 'accounting_remarks',
-                'signed_by' => 'accounting_signed_by',
-                'signed_at' => 'accounting_signed_at',
-            ],
-            'sao' => [
-                'status' => 'sao_status',
-                'remarks' => 'sao_remarks',
-                'signed_by' => 'sao_signed_by',
-                'signed_at' => 'sao_signed_at',
-            ],
-            default => throw new \InvalidArgumentException('Invalid department role.'),
-        };
+        return ClearanceSignatories::columns($department);
     }
 
     public function submitFile(Clearance $clearance, UploadedFile $file): Clearance
@@ -59,7 +34,10 @@ class ClearanceService
             throw new \RuntimeException('Clearance supporting file can only be updated while clearance is in progress.');
         }
 
-        if ($clearance->teacher_signed_at || $clearance->dean_signed_at || $clearance->accounting_signed_at || $clearance->sao_signed_at) {
+        $hasStartedSigning = collect(ClearanceSignatories::definitions())
+            ->contains(fn (array $signatory): bool => $clearance->{$signatory['signed_at']} !== null);
+
+        if ($hasStartedSigning) {
             throw new \RuntimeException('Clearance supporting file can no longer be updated after department signing starts.');
         }
 
@@ -213,8 +191,8 @@ class ClearanceService
 
     private function ensureOfficerMatchesDepartment(User $officer, string $department): void
     {
-        if ($officer->role !== $department) {
-            throw new \InvalidArgumentException('Officer role does not match the clearance department.');
+        if ($officer->role !== $department || ! ClearanceSignatories::isSignatoryRole($department)) {
+            throw new \InvalidArgumentException('Officer role does not match the clearance signatory office.');
         }
     }
 

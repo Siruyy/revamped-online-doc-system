@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use App\Support\ClearanceSignatories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -86,8 +87,42 @@ class UserFactory extends Factory
 
     public function dean(): static
     {
+        return $this->signatory('dean');
+    }
+
+    public function president(): static
+    {
+        return $this->signatory('president');
+    }
+
+    public function librarian(): static
+    {
+        return $this->signatory('librarian');
+    }
+
+    public function studentAffairs(): static
+    {
+        return $this->signatory('student_affairs');
+    }
+
+    public function alumni(): static
+    {
+        return $this->signatory('alumni');
+    }
+
+    public function guidance(): static
+    {
+        return $this->signatory('guidance');
+    }
+
+    public function signatory(string $role): static
+    {
+        if (! ClearanceSignatories::isSignatoryRole($role)) {
+            throw new \InvalidArgumentException('Invalid clearance signatory role.');
+        }
+
         return $this->state(fn () => [
-            'role' => 'dean',
+            'role' => $role,
             'course' => null,
             'year_level' => null,
             'student_id' => null,

@@ -58,10 +58,12 @@ const userInitials = computed(() => {
 const departmentTitle = computed(
     () =>
         ({
-            teacher: 'Teacher',
             dean: 'Dean',
-            accounting: 'Accounting',
-            sao: 'SAO',
+            president: 'Office of the President',
+            librarian: 'Librarian',
+            student_affairs: 'Dean of Student Affairs',
+            alumni: 'SVC Alumni Officer',
+            guidance: 'Guidance Counselor',
         })[role.value] ?? '',
 );
 
@@ -76,10 +78,12 @@ const roleBadgeClass = computed(
         ({
             superadmin: 'bg-violet-100 text-violet-700',
             admin: 'bg-emerald-100 text-emerald-700',
-            teacher: 'bg-sky-100 text-sky-700',
             dean: 'bg-indigo-100 text-indigo-700',
-            accounting: 'bg-amber-100 text-amber-700',
-            sao: 'bg-rose-100 text-rose-700',
+            president: 'bg-sky-100 text-sky-700',
+            librarian: 'bg-amber-100 text-amber-700',
+            student_affairs: 'bg-rose-100 text-rose-700',
+            alumni: 'bg-teal-100 text-teal-700',
+            guidance: 'bg-fuchsia-100 text-fuchsia-700',
         })[role.value] ?? 'bg-slate-100 text-slate-600',
 );
 
@@ -119,7 +123,7 @@ const links = computed(() => {
         ].map((link) => ({ ...link, icon: getIconForRoute(link.route) }));
     }
 
-    if (['teacher', 'dean', 'accounting', 'sao'].includes(role.value)) {
+    if (['dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance'].includes(role.value)) {
         return [
             { route: 'department.dashboard', label: 'Dashboard' },
             { route: 'department.clearances.index', label: 'Clearances' },

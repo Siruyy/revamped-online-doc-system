@@ -32,10 +32,12 @@ const banner = computed(() => page.props.flash?.banner ?? null);
 const roleLabels = {
     student: 'Students',
     admin: 'Admins',
-    teacher: 'Teachers',
     dean: 'Deans',
-    accounting: 'Accounting',
-    sao: 'SAO',
+    president: 'Office of the President',
+    librarian: 'Librarians',
+    student_affairs: 'Dean of Student Affairs',
+    alumni: 'SVC Alumni Officers',
+    guidance: 'Guidance Counselors',
     superadmin: 'SuperAdmins',
 };
 

@@ -6,8 +6,8 @@ export type RoleName = 'student' | 'admin' | 'department' | 'superadmin';
 const accounts: Record<RoleName, { email: string }> = {
     student: { email: 'e2e.student@example.com' },
     admin: { email: 'e2e.admin@example.com' },
-    // E2E seed uses a teacher account for department clearance workflows.
-    department: { email: 'e2e.teacher@example.com' },
+    // E2E seed uses the dean account for department clearance workflows.
+    department: { email: 'e2e.dean@example.com' },
     superadmin: { email: 'e2e.superadmin@example.com' },
 };
 

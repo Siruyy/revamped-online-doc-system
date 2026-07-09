@@ -17,7 +17,20 @@ return new class extends Migration
             $table->string('email', 150)->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['student', 'admin', 'teacher', 'dean', 'accounting', 'sao', 'superadmin']);
+            $table->enum('role', [
+                'student',
+                'admin',
+                'teacher',
+                'dean',
+                'accounting',
+                'sao',
+                'president',
+                'librarian',
+                'student_affairs',
+                'alumni',
+                'guidance',
+                'superadmin',
+            ]);
             $table->enum('status', ['pending', 'active', 'suspended', 'rejected'])->default('pending');
             $table->string('course', 100)->nullable();
             $table->unsignedTinyInteger('year_level')->nullable();

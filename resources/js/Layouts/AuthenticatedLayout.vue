@@ -14,7 +14,9 @@ const dashboardRoute = computed(() => {
     const effectiveRole = page.props.auth?.user?.role || 'student';
 
     if (effectiveRole === 'admin') return 'admin.dashboard';
-    if (['teacher', 'dean', 'accounting', 'sao'].includes(effectiveRole)) return 'department.dashboard';
+    if (['dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance'].includes(effectiveRole)) {
+        return 'department.dashboard';
+    }
     if (effectiveRole === 'superadmin') return 'superadmin.dashboard';
 
     return 'student.dashboard';

@@ -16,10 +16,12 @@ const notificationsUrl = computed(() => {
     const routesByRole = {
         student: 'student.notifications.index',
         admin: 'admin.notifications.index',
-        teacher: 'department.notifications.index',
         dean: 'department.notifications.index',
-        accounting: 'department.notifications.index',
-        sao: 'department.notifications.index',
+        president: 'department.notifications.index',
+        librarian: 'department.notifications.index',
+        student_affairs: 'department.notifications.index',
+        alumni: 'department.notifications.index',
+        guidance: 'department.notifications.index',
         superadmin: 'superadmin.notifications.index',
     };
     const name = routesByRole[role];

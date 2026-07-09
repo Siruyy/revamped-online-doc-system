@@ -12,6 +12,7 @@ use App\Models\RequestRequirement;
 use App\Services\ActivityLogger;
 use App\Services\Policy\RequestRulesEngine;
 use App\Services\RequestService;
+use App\Support\ClearanceSignatories;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -184,10 +185,9 @@ class RequestController extends Controller
             'documentType',
             'items.documentType',
             'payments',
-            'clearances.teacherSigner:id,fullname',
-            'clearances.deanSigner:id,fullname',
-            'clearances.accountingSigner:id,fullname',
-            'clearances.saoSigner:id,fullname',
+            ...collect(ClearanceSignatories::signerRelations())
+                ->map(fn (string $relation): string => "clearances.{$relation}:id,fullname")
+                ->all(),
             'requirements',
             'claimSlip',
         ]);
@@ -202,6 +202,7 @@ class RequestController extends Controller
                 'requirements_catalog' => config('policy.requirements'),
                 'release_channels' => config('policy.release_channels'),
                 'offices' => config('policy.offices'),
+                'clearance_signatories' => ClearanceSignatories::definitions(),
             ],
             'paymentProfile' => $paymentProfile ? [
                 'bank_name' => $paymentProfile->bank_name,

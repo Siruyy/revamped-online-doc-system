@@ -10,6 +10,17 @@ const props = defineProps({
 
 const page = usePage();
 const banner = computed(() => page.props.flash?.banner ?? null);
+const roleOptions = [
+    { value: 'student', label: 'Student' },
+    { value: 'admin', label: 'Admin' },
+    { value: 'dean', label: 'Dean' },
+    { value: 'president', label: 'Office of the President' },
+    { value: 'librarian', label: 'Librarian' },
+    { value: 'student_affairs', label: 'Dean of Student Affairs' },
+    { value: 'alumni', label: 'SVC Alumni Officer' },
+    { value: 'guidance', label: 'Guidance Counselor' },
+    { value: 'superadmin', label: 'SuperAdmin' },
+];
 const isSelf = computed(() => page.props.auth?.user?.id === props.user.id);
 
 const form = useForm({
@@ -96,13 +107,9 @@ const destroyUser = () => {
                             :aria-describedby="describedBy"
                             :aria-invalid="invalid ? 'true' : undefined"
                         >
-                            <option value="student">Student</option>
-                            <option value="admin">Admin</option>
-                            <option value="teacher">Teacher</option>
-                            <option value="dean">Dean</option>
-                            <option value="accounting">Accounting</option>
-                            <option value="sao">SAO</option>
-                            <option value="superadmin">SuperAdmin</option>
+                            <option v-for="option in roleOptions" :key="option.value" :value="option.value">
+                                {{ option.label }}
+                            </option>
                         </select>
                     </template>
                 </FormField>

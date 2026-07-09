@@ -67,7 +67,7 @@ Route::middleware(['auth', 'role:admin', 'approved', 'verified'])
     ->name('admin.')
     ->group(base_path('routes/admin.php'));
 
-Route::middleware(['auth', 'role:teacher|dean|accounting|sao', 'approved', 'verified'])
+Route::middleware(['auth', 'role:dean|president|librarian|student_affairs|alumni|guidance', 'approved', 'verified'])
     ->prefix('department')
     ->name('department.')
     ->group(base_path('routes/department.php'));

@@ -6,6 +6,7 @@ use App\Models\Clearance;
 use App\Models\DocumentRequest;
 use App\Models\RequestRequirement;
 use App\Models\User;
+use App\Support\ClearanceSignatories;
 use Illuminate\Database\Eloquent\Model;
 
 class RequestRequirementPolicy
@@ -29,7 +30,7 @@ class RequestRequirementPolicy
             return $documentRequest->user_id === $user->id;
         }
 
-        if (! in_array($user->role, ['teacher', 'dean', 'accounting', 'sao'], true) || $documentRequest->user_id !== null) {
+        if (! ClearanceSignatories::isSignatoryRole($user->role) || $documentRequest->user_id !== null) {
             return false;
         }
 

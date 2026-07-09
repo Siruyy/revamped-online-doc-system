@@ -747,30 +747,25 @@ function paymentStatusBadge(status) {
                     </div>
                     <dl v-else class="mt-4 space-y-2 text-sm">
                         <div
-                            v-for="(status, key) in {
-                                teacher: clearance.teacher_status,
-                                dean: clearance.dean_status,
-                                accounting: clearance.accounting_status,
-                                sao: clearance.sao_status,
-                            }"
-                            :key="key"
+                            v-for="signatory in policy.clearance_signatories"
+                            :key="signatory.role"
                             class="flex justify-between"
                         >
-                            <dt class="capitalize text-slate-500">{{ key }}</dt>
+                            <dt class="text-slate-500">{{ signatory.label }}</dt>
                             <dd>
                                 <span
                                     :class="[
                                         'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
                                         requirementBadge(
-                                            status === 'cleared'
+                                            clearance[signatory.status] === 'cleared'
                                                 ? 'validated'
-                                                : status === 'denied'
+                                                : clearance[signatory.status] === 'denied'
                                                   ? 'rejected'
                                                   : 'submitted',
                                         ),
                                     ]"
                                 >
-                                    {{ status }}
+                                    {{ clearance[signatory.status] }}
                                 </span>
                             </dd>
                         </div>

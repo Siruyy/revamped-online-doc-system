@@ -13,17 +13,21 @@ class ClearanceModelTest extends TestCase
 
     #[DataProvider('clearanceStatusCombinations')]
     public function test_is_complete_returns_expected_result(
-        string $teacherStatus,
         string $deanStatus,
-        string $accountingStatus,
-        string $saoStatus,
+        string $presidentStatus,
+        string $librarianStatus,
+        string $studentAffairsStatus,
+        string $alumniStatus,
+        string $guidanceStatus,
         bool $expected
     ): void {
         $clearance = Clearance::factory()->make([
-            'teacher_status' => $teacherStatus,
             'dean_status' => $deanStatus,
-            'accounting_status' => $accountingStatus,
-            'sao_status' => $saoStatus,
+            'president_status' => $presidentStatus,
+            'librarian_status' => $librarianStatus,
+            'student_affairs_status' => $studentAffairsStatus,
+            'alumni_status' => $alumniStatus,
+            'guidance_status' => $guidanceStatus,
         ]);
 
         $this->assertSame($expected, $clearance->isComplete());
@@ -34,19 +38,24 @@ class ClearanceModelTest extends TestCase
         $statuses = ['pending', 'cleared'];
         $datasets = [];
 
-        foreach ($statuses as $teacher) {
-            foreach ($statuses as $dean) {
-                foreach ($statuses as $accounting) {
-                    foreach ($statuses as $sao) {
-                        $expected = $teacher === 'cleared'
-                            && $dean === 'cleared'
-                            && $accounting === 'cleared'
-                            && $sao === 'cleared';
+        $signatories = ['dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance'];
 
-                        $datasets[] = [$teacher, $dean, $accounting, $sao, $expected];
-                    }
-                }
+        for ($mask = 0; $mask < (2 ** count($signatories)); $mask++) {
+            $row = [];
+
+            foreach ($signatories as $index => $signatory) {
+                $row[$signatory] = ($mask & (1 << $index)) ? 'cleared' : 'pending';
             }
+
+            $datasets[] = [
+                $row['dean'],
+                $row['president'],
+                $row['librarian'],
+                $row['student_affairs'],
+                $row['alumni'],
+                $row['guidance'],
+                collect($row)->every(fn (string $status): bool => $status === 'cleared'),
+            ];
         }
 
         return $datasets;
@@ -55,10 +64,12 @@ class ClearanceModelTest extends TestCase
     public function test_recompute_overall_status_sets_denied_when_any_department_denies(): void
     {
         $clearance = Clearance::factory()->make([
-            'teacher_status' => 'cleared',
             'dean_status' => 'denied',
-            'accounting_status' => 'pending',
-            'sao_status' => 'pending',
+            'president_status' => 'pending',
+            'librarian_status' => 'pending',
+            'student_affairs_status' => 'pending',
+            'alumni_status' => 'pending',
+            'guidance_status' => 'pending',
             'overall_status' => 'in_progress',
         ]);
 
@@ -71,10 +82,12 @@ class ClearanceModelTest extends TestCase
     public function test_recompute_overall_status_sets_completed_when_all_cleared(): void
     {
         $clearance = Clearance::factory()->make([
-            'teacher_status' => 'cleared',
             'dean_status' => 'cleared',
-            'accounting_status' => 'cleared',
-            'sao_status' => 'cleared',
+            'president_status' => 'cleared',
+            'librarian_status' => 'cleared',
+            'student_affairs_status' => 'cleared',
+            'alumni_status' => 'cleared',
+            'guidance_status' => 'cleared',
             'overall_status' => 'in_progress',
             'completed_at' => null,
         ]);
@@ -88,10 +101,12 @@ class ClearanceModelTest extends TestCase
     public function test_recompute_overall_status_sets_in_progress_when_not_complete_and_not_denied(): void
     {
         $clearance = Clearance::factory()->make([
-            'teacher_status' => 'cleared',
             'dean_status' => 'pending',
-            'accounting_status' => 'pending',
-            'sao_status' => 'cleared',
+            'president_status' => 'cleared',
+            'librarian_status' => 'cleared',
+            'student_affairs_status' => 'cleared',
+            'alumni_status' => 'cleared',
+            'guidance_status' => 'cleared',
             'overall_status' => 'completed',
             'completed_at' => now(),
         ]);

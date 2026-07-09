@@ -18,7 +18,7 @@
     </style>
 </head>
 <body>
-    @php($signatureImages = $signatureImages ?? [])
+    @php($signatories = $signatories ?? [])
     @php($request = $clearance->documentRequest)
     @php($studentName = $clearance->user?->fullname ?? $request?->requester_name ?? 'N/A')
     @php($studentId = $clearance->user?->student_id ?? $request?->requester_student_id ?? 'N/A')
@@ -59,59 +59,21 @@
                 <th>Department</th>
                 <th>Status</th>
                 <th>Signed By</th>
-                <th>Signed At</th>
+                <th>Date Signed</th>
                 <th>Remarks</th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>Teacher Signer</td>
-                <td>{{ ucfirst($clearance->teacher_status) }}</td>
-                <td>
-                    @if (! empty($signatureImages['teacher']))
-                        <img src="{{ $signatureImages['teacher'] }}" alt="Teacher signature" height="40"><br>
-                    @endif
-                    {{ $clearance->teacherSigner->fullname ?? 'N/A' }}
-                </td>
-                <td>{{ $clearance->teacher_signed_at?->format('M d, Y h:i A') ?? 'N/A' }}</td>
-                <td>{{ $clearance->teacher_remarks ?? '' }}</td>
-            </tr>
-            <tr>
-                <td>Dean Signer</td>
-                <td>{{ ucfirst($clearance->dean_status) }}</td>
-                <td>
-                    @if (! empty($signatureImages['dean']))
-                        <img src="{{ $signatureImages['dean'] }}" alt="Dean signature" height="40"><br>
-                    @endif
-                    {{ $clearance->deanSigner->fullname ?? 'N/A' }}
-                </td>
-                <td>{{ $clearance->dean_signed_at?->format('M d, Y h:i A') ?? 'N/A' }}</td>
-                <td>{{ $clearance->dean_remarks ?? '' }}</td>
-            </tr>
-            <tr>
-                <td>Accounting Signer</td>
-                <td>{{ ucfirst($clearance->accounting_status) }}</td>
-                <td>
-                    @if (! empty($signatureImages['accounting']))
-                        <img src="{{ $signatureImages['accounting'] }}" alt="Accounting signature" height="40"><br>
-                    @endif
-                    {{ $clearance->accountingSigner->fullname ?? 'N/A' }}
-                </td>
-                <td>{{ $clearance->accounting_signed_at?->format('M d, Y h:i A') ?? 'N/A' }}</td>
-                <td>{{ $clearance->accounting_remarks ?? '' }}</td>
-            </tr>
-            <tr>
-                <td>SAO Signer</td>
-                <td>{{ ucfirst($clearance->sao_status) }}</td>
-                <td>
-                    @if (! empty($signatureImages['sao']))
-                        <img src="{{ $signatureImages['sao'] }}" alt="SAO signature" height="40"><br>
-                    @endif
-                    {{ $clearance->saoSigner->fullname ?? 'N/A' }}
-                </td>
-                <td>{{ $clearance->sao_signed_at?->format('M d, Y h:i A') ?? 'N/A' }}</td>
-                <td>{{ $clearance->sao_remarks ?? '' }}</td>
-            </tr>
+            @foreach ($signatories as $signatory)
+                @php($signedAt = $clearance->{$signatory['signed_at']})
+                <tr>
+                    <td>{{ $signatory['label'] }}</td>
+                    <td>{{ ucfirst($clearance->{$signatory['status']} ?? 'pending') }}</td>
+                    <td>{{ $clearance->{$signatory['signer']}?->fullname ?? 'N/A' }}</td>
+                    <td>{{ $signedAt?->format('M d, Y h:i A') ?? 'N/A' }}</td>
+                    <td>{{ $clearance->{$signatory['remarks']} ?? '' }}</td>
+                </tr>
+            @endforeach
         </tbody>
     </table>
 

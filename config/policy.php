@@ -33,22 +33,21 @@ return [
     | Office / Clearance Role Directory
     |--------------------------------------------------------------------------
     |
-    | System roles stay as-is (teacher, dean, accounting, sao) but the policy
-    | also references president, alumni, guidance, library, registrar. The
-    | clearance engine collapses unknown offices into the closest signing role
-    | for now and exposes "virtual" offices for UI checklists.
+    | Document policy offices are shown to requestors and admins for checklist
+    | context. When clearance is required, the clearance engine now routes the
+    | record to all configured clearance signatories.
     |
     */
     'offices' => [
-        'president' => ['label' => 'Office of the School President', 'signer_role' => 'admin'],
+        'president' => ['label' => 'Office of the President', 'signer_role' => 'president'],
         'dean' => ['label' => 'Office of the College Dean',      'signer_role' => 'dean'],
-        'alumni' => ['label' => 'Alumni Office',                    'signer_role' => 'admin'],
-        'guidance' => ['label' => 'Guidance Office',                  'signer_role' => 'sao'],
-        'sao' => ['label' => 'Student Affairs Office',           'signer_role' => 'sao'],
-        'library' => ['label' => 'Library',                          'signer_role' => 'admin'],
+        'alumni' => ['label' => 'SVC Alumni Officer',             'signer_role' => 'alumni'],
+        'guidance' => ['label' => 'Guidance Counselor',             'signer_role' => 'guidance'],
+        'sao' => ['label' => 'Dean of Student Affairs',        'signer_role' => 'student_affairs'],
+        'library' => ['label' => 'Librarian',                        'signer_role' => 'librarian'],
         'registrar' => ['label' => 'Office of the Registrar',         'signer_role' => 'admin'],
         'accounting' => ['label' => 'Accounting / Cashier',             'signer_role' => 'accounting'],
-        'teacher' => ['label' => 'Subject Teacher / Adviser',        'signer_role' => 'teacher'],
+        'teacher' => ['label' => 'Subject Teacher / Adviser',        'signer_role' => 'dean'],
     ],
 
     /*

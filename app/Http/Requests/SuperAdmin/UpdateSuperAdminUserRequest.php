@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\SuperAdmin;
 
+use App\Support\ClearanceSignatories;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -34,7 +35,7 @@ class UpdateSuperAdminUserRequest extends FormRequest
         return [
             'fullname' => ['required', 'string', 'max:150'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:150', Rule::unique('users', 'email')->ignore($userId)],
-            'role' => ['required', Rule::in(['student', 'admin', 'teacher', 'dean', 'accounting', 'sao', 'superadmin'])],
+            'role' => ['required', Rule::in(ClearanceSignatories::roleOptions(includeStudentAndSuperAdmin: true))],
             'status' => ['required', Rule::in(['pending', 'active', 'suspended', 'rejected'])],
             'course' => ['nullable', 'string', 'max:100'],
             'year_level' => ['nullable', 'integer', 'min:1', 'max:4'],

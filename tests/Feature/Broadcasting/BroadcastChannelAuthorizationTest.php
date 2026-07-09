@@ -106,24 +106,24 @@ class BroadcastChannelAuthorizationTest extends TestCase
         ])->assertForbidden();
     }
 
-    public function test_teacher_can_authorize_matching_department_channel(): void
+    public function test_signatory_can_authorize_matching_department_channel(): void
     {
         $teacher = User::factory()->create([
-            'role' => 'teacher',
+            'role' => 'librarian',
             'status' => 'active',
             'email_verified_at' => now(),
         ]);
 
         $this->actingAs($teacher)->postJson('/broadcasting/auth', [
-            'channel_name' => 'private-role.department.teacher',
+            'channel_name' => 'private-role.department.librarian',
             'socket_id' => '123.456',
         ])->assertOk();
     }
 
-    public function test_teacher_cannot_authorize_other_department_channel(): void
+    public function test_signatory_cannot_authorize_other_department_channel(): void
     {
         $teacher = User::factory()->create([
-            'role' => 'teacher',
+            'role' => 'librarian',
             'status' => 'active',
             'email_verified_at' => now(),
         ]);

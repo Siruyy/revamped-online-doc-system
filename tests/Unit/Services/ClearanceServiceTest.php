@@ -9,6 +9,7 @@ use App\Models\DocumentRequest;
 use App\Models\User;
 use App\Notifications\ClearanceCompletedNotification;
 use App\Services\ClearanceService;
+use App\Support\ClearanceSignatories;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
@@ -49,9 +50,9 @@ class ClearanceServiceTest extends TestCase
 
         $student = User::factory()->student()->create();
         $clearance = Clearance::factory()->for($student)->create([
-            'teacher_status' => 'cleared',
-            'teacher_signed_by' => User::factory()->teacher()->create()->id,
-            'teacher_signed_at' => now(),
+            'dean_status' => 'cleared',
+            'dean_signed_by' => User::factory()->dean()->create()->id,
+            'dean_signed_at' => now(),
         ]);
 
         $this->expectException(\RuntimeException::class);
@@ -65,32 +66,29 @@ class ClearanceServiceTest extends TestCase
         Event::fake([ClearanceUpdated::class]);
         Notification::fake();
 
-        $teacher = User::factory()->teacher()->create();
+        $dean = User::factory()->dean()->create();
         $student = User::factory()->student()->create();
         $clearance = Clearance::factory()->for($student)->create([
-            'teacher_status' => 'pending',
             'dean_status' => 'pending',
-            'accounting_status' => 'pending',
-            'sao_status' => 'pending',
             'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
         ]);
 
-        $updated = $this->service()->signFor($clearance, $teacher, 'teacher', 'Verified');
+        $updated = $this->service()->signFor($clearance, $dean, 'dean', 'Verified');
 
-        $this->assertSame('cleared', $updated->teacher_status);
-        $this->assertSame('Verified', $updated->teacher_remarks);
-        $this->assertSame($teacher->id, $updated->teacher_signed_by);
-        $this->assertNotNull($updated->teacher_signed_at);
+        $this->assertSame('cleared', $updated->dean_status);
+        $this->assertSame('Verified', $updated->dean_remarks);
+        $this->assertSame($dean->id, $updated->dean_signed_by);
+        $this->assertNotNull($updated->dean_signed_at);
         $this->assertSame('in_progress', $updated->overall_status);
         Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $updated->id
             && $event->studentId === $student->id
-            && $event->department === 'teacher'
+            && $event->department === 'dean'
             && $event->action === 'signed'
             && $event->overallStatus === 'in_progress'
         );
         $this->assertDatabaseHas('activity_logs', [
             'action' => 'clearance_signed',
-            'user_id' => $teacher->id,
+            'user_id' => $dean->id,
             'affected_user_id' => $student->id,
         ]);
     }
@@ -100,14 +98,10 @@ class ClearanceServiceTest extends TestCase
         Event::fake([ClearanceUpdated::class]);
         Notification::fake();
 
-        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
-            $officer = User::factory()->{$role}()->create();
+        foreach ($this->signatoryRoles() as $role) {
+            $officer = User::factory()->signatory($role)->create();
             $student = User::factory()->student()->create();
             $clearance = Clearance::factory()->for($student)->create([
-                'teacher_status' => 'pending',
-                'dean_status' => 'pending',
-                'accounting_status' => 'pending',
-                'sao_status' => 'pending',
                 'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
             ]);
 
@@ -118,7 +112,7 @@ class ClearanceServiceTest extends TestCase
             $this->assertSame($officer->id, $updated->getAttribute("{$role}_signed_by"));
             $this->assertNotNull($updated->getAttribute("{$role}_signed_at"));
 
-            foreach (array_diff(['teacher', 'dean', 'accounting', 'sao'], [$role]) as $otherRole) {
+            foreach (array_diff($this->signatoryRoles(), [$role]) as $otherRole) {
                 $this->assertSame('pending', $updated->getAttribute("{$otherRole}_status"));
                 $this->assertNull($updated->getAttribute("{$otherRole}_signed_by"));
             }
@@ -132,7 +126,7 @@ class ClearanceServiceTest extends TestCase
 
         $student = User::factory()->student()->create();
         $clearance = Clearance::factory()->for($student)->create([
-            'teacher_status' => 'pending',
+            'dean_status' => 'pending',
             'overall_status' => 'denied',
             'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
         ]);
@@ -140,7 +134,7 @@ class ClearanceServiceTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Clearance can only be signed while it is in progress.');
 
-        $this->service()->signFor($clearance, User::factory()->teacher()->create(), 'teacher');
+        $this->service()->signFor($clearance, User::factory()->dean()->create(), 'dean');
     }
 
     public function test_it_prevents_signing_when_department_status_is_not_pending(): void
@@ -150,7 +144,7 @@ class ClearanceServiceTest extends TestCase
 
         $student = User::factory()->student()->create();
         $clearance = Clearance::factory()->for($student)->create([
-            'teacher_status' => 'cleared',
+            'dean_status' => 'cleared',
             'overall_status' => 'in_progress',
             'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
         ]);
@@ -158,7 +152,7 @@ class ClearanceServiceTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('This department clearance is no longer pending.');
 
-        $this->service()->signFor($clearance, User::factory()->teacher()->create(), 'teacher');
+        $this->service()->signFor($clearance, User::factory()->dean()->create(), 'dean');
     }
 
     public function test_it_prevents_signing_without_uploaded_supporting_file(): void
@@ -168,7 +162,7 @@ class ClearanceServiceTest extends TestCase
 
         $student = User::factory()->student()->create();
         $clearance = Clearance::factory()->for($student)->create([
-            'teacher_status' => 'pending',
+            'dean_status' => 'pending',
             'overall_status' => 'in_progress',
             'uploaded_file_path' => null,
         ]);
@@ -176,7 +170,7 @@ class ClearanceServiceTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Student must upload the clearance supporting file before department signing.');
 
-        $this->service()->signFor($clearance, User::factory()->teacher()->create(), 'teacher');
+        $this->service()->signFor($clearance, User::factory()->dean()->create(), 'dean');
     }
 
     public function test_it_prevents_signing_for_a_different_department_than_the_officer_role(): void
@@ -186,16 +180,16 @@ class ClearanceServiceTest extends TestCase
 
         $student = User::factory()->student()->create();
         $clearance = Clearance::factory()->for($student)->create([
-            'teacher_status' => 'pending',
             'dean_status' => 'pending',
+            'president_status' => 'pending',
             'overall_status' => 'in_progress',
             'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
         ]);
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Officer role does not match the clearance department.');
+        $this->expectExceptionMessage('Officer role does not match the clearance signatory office.');
 
-        $this->service()->signFor($clearance, User::factory()->teacher()->create(), 'dean');
+        $this->service()->signFor($clearance, User::factory()->signatory('president')->create(), 'dean');
     }
 
     public function test_it_denies_department_and_recomputes_denied_status(): void
@@ -206,10 +200,7 @@ class ClearanceServiceTest extends TestCase
         $dean = User::factory()->dean()->create();
         $student = User::factory()->student()->create();
         $clearance = Clearance::factory()->for($student)->create([
-            'teacher_status' => 'cleared',
             'dean_status' => 'pending',
-            'accounting_status' => 'pending',
-            'sao_status' => 'pending',
         ]);
 
         $updated = $this->service()->denyFor($clearance, $dean, 'dean', 'Missing library clearance paperwork');
@@ -237,15 +228,10 @@ class ClearanceServiceTest extends TestCase
         Event::fake([ClearanceUpdated::class]);
         Notification::fake();
 
-        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
-            $officer = User::factory()->{$role}()->create();
+        foreach ($this->signatoryRoles() as $role) {
+            $officer = User::factory()->signatory($role)->create();
             $student = User::factory()->student()->create();
-            $clearance = Clearance::factory()->for($student)->create([
-                'teacher_status' => 'pending',
-                'dean_status' => 'pending',
-                'accounting_status' => 'pending',
-                'sao_status' => 'pending',
-            ]);
+            $clearance = Clearance::factory()->for($student)->create();
 
             $updated = $this->service()->denyFor($clearance, $officer, $role, "{$role} requirement missing");
 
@@ -255,7 +241,7 @@ class ClearanceServiceTest extends TestCase
             $this->assertNotNull($updated->getAttribute("{$role}_signed_at"));
             $this->assertSame('denied', $updated->overall_status);
 
-            foreach (array_diff(['teacher', 'dean', 'accounting', 'sao'], [$role]) as $otherRole) {
+            foreach (array_diff($this->signatoryRoles(), [$role]) as $otherRole) {
                 $this->assertSame('pending', $updated->getAttribute("{$otherRole}_status"));
                 $this->assertNull($updated->getAttribute("{$otherRole}_signed_by"));
             }
@@ -303,15 +289,15 @@ class ClearanceServiceTest extends TestCase
 
         $student = User::factory()->student()->create();
         $clearance = Clearance::factory()->for($student)->create([
-            'teacher_status' => 'pending',
             'dean_status' => 'pending',
+            'president_status' => 'pending',
             'overall_status' => 'in_progress',
         ]);
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Officer role does not match the clearance department.');
+        $this->expectExceptionMessage('Officer role does not match the clearance signatory office.');
 
-        $this->service()->denyFor($clearance, User::factory()->teacher()->create(), 'dean', 'Missing paperwork');
+        $this->service()->denyFor($clearance, User::factory()->signatory('president')->create(), 'dean', 'Missing paperwork');
     }
 
     public function test_it_completes_clearance_once_all_departments_sign(): void
@@ -323,15 +309,17 @@ class ClearanceServiceTest extends TestCase
         $student = User::factory()->student()->create();
         $request = DocumentRequest::factory()->for($student)->approved()->create();
         $clearance = Clearance::factory()->for($student)->for($request)->create([
-            'teacher_status' => 'cleared',
             'dean_status' => 'cleared',
-            'accounting_status' => 'cleared',
-            'sao_status' => 'pending',
+            'president_status' => 'cleared',
+            'librarian_status' => 'cleared',
+            'student_affairs_status' => 'cleared',
+            'alumni_status' => 'cleared',
+            'guidance_status' => 'pending',
             'overall_status' => 'in_progress',
             'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
         ]);
 
-        $updated = $this->service()->signFor($clearance, User::factory()->sao()->create(), 'sao');
+        $updated = $this->service()->signFor($clearance, User::factory()->signatory('guidance')->create(), 'guidance');
 
         $this->assertSame('completed', $updated->overall_status);
         $this->assertNotNull($updated->completed_at);
@@ -344,5 +332,13 @@ class ClearanceServiceTest extends TestCase
     private function service(): ClearanceService
     {
         return $this->app->make(ClearanceService::class);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function signatoryRoles(): array
+    {
+        return ClearanceSignatories::roles();
     }
 }

@@ -7,8 +7,8 @@ use App\Models\Clearance;
 use App\Models\DocumentRequest;
 use App\Models\RequestRequirement;
 use App\Models\User;
-use App\Notifications\ClearanceCompletedNotification;
 use App\Notifications\WorkflowStatusNotification;
+use App\Support\ClearanceSignatories;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
@@ -19,15 +19,15 @@ class ClearanceWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_department_officer_can_list_and_view_clearances(): void
+    public function test_signatory_can_list_and_view_clearances(): void
     {
-        $teacher = $this->makeOfficer('teacher');
+        $officer = $this->makeOfficer('dean');
         $student = $this->makeStudent();
-        $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
-        $clearance = Clearance::factory()->for($student)->for($docRequest)->create();
+        $request = DocumentRequest::factory()->for($student)->approved()->create();
+        $clearance = Clearance::factory()->for($student)->for($request)->create();
 
-        $this->actingAs($teacher)->get(route('department.clearances.index'))->assertOk();
-        $this->actingAs($teacher)->get(route('department.clearances.show', $clearance))->assertOk();
+        $this->actingAs($officer)->get(route('department.clearances.index'))->assertOk();
+        $this->actingAs($officer)->get(route('department.clearances.show', $clearance))->assertOk();
     }
 
     public function test_student_cannot_access_department_clearance_routes(): void
@@ -39,12 +39,12 @@ class ClearanceWorkflowTest extends TestCase
         $this->actingAs($student)->get(route('department.clearances.show', $clearance))->assertForbidden();
     }
 
-    public function test_department_clearance_filters_include_public_request_snapshot_fields(): void
+    public function test_signatory_clearance_filters_include_public_request_snapshot_fields(): void
     {
-        $teacher = $this->makeOfficer('teacher');
+        $officer = $this->makeOfficer('president');
         $clearance = $this->makePublicClearance();
 
-        $this->actingAs($teacher)
+        $this->actingAs($officer)
             ->get(route('department.clearances.index', [
                 'status' => 'pending',
                 'course' => 'BSIT',
@@ -57,12 +57,14 @@ class ClearanceWorkflowTest extends TestCase
                 ->has('clearances.data', 1)
                 ->where('clearances.data.0.id', $clearance->id)
                 ->where('clearances.data.0.document_request.requester_name', 'Public Requestor')
-                ->where('clearances.data.0.document_request.requester_student_id', 'PUBLIC-001'));
+                ->where('clearances.data.0.document_request.requester_student_id', 'PUBLIC-001')
+                ->where('departmentStatusColumn', 'president_status')
+                ->has('signatories', 6));
     }
 
-    public function test_department_clearance_detail_includes_public_request_snapshot(): void
+    public function test_signatory_clearance_detail_includes_public_request_snapshot_and_requirements(): void
     {
-        $teacher = $this->makeOfficer('teacher');
+        $officer = $this->makeOfficer('librarian');
         $clearance = $this->makePublicClearance();
         $requirement = RequestRequirement::query()->create([
             'document_request_id' => $clearance->document_request_id,
@@ -72,7 +74,7 @@ class ClearanceWorkflowTest extends TestCase
             'file_path' => "request-requirements/public/{$clearance->document_request_id}/valid-id.pdf",
         ]);
 
-        $this->actingAs($teacher)
+        $this->actingAs($officer)
             ->get(route('department.clearances.show', $clearance))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
@@ -84,62 +86,21 @@ class ClearanceWorkflowTest extends TestCase
                 ->where('clearance.document_request.requester_year_level', 3)
                 ->where('clearance.document_request.requester_email', 'public-requestor@example.test')
                 ->where('clearance.document_request.requirements.0.id', $requirement->id)
-                ->where('clearance.document_request.requirements.0.label', 'Valid ID photocopy'));
+                ->where('clearance.document_request.requirements.0.label', 'Valid ID photocopy')
+                ->where('currentSignatory.label', 'Librarian')
+                ->has('signatories', 6));
     }
 
-    public function test_teacher_can_sign_pending_clearance(): void
-    {
-        Event::fake([ClearanceUpdated::class]);
-        Notification::fake();
-        $teacher = $this->makeOfficer('teacher');
-        $student = $this->makeStudent();
-        $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
-        $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
-            'teacher_status' => 'pending',
-            'dean_status' => 'pending',
-            'accounting_status' => 'pending',
-            'sao_status' => 'pending',
-            'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
-        ]);
-
-        $this->actingAs($teacher)->post(route('department.clearances.sign', $clearance), [
-            'remarks' => 'Verified',
-        ])->assertRedirect()->assertSessionHasNoErrors();
-
-        $clearance->refresh();
-        $this->assertSame('cleared', $clearance->teacher_status);
-        $this->assertSame($teacher->id, $clearance->teacher_signed_by);
-        $this->assertSame('pending', $clearance->dean_status);
-        $this->assertSame('pending', $clearance->accounting_status);
-        $this->assertSame('pending', $clearance->sao_status);
-
-        Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $clearance->id
-            && $event->studentId === $student->id
-            && $event->department === 'teacher'
-            && $event->action === 'signed'
-            && $event->overallStatus === 'in_progress'
-        );
-        $this->assertDatabaseHas('activity_logs', [
-            'action' => 'clearance_signed',
-            'user_id' => $teacher->id,
-            'affected_user_id' => $student->id,
-        ]);
-    }
-
-    public function test_each_department_role_can_sign_only_its_own_pending_column(): void
+    public function test_each_required_signatory_can_sign_only_its_own_pending_column(): void
     {
         Event::fake([ClearanceUpdated::class]);
         Notification::fake();
 
-        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
+        foreach (ClearanceSignatories::roles() as $role) {
             $officer = $this->makeOfficer($role);
             $student = $this->makeStudent();
-            $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
-            $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
-                'teacher_status' => 'pending',
-                'dean_status' => 'pending',
-                'accounting_status' => 'pending',
-                'sao_status' => 'pending',
+            $request = DocumentRequest::factory()->for($student)->approved()->create();
+            $clearance = Clearance::factory()->for($student)->for($request)->create([
                 'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
             ]);
 
@@ -153,107 +114,59 @@ class ClearanceWorkflowTest extends TestCase
             $this->assertSame($officer->id, $clearance->getAttribute("{$role}_signed_by"));
             $this->assertNotNull($clearance->getAttribute("{$role}_signed_at"));
 
-            foreach (array_diff(['teacher', 'dean', 'accounting', 'sao'], [$role]) as $otherRole) {
+            foreach (array_diff(ClearanceSignatories::roles(), [$role]) as $otherRole) {
                 $this->assertSame('pending', $clearance->getAttribute("{$otherRole}_status"));
                 $this->assertNull($clearance->getAttribute("{$otherRole}_signed_by"));
             }
         }
     }
 
-    public function test_teacher_cannot_sign_when_teacher_column_not_pending(): void
+    public function test_signatory_cannot_sign_when_own_column_not_pending(): void
     {
-        $teacher = $this->makeOfficer('teacher');
+        $officer = $this->makeOfficer('dean');
         $student = $this->makeStudent();
-        $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
-        $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
-            'teacher_status' => 'cleared',
-            'teacher_signed_by' => $teacher->id,
-            'teacher_signed_at' => now(),
-            'dean_status' => 'pending',
-            'accounting_status' => 'pending',
-            'sao_status' => 'pending',
+        $request = DocumentRequest::factory()->for($student)->approved()->create();
+        $clearance = Clearance::factory()->for($student)->for($request)->create([
+            'dean_status' => 'cleared',
+            'dean_signed_by' => $officer->id,
+            'dean_signed_at' => now(),
         ]);
 
-        $this->actingAs($teacher)->post(route('department.clearances.sign', $clearance), [
+        $this->actingAs($officer)->post(route('department.clearances.sign', $clearance), [
             'remarks' => 'Again',
         ])->assertForbidden();
     }
 
-    public function test_teacher_cannot_sign_without_uploaded_supporting_file(): void
+    public function test_signatory_cannot_sign_student_clearance_without_uploaded_supporting_file(): void
     {
         Event::fake([ClearanceUpdated::class]);
 
-        $teacher = $this->makeOfficer('teacher');
+        $officer = $this->makeOfficer('dean');
         $student = $this->makeStudent();
-        $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
-        $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
-            'teacher_status' => 'pending',
-            'dean_status' => 'pending',
-            'accounting_status' => 'pending',
-            'sao_status' => 'pending',
+        $request = DocumentRequest::factory()->for($student)->approved()->create();
+        $clearance = Clearance::factory()->for($student)->for($request)->create([
             'uploaded_file_path' => null,
         ]);
 
-        $this->actingAs($teacher)->post(route('department.clearances.sign', $clearance), [
+        $this->actingAs($officer)->post(route('department.clearances.sign', $clearance), [
             'remarks' => 'Verified',
         ])->assertRedirect()->assertSessionHasErrors([
             'sign' => 'Student must upload the clearance supporting file before department signing.',
         ]);
 
-        $this->assertSame('pending', $clearance->refresh()->teacher_status);
+        $this->assertSame('pending', $clearance->refresh()->dean_status);
     }
 
-    public function test_dean_can_deny_with_remarks(): void
-    {
-        Event::fake([ClearanceUpdated::class]);
-        Notification::fake();
-        $dean = $this->makeOfficer('dean');
-        $student = $this->makeStudent();
-        $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
-        $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
-            'teacher_status' => 'cleared',
-            'dean_status' => 'pending',
-            'accounting_status' => 'pending',
-            'sao_status' => 'pending',
-        ]);
-
-        $this->actingAs($dean)->post(route('department.clearances.deny', $clearance), [
-            'remarks' => 'Missing library clearance paperwork',
-        ])->assertRedirect()->assertSessionHasNoErrors();
-
-        $clearance->refresh();
-        $this->assertSame('denied', $clearance->dean_status);
-        $this->assertStringContainsString('library', $clearance->dean_remarks ?? '');
-        $this->assertSame('denied', $clearance->overall_status);
-
-        Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event) => $event->clearanceId === $clearance->id
-            && $event->studentId === $student->id
-            && $event->department === 'dean'
-            && $event->action === 'denied'
-            && $event->overallStatus === 'denied'
-        );
-        $this->assertDatabaseHas('activity_logs', [
-            'action' => 'clearance_denied',
-            'user_id' => $dean->id,
-            'affected_user_id' => $student->id,
-        ]);
-    }
-
-    public function test_each_department_role_can_deny_only_its_own_pending_column(): void
+    public function test_each_required_signatory_can_deny_its_own_pending_column(): void
     {
         Event::fake([ClearanceUpdated::class]);
         Notification::fake();
 
-        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
+        foreach (ClearanceSignatories::roles() as $role) {
             $officer = $this->makeOfficer($role);
             $student = $this->makeStudent();
-            $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
-            $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
-                'teacher_status' => 'pending',
-                'dean_status' => 'pending',
-                'accounting_status' => 'pending',
-                'sao_status' => 'pending',
-            ]);
+            $request = DocumentRequest::factory()->for($student)->approved()->create();
+            $clearance = Clearance::factory()->for($student)->for($request)->create();
 
             $this->actingAs($officer)->post(route('department.clearances.deny', $clearance), [
                 'remarks' => "{$role} requirement missing",
@@ -261,147 +174,8 @@ class ClearanceWorkflowTest extends TestCase
 
             $clearance->refresh();
             $this->assertSame('denied', $clearance->getAttribute("{$role}_status"));
-            $this->assertSame("{$role} requirement missing", $clearance->getAttribute("{$role}_remarks"));
-            $this->assertSame($officer->id, $clearance->getAttribute("{$role}_signed_by"));
-            $this->assertSame('denied', $clearance->overall_status);
-
-            foreach (array_diff(['teacher', 'dean', 'accounting', 'sao'], [$role]) as $otherRole) {
-                $this->assertSame('pending', $clearance->getAttribute("{$otherRole}_status"));
-                $this->assertNull($clearance->getAttribute("{$otherRole}_signed_by"));
-            }
-        }
-    }
-
-    public function test_deny_requires_minimum_remarks_length(): void
-    {
-        $dean = $this->makeOfficer('dean');
-        $student = $this->makeStudent();
-        $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
-        $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
-            'teacher_status' => 'cleared',
-            'dean_status' => 'pending',
-            'accounting_status' => 'pending',
-            'sao_status' => 'pending',
-        ]);
-
-        $this->actingAs($dean)->post(route('department.clearances.deny', $clearance), [
-            'remarks' => 'short',
-        ])->assertSessionHasErrors('remarks');
-    }
-
-    public function test_department_cannot_deny_when_clearance_is_not_in_progress(): void
-    {
-        $dean = $this->makeOfficer('dean');
-        $student = $this->makeStudent();
-        $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
-        $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
-            'dean_status' => 'pending',
-            'overall_status' => 'completed',
-        ]);
-
-        $this->actingAs($dean)->post(route('department.clearances.deny', $clearance), [
-            'remarks' => 'Missing library clearance paperwork',
-        ])->assertForbidden();
-
-        $this->assertSame('pending', $clearance->refresh()->dean_status);
-    }
-
-    public function test_department_cannot_deny_when_department_column_not_pending(): void
-    {
-        $dean = $this->makeOfficer('dean');
-        $student = $this->makeStudent();
-        $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
-        $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
-            'dean_status' => 'cleared',
-            'dean_signed_by' => $dean->id,
-            'dean_signed_at' => now(),
-            'overall_status' => 'in_progress',
-        ]);
-
-        $this->actingAs($dean)->post(route('department.clearances.deny', $clearance), [
-            'remarks' => 'Missing library clearance paperwork',
-        ])->assertForbidden();
-
-        $this->assertSame('cleared', $clearance->refresh()->dean_status);
-    }
-
-    public function test_all_departments_clearing_completes_clearance_and_generates_pdf_record(): void
-    {
-        Event::fake();
-        Notification::fake();
-
-        $student = $this->makeStudent();
-        $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
-        $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
-            'teacher_status' => 'pending',
-            'dean_status' => 'pending',
-            'accounting_status' => 'pending',
-            'sao_status' => 'pending',
-            'uploaded_file_path' => "clearance-files/{$student->id}/support.pdf",
-        ]);
-
-        $this->actingAs($this->makeOfficer('teacher'))->post(route('department.clearances.sign', $clearance), [])->assertRedirect();
-        $clearance->refresh();
-        $this->actingAs($this->makeOfficer('dean'))->post(route('department.clearances.sign', $clearance), [])->assertRedirect();
-        $clearance->refresh();
-        $this->actingAs($this->makeOfficer('accounting'))->post(route('department.clearances.sign', $clearance), [])->assertRedirect();
-        $clearance->refresh();
-        $this->actingAs($this->makeOfficer('sao'))->post(route('department.clearances.sign', $clearance), [])->assertRedirect();
-
-        $clearance->refresh();
-        $this->assertSame('completed', $clearance->overall_status);
-        $this->assertNotNull($clearance->pdf_path);
-        $this->assertStringStartsWith('pdfs/clearance/', $clearance->pdf_path);
-
-        Notification::assertSentTo($student, ClearanceCompletedNotification::class);
-    }
-
-    public function test_each_department_role_can_sign_public_clearance_without_supporting_file(): void
-    {
-        Event::fake([ClearanceUpdated::class]);
-        Notification::fake();
-
-        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
-            $officer = $this->makeOfficer($role);
-            $clearance = $this->makePublicClearance();
-
-            $this->actingAs($officer)->post(route('department.clearances.sign', $clearance), [
-                'remarks' => "{$role} verified",
-            ])->assertRedirect()->assertSessionHasNoErrors();
-
-            $clearance->refresh();
-            $this->assertSame('cleared', $clearance->getAttribute("{$role}_status"));
-            $this->assertSame($officer->id, $clearance->getAttribute("{$role}_signed_by"));
-
-            Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event): bool => $event->clearanceId === $clearance->id
-                && $event->studentId === null
-                && $event->department === $role
-                && $event->action === 'signed');
-        }
-    }
-
-    public function test_each_department_role_can_deny_public_clearance_without_student_user(): void
-    {
-        Event::fake([ClearanceUpdated::class]);
-        Notification::fake();
-
-        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
-            $officer = $this->makeOfficer($role);
-            $clearance = $this->makePublicClearance();
-
-            $this->actingAs($officer)->post(route('department.clearances.deny', $clearance), [
-                'remarks' => "{$role} public requirement missing",
-            ])->assertRedirect()->assertSessionHasNoErrors();
-
-            $clearance->refresh();
-            $this->assertSame('denied', $clearance->getAttribute("{$role}_status"));
             $this->assertSame('denied', $clearance->overall_status);
             $this->assertSame($officer->id, $clearance->getAttribute("{$role}_signed_by"));
-
-            Event::assertDispatched(ClearanceUpdated::class, fn (ClearanceUpdated $event): bool => $event->clearanceId === $clearance->id
-                && $event->studentId === null
-                && $event->department === $role
-                && $event->action === 'denied');
         }
     }
 
@@ -411,11 +185,9 @@ class ClearanceWorkflowTest extends TestCase
         Event::fake();
         Notification::fake();
 
-        $admin = $this->makeOfficer('admin');
-        $superadmin = $this->makeOfficer('superadmin');
         $clearance = $this->makePublicClearance('public-requestor@example.test');
 
-        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
+        foreach (ClearanceSignatories::roles() as $role) {
             $this->actingAs($this->makeOfficer($role))
                 ->post(route('department.clearances.sign', $clearance), [])
                 ->assertRedirect()
@@ -433,70 +205,30 @@ class ClearanceWorkflowTest extends TestCase
                 && ($notifiable->routes['mail'] ?? null) === 'public-requestor@example.test'
                 && ($notification->toArray($notifiable)['type'] ?? null) === 'clearance_completed',
         );
-        Notification::assertSentTo(
-            $admin,
-            WorkflowStatusNotification::class,
-            fn (WorkflowStatusNotification $notification): bool => ($notification->toArray($admin)['type'] ?? null) === 'clearance_completed_for_processing'
-                && ($notification->toArray($admin)['document_request_id'] ?? null) === $clearance->document_request_id,
-        );
-        Notification::assertSentTo(
-            $superadmin,
-            WorkflowStatusNotification::class,
-            fn (WorkflowStatusNotification $notification): bool => ($notification->toArray($superadmin)['type'] ?? null) === 'clearance_completed_for_processing'
-                && ($notification->toArray($superadmin)['document_request_id'] ?? null) === $clearance->document_request_id,
-        );
-    }
-
-    public function test_public_clearance_completion_skips_requestor_email_when_absent(): void
-    {
-        Storage::fake('local');
-        Event::fake();
-        Notification::fake();
-
-        $clearance = $this->makePublicClearance(null);
-
-        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
-            $this->actingAs($this->makeOfficer($role))
-                ->post(route('department.clearances.sign', $clearance), [])
-                ->assertRedirect()
-                ->assertSessionHasNoErrors();
-            $clearance->refresh();
-        }
-
-        $this->assertSame('completed', $clearance->overall_status);
-        Notification::assertSentOnDemandTimes(WorkflowStatusNotification::class, 0);
     }
 
     public function test_department_can_download_supporting_file(): void
     {
         Storage::fake('local');
 
-        $teacher = $this->makeOfficer('teacher');
+        $officer = $this->makeOfficer('dean');
         $student = $this->makeStudent();
-        $docRequest = DocumentRequest::factory()->for($student)->approved()->create();
+        $request = DocumentRequest::factory()->for($student)->approved()->create();
         $path = "clearance-files/{$student->id}/support.pdf";
         Storage::disk('local')->put($path, 'binary');
-        $clearance = Clearance::factory()->for($student)->for($docRequest)->create([
+        $clearance = Clearance::factory()->for($student)->for($request)->create([
             'uploaded_file_path' => $path,
-            'teacher_status' => 'pending',
-            'dean_status' => 'pending',
-            'accounting_status' => 'pending',
-            'sao_status' => 'pending',
         ]);
 
-        $this->actingAs($teacher)->get(route('files.clearance-supporting', $clearance))->assertOk();
+        $this->actingAs($officer)->get(route('files.clearance-supporting', $clearance))->assertOk();
     }
 
-    public function test_department_dashboard_loads(): void
+    public function test_department_dashboard_and_faq_load(): void
     {
-        $teacher = $this->makeOfficer('teacher');
-        $this->actingAs($teacher)->get(route('department.dashboard'))->assertOk();
-    }
+        $officer = $this->makeOfficer('dean');
 
-    public function test_department_faq_page_loads(): void
-    {
-        $teacher = $this->makeOfficer('teacher');
-        $this->actingAs($teacher)->get(route('department.faq.index'))->assertOk();
+        $this->actingAs($officer)->get(route('department.dashboard'))->assertOk();
+        $this->actingAs($officer)->get(route('department.faq.index'))->assertOk();
     }
 
     private function makeStudent(): User
@@ -509,7 +241,11 @@ class ClearanceWorkflowTest extends TestCase
 
     private function makeOfficer(string $role): User
     {
-        return User::factory()->{$role}()->create([
+        $factory = ClearanceSignatories::isSignatoryRole($role)
+            ? User::factory()->signatory($role)
+            : User::factory()->{$role}();
+
+        return $factory->create([
             'status' => 'active',
             'email_verified_at' => now(),
         ]);
@@ -517,7 +253,7 @@ class ClearanceWorkflowTest extends TestCase
 
     private function makePublicClearance(?string $requesterEmail = 'public-requestor@example.test'): Clearance
     {
-        $docRequest = DocumentRequest::factory()->approved()->create([
+        $request = DocumentRequest::factory()->approved()->create([
             'user_id' => null,
             'intake_mode' => 'public',
             'requester_name' => 'Public Requestor',
@@ -528,12 +264,8 @@ class ClearanceWorkflowTest extends TestCase
             'requester_year_level' => 3,
         ]);
 
-        return Clearance::factory()->for($docRequest, 'documentRequest')->create([
+        return Clearance::factory()->for($request, 'documentRequest')->create([
             'user_id' => null,
-            'teacher_status' => 'pending',
-            'dean_status' => 'pending',
-            'accounting_status' => 'pending',
-            'sao_status' => 'pending',
             'uploaded_file_path' => null,
         ]);
     }

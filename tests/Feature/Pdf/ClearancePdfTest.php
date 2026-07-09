@@ -6,6 +6,7 @@ use App\Models\Clearance;
 use App\Models\DocumentRequest;
 use App\Models\User;
 use App\Services\PdfService;
+use App\Support\ClearanceSignatories;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -32,42 +33,41 @@ class ClearancePdfTest extends TestCase
         $student = User::factory()->student()->create([
             'fullname' => 'PDF Content Student',
         ]);
-        $teacher = User::factory()->teacher()->create([
-            'fullname' => 'Teacher Signatory',
-            'signature_path' => 'signatures/1/private-signature.png',
-        ]);
         $dean = User::factory()->dean()->create(['fullname' => 'Dean Signatory']);
-        $accounting = User::factory()->accounting()->create(['fullname' => 'Accounting Signatory']);
-        $sao = User::factory()->sao()->create(['fullname' => 'SAO Signatory']);
+        $president = User::factory()->president()->create(['fullname' => 'President Signatory']);
+        $librarian = User::factory()->librarian()->create(['fullname' => 'Librarian Signatory']);
+        $studentAffairs = User::factory()->studentAffairs()->create(['fullname' => 'Student Affairs Signatory']);
+        $alumni = User::factory()->alumni()->create(['fullname' => 'Alumni Signatory']);
+        $guidance = User::factory()->guidance()->create(['fullname' => 'Guidance Signatory']);
         $clearance = Clearance::factory()->for($student)->completed()->create([
-            'teacher_signed_by' => $teacher->id,
             'dean_signed_by' => $dean->id,
-            'accounting_signed_by' => $accounting->id,
-            'sao_signed_by' => $sao->id,
+            'president_signed_by' => $president->id,
+            'librarian_signed_by' => $librarian->id,
+            'student_affairs_signed_by' => $studentAffairs->id,
+            'alumni_signed_by' => $alumni->id,
+            'guidance_signed_by' => $guidance->id,
         ]);
 
         $html = view('pdf.clearance', [
             'clearance' => $clearance->loadMissing([
                 'user',
                 'documentRequest',
-                'teacherSigner',
-                'deanSigner',
-                'accountingSigner',
-                'saoSigner',
+                ...ClearanceSignatories::signerRelations(),
             ]),
             'generatedAt' => now(),
-            'signatureImages' => [
-                'teacher' => 'data:image/png;base64,signature-bytes',
-            ],
+            'signatories' => ClearanceSignatories::definitions(),
         ])->render();
 
         $this->assertStringContainsString('PDF Content Student', $html);
-        $this->assertStringContainsString('data:image/png;base64,signature-bytes', $html);
-        $this->assertStringContainsString('Teacher Signer', $html);
-        $this->assertStringContainsString('Dean Signer', $html);
-        $this->assertStringContainsString('Accounting Signer', $html);
-        $this->assertStringContainsString('SAO Signer', $html);
-        $this->assertStringNotContainsString('signatures/1/private-signature.png', $html);
+        $this->assertStringContainsString('Dean', $html);
+        $this->assertStringContainsString('Dean Signatory', $html);
+        $this->assertStringContainsString('Office of the President', $html);
+        $this->assertStringContainsString('President Signatory', $html);
+        $this->assertStringContainsString('Librarian Signatory', $html);
+        $this->assertStringContainsString('Student Affairs Signatory', $html);
+        $this->assertStringContainsString('Alumni Signatory', $html);
+        $this->assertStringContainsString('Guidance Signatory', $html);
+        $this->assertStringContainsString('Date Signed', $html);
     }
 
     public function test_clearance_pdf_view_uses_public_request_snapshot_when_user_is_absent(): void
@@ -88,13 +88,10 @@ class ClearancePdfTest extends TestCase
             'clearance' => $clearance->loadMissing([
                 'user',
                 'documentRequest',
-                'teacherSigner',
-                'deanSigner',
-                'accountingSigner',
-                'saoSigner',
+                ...ClearanceSignatories::signerRelations(),
             ]),
             'generatedAt' => now(),
-            'signatureImages' => [],
+            'signatories' => ClearanceSignatories::definitions(),
         ])->render();
 
         $this->assertStringContainsString('Public PDF Requestor', $html);
@@ -122,29 +119,6 @@ class ClearancePdfTest extends TestCase
         $this->assertSame("pdfs/clearance/public/{$request->id}/clearance-{$clearance->id}.pdf", $path);
         $this->assertSame($path, $clearance->fresh()->pdf_path);
         Storage::disk('local')->assertExists($path);
-    }
-
-    public function test_pdf_service_embeds_only_safe_private_signatures(): void
-    {
-        Storage::fake('local');
-        $student = User::factory()->student()->create();
-        $teacher = User::factory()->teacher()->create(['signature_path' => 'signatures/pending/signature.png']);
-        $teacher->forceFill(['signature_path' => "signatures/{$teacher->id}/signature.png"])->save();
-        $dean = User::factory()->dean()->create(['signature_path' => 'signatures/999/signature.png']);
-        $clearance = Clearance::factory()->for($student)->completed()->create([
-            'teacher_signed_by' => $teacher->id,
-            'dean_signed_by' => $dean->id,
-        ])->loadMissing(['teacherSigner', 'deanSigner']);
-
-        Storage::disk('local')->put($teacher->signature_path, base64_decode('iVBORw0KGgo='));
-        Storage::disk('local')->put($dean->signature_path, base64_decode('iVBORw0KGgo='));
-
-        $method = new \ReflectionMethod(PdfService::class, 'signatureImages');
-        $images = $method->invoke(app(PdfService::class), $clearance);
-
-        $this->assertArrayHasKey('teacher', $images);
-        $this->assertStringStartsWith('data:', $images['teacher']);
-        $this->assertArrayNotHasKey('dean', $images);
     }
 
     public function test_clearance_pdf_download_requires_owner_scoped_path(): void

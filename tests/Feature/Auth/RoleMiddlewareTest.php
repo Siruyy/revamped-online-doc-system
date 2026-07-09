@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use App\Support\ClearanceSignatories;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -33,8 +34,8 @@ class RoleMiddlewareTest extends TestCase
 
     public function test_department_route_allows_all_department_officer_roles(): void
     {
-        foreach (['teacher', 'dean', 'accounting', 'sao'] as $role) {
-            $officer = User::factory()->{$role}()->create([
+        foreach (ClearanceSignatories::roles() as $role) {
+            $officer = User::factory()->signatory($role)->create([
                 'status' => 'active',
                 'email_verified_at' => now(),
             ]);

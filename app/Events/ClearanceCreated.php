@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Support\ClearanceSignatories;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -24,12 +25,9 @@ class ClearanceCreated implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
-        return [
-            new PrivateChannel('role.department.teacher'),
-            new PrivateChannel('role.department.dean'),
-            new PrivateChannel('role.department.accounting'),
-            new PrivateChannel('role.department.sao'),
-        ];
+        return collect(ClearanceSignatories::roles())
+            ->map(fn (string $role): PrivateChannel => new PrivateChannel("role.department.{$role}"))
+            ->all();
     }
 
     /**

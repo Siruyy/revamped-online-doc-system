@@ -39,42 +39,7 @@ class DemoDataSeeder extends Seeder
             ])->toArray()
         );
 
-        User::query()->updateOrCreate(
-            ['email' => 'teacher@example.com'],
-            User::factory()->teacher()->make([
-                'fullname' => 'Teacher Signer',
-                'password' => Hash::make('password'),
-                'status' => 'active',
-                'email_verified_at' => now(),
-            ])->toArray()
-        );
-        User::query()->updateOrCreate(
-            ['email' => 'dean@example.com'],
-            User::factory()->dean()->make([
-                'fullname' => 'Dean Signer',
-                'password' => Hash::make('password'),
-                'status' => 'active',
-                'email_verified_at' => now(),
-            ])->toArray()
-        );
-        User::query()->updateOrCreate(
-            ['email' => 'accounting@example.com'],
-            User::factory()->accounting()->make([
-                'fullname' => 'Accounting Signer',
-                'password' => Hash::make('password'),
-                'status' => 'active',
-                'email_verified_at' => now(),
-            ])->toArray()
-        );
-        User::query()->updateOrCreate(
-            ['email' => 'sao@example.com'],
-            User::factory()->sao()->make([
-                'fullname' => 'SAO Signer',
-                'password' => Hash::make('password'),
-                'status' => 'active',
-                'email_verified_at' => now(),
-            ])->toArray()
-        );
+        $this->call(ClearanceSignatorySeeder::class);
 
         // Seed default school payment profile so students see payment instructions immediately
         PaymentProfile::query()->updateOrCreate(
