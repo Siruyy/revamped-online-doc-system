@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\PaymentProfile;
 use App\Models\User;
 use App\Notifications\WorkflowStatusNotification;
+use App\Support\FileUploadLimits;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
@@ -312,6 +313,41 @@ class PublicRequestSubmissionTest extends TestCase
                 ->component('Public/RequestDocument', false)
                 ->where('paymentProfile.qr_url', route('public.files.payment-qr', $profile))
             );
+    }
+
+    public function test_public_request_page_exposes_effective_upload_limits(): void
+    {
+        $this->get('/request-document')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Public/RequestDocument', false)
+                ->where('uploadLimits.max_file_kb', FileUploadLimits::publicIntakeMaxFileKilobytes())
+                ->where('uploadLimits.max_file_bytes', FileUploadLimits::publicIntakeMaxFileKilobytes() * 1024)
+                ->where('uploadLimits.max_total_kb', FileUploadLimits::publicIntakeMaxPostKilobytes())
+            );
+    }
+
+    public function test_public_request_rejects_uploads_over_effective_file_limit(): void
+    {
+        Storage::fake('local');
+
+        $documentType = DocumentType::factory()->create([
+            'requirements' => ['valid_id_photocopy_claimant'],
+        ]);
+        $tooLargeKilobytes = FileUploadLimits::publicIntakeMaxFileKilobytes() + 1;
+
+        $response = $this->from('/request-document')->post('/request-document', $this->validPayload($documentType, [
+            'receipt' => UploadedFile::fake()->create('receipt.pdf', $tooLargeKilobytes, 'application/pdf'),
+            'requirements' => [
+                'valid_id_photocopy_claimant' => UploadedFile::fake()->create('valid-id.pdf', $tooLargeKilobytes, 'application/pdf'),
+            ],
+        ]));
+
+        $response->assertRedirect('/request-document');
+        $response->assertSessionHasErrors([
+            'receipt',
+            'requirements.valid_id_photocopy_claimant',
+        ]);
     }
 
     public function test_public_payment_qr_route_serves_only_active_profiles(): void

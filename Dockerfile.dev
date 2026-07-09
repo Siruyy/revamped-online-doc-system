@@ -46,6 +46,7 @@ RUN npm ci
 
 # Copy application code
 COPY . .
+COPY docker/php-upload-limits.ini /usr/local/etc/php/conf.d/uploads.ini
 
 # Finish Composer install
 RUN composer dump-autoload --optimize
