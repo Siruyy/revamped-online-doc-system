@@ -19,26 +19,32 @@ test('public requestor submits and tracks without an account', async ({ page }) 
     await page.getByLabel(/full name/i).fill('Public E2E Requestor');
     await page.getByLabel(/email/i).fill('public.e2e@example.com');
     await page.getByLabel(/contact number/i).fill('09990001234');
-    await page.getByLabel(/student id/i).fill('PUBLIC-E2E');
+    await page.getByLabel(/id number/i).fill('PUBLIC-E2E');
     await page.getByLabel(/course/i).fill('BSIT');
     await page.getByLabel(/year level/i).fill('4');
+    await page.getByLabel(/graduation \/ last semester/i).fill('2nd Sem 2025-2026');
     await page.getByLabel(/purpose/i).fill('E2E public request smoke test');
     await page.getByRole('button', { name: /continue/i }).click();
 
-    const fileInputs = page.locator('input[type="file"]');
-    const fileCount = await fileInputs.count();
-    expect(fileCount).toBeGreaterThan(0);
+    const requirementInputs = page.locator('input[type="file"]');
+    const requirementCount = await requirementInputs.count();
 
-    for (let index = 0; index < fileCount; index += 1) {
-        await fileInputs.nth(index).setInputFiles({
+    for (let index = 0; index < requirementCount; index += 1) {
+        await requirementInputs.nth(index).setInputFiles({
             name: `public-upload-${index}.png`,
             mimeType: 'image/png',
             buffer: tinyPng,
         });
     }
 
+    await page.getByRole('button', { name: /continue/i }).click();
     await page.getByLabel(/payment method/i).fill('GCash');
     await page.getByLabel(/payment reference/i).fill(`PUBLIC-E2E-${Date.now()}`);
+    await page.locator('input[type="file"]').setInputFiles({
+        name: 'public-receipt.png',
+        mimeType: 'image/png',
+        buffer: tinyPng,
+    });
     await page.getByRole('button', { name: /continue/i }).click();
     await page.getByRole('button', { name: /submit public request/i }).click();
 

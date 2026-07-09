@@ -78,6 +78,7 @@ RUN composer dump-autoload --optimize \
     && chown -R www-data:www-data storage bootstrap/cache
 
 COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/php-upload-limits.ini /usr/local/etc/php/conf.d/uploads.ini
 COPY docker/supervisord.conf /etc/supervisord.conf
 COPY docker/supervisord-queue.conf /etc/supervisord-queue.conf
 COPY docker/supervisord-reverb.conf /etc/supervisord-reverb.conf

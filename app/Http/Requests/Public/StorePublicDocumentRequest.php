@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Public;
 
 use App\Models\DocumentType;
+use App\Support\FileUploadLimits;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -18,6 +19,8 @@ class StorePublicDocumentRequest extends FormRequest
      */
     public function rules(): array
     {
+        $maxFileKilobytes = FileUploadLimits::publicIntakeMaxFileKilobytes();
+
         return [
             'requester_name' => ['required', 'string', 'max:150'],
             'requester_email' => ['required', 'email', 'max:150'],
@@ -32,9 +35,9 @@ class StorePublicDocumentRequest extends FormRequest
             'purpose' => ['required', 'string', 'min:5', 'max:500'],
             'payment_method' => ['required', 'string', 'max:50'],
             'payment_reference_number' => ['nullable', 'string', 'max:100'],
-            'receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'],
+            'receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:'.$maxFileKilobytes],
             'requirements' => ['nullable', 'array'],
-            'requirements.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'],
+            'requirements.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:'.$maxFileKilobytes],
         ];
     }
 

@@ -17,6 +17,7 @@ import {
 const props = defineProps({
     documentTypeGroups: { type: Object, required: true },
     paymentProfile: { type: Object, default: null },
+    uploadLimits: { type: Object, default: () => ({}) },
 });
 
 const steps = [
@@ -75,6 +76,7 @@ const form = useForm({
     payment_reference_number: '',
     receipt: null,
 });
+const clientFileErrors = ref({});
 
 const currentStep = computed(() => steps[step.value - 1]);
 const selectedRequirementFilesCount = computed(
@@ -84,9 +86,29 @@ const missingRequirementCount = computed(() =>
     Math.max(requirementList.value.length - selectedRequirementFilesCount.value, 0),
 );
 const hasReceipt = computed(() => Boolean(form.receipt));
+const maxFileBytes = computed(() => Number(props.uploadLimits?.max_file_bytes || 5 * 1024 * 1024));
+const maxTotalBytes = computed(() => {
+    const limit = Number(props.uploadLimits?.max_total_bytes || 0);
+
+    return limit > 0 ? limit : null;
+});
+const fileUploadHint = computed(() => `Upload a clear JPG, PNG, or PDF up to ${formatFileSize(maxFileBytes.value)}.`);
+const selectedUploadBytes = computed(() => {
+    const requirementBytes = Object.values(form.requirements || {}).reduce((sum, file) => sum + (file?.size || 0), 0);
+
+    return requirementBytes + (form.receipt?.size || 0);
+});
+const totalUploadError = computed(() => {
+    if (!maxTotalBytes.value || selectedUploadBytes.value <= maxTotalBytes.value) return '';
+
+    return `Selected uploads total ${formatFileSize(selectedUploadBytes.value)}. Please keep all selected files under ${formatFileSize(maxTotalBytes.value)}.`;
+});
+const blockingUploadError = computed(
+    () => totalUploadError.value || Object.values(clientFileErrors.value).find(Boolean) || '',
+);
 const submitErrors = computed(() => Object.entries(form.errors));
-const hasSubmitErrors = computed(() => submitErrors.value.length > 0);
-const firstErrorMessage = computed(() => submitErrors.value[0]?.[1] ?? '');
+const hasSubmitErrors = computed(() => Boolean(blockingUploadError.value) || submitErrors.value.length > 0);
+const firstErrorMessage = computed(() => blockingUploadError.value || submitErrors.value[0]?.[1] || '');
 const paymentInstructionSteps = computed(() => {
     const instructions = props.paymentProfile?.instructions || '';
     if (!instructions) return [];
@@ -123,6 +145,41 @@ function formatPeso(value) {
     return `PHP ${Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function formatFileSize(bytes) {
+    const megabytes = Number(bytes || 0) / (1024 * 1024);
+
+    if (megabytes >= 1) {
+        return `${Number.isInteger(megabytes) ? megabytes.toFixed(0) : megabytes.toFixed(1)} MB`;
+    }
+
+    return `${Math.ceil(Number(bytes || 0) / 1024)} KB`;
+}
+
+function validateUpload(field, file) {
+    delete clientFileErrors.value[field];
+
+    if (!file) return true;
+
+    if (file.size > maxFileBytes.value) {
+        clientFileErrors.value[field] =
+            `${file.name} is ${formatFileSize(file.size)}. The limit is ${formatFileSize(maxFileBytes.value)}.`;
+
+        return false;
+    }
+
+    return true;
+}
+
+function setRequirementFile(requirement, file) {
+    const field = `requirements.${requirement.key}`;
+
+    form.requirements[requirement.key] = validateUpload(field, file) ? file : null;
+}
+
+function setReceiptFile(file) {
+    form.receipt = validateUpload('receipt', file) ? file : null;
+}
+
 function errorStep(field) {
     if (field === 'items' || field.startsWith('items.')) return 1;
     if (
@@ -145,6 +202,14 @@ function errorStep(field) {
 }
 
 function submit() {
+    if (blockingUploadError.value) {
+        step.value = totalUploadError.value
+            ? 4
+            : errorStep(Object.keys(clientFileErrors.value).find(Boolean) || 'receipt');
+
+        return;
+    }
+
     form.items = cartItems.value.map((item) => ({ document_type_id: item.type.id, copies: item.copies }));
     form.post(route('public.requests.store'), {
         forceFormData: true,
@@ -170,7 +235,7 @@ function canContinue() {
         );
     }
     if (step.value === 3) return missingRequirementCount.value === 0;
-    if (step.value === 4) return form.payment_method && hasReceipt.value;
+    if (step.value === 4) return form.payment_method && hasReceipt.value && !blockingUploadError.value;
 
     return true;
 }
@@ -491,13 +556,14 @@ function requirementMissing(requirement) {
                             :id="`requirement-${requirement.key}`"
                             :key="requirement.key"
                             :label="requirement.label"
-                            :hint="
-                                requirement.hint || 'Upload a clear scanned copy or photo. JPG, PNG, or PDF up to 5 MB.'
+                            :hint="requirement.hint ? `${requirement.hint} ${fileUploadHint}` : fileUploadHint"
+                            :error="
+                                clientFileErrors[`requirements.${requirement.key}`] ||
+                                form.errors[`requirements.${requirement.key}`]
                             "
-                            :error="form.errors[`requirements.${requirement.key}`]"
                             :missing="requirementMissing(requirement)"
                             required
-                            @change="(file) => (form.requirements[requirement.key] = file)"
+                            @change="(file) => setRequirementFile(requirement, file)"
                         />
                         <p
                             v-if="!requirementList.length"
@@ -568,12 +634,13 @@ function requirementMissing(requirement) {
                             <FileUploadField
                                 id="payment-receipt"
                                 label="Payment receipt"
-                                hint="Upload the receipt image or PDF. JPG, PNG, or PDF up to 5 MB."
-                                :error="form.errors.receipt"
+                                :hint="`Upload the receipt image or PDF. ${fileUploadHint}`"
+                                :error="clientFileErrors.receipt || form.errors.receipt"
                                 :missing="!hasReceipt"
                                 required
-                                @change="(file) => (form.receipt = file)"
+                                @change="setReceiptFile"
                             />
+                            <p v-if="totalUploadError" class="text-sm text-rose-600">{{ totalUploadError }}</p>
                         </div>
                     </section>
 
@@ -646,6 +713,9 @@ function requirementMissing(requirement) {
                                 {{ form.processing ? 'Submitting request...' : 'Submit public request' }}
                                 <CheckCircleIcon class="h-5 w-5" />
                             </button>
+                            <p v-if="blockingUploadError" class="mt-3 text-sm text-rose-200">
+                                {{ blockingUploadError }}
+                            </p>
                             <p v-if="form.errors.items" class="mt-3 text-sm text-rose-200">{{ form.errors.items }}</p>
                         </div>
                     </section>

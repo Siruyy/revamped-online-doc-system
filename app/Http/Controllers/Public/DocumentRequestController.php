@@ -8,6 +8,7 @@ use App\Models\DocumentType;
 use App\Models\PaymentProfile;
 use App\Services\Policy\RequestRulesEngine;
 use App\Services\PublicDocumentRequestService;
+use App\Support\FileUploadLimits;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -73,6 +74,7 @@ class DocumentRequestController extends Controller
             ] : null,
             'requirementsCatalog' => config('policy.requirements'),
             'releaseChannels' => config('policy.release_channels'),
+            'uploadLimits' => FileUploadLimits::publicIntakePayload(),
         ]);
     }
 
