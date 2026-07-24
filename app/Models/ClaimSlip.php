@@ -24,6 +24,7 @@ class ClaimSlip extends Model
         'notes',
         'released_by',
         'released_at',
+        'pdf_path',
     ];
 
     protected function casts(): array

@@ -5,7 +5,7 @@ import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import { useEchoPrivateChannel } from '@/Composables/useEchoPrivateChannel';
 import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { BanknotesIcon } from '@heroicons/vue/24/outline';
 import { reactive, watch } from 'vue';
 
@@ -13,6 +13,8 @@ const props = defineProps({
     payments: { type: Object, required: true },
     filters: { type: Object, required: true },
 });
+const page = usePage();
+const routeBase = page.props.auth?.user?.role === 'accounting' ? 'department' : 'admin';
 
 const filterForm = reactive({ status: props.filters.status || '' });
 const denyReasons = reactive({});
@@ -56,7 +58,7 @@ watch(
 );
 
 const applyFilters = () => {
-    router.get(route('admin.payments.index'), filterForm, { preserveState: true, replace: true });
+    router.get(route(`${routeBase}.payments.index`), filterForm, { preserveState: true, replace: true });
 };
 
 const clearRowErrors = (id) => {
@@ -74,7 +76,7 @@ const approve = (id) => {
     clearRowErrors(id);
     processingByPayment[id].approve = true;
     router.post(
-        route('admin.payments.approve', id),
+        route(`${routeBase}.payments.approve`, id),
         {},
         {
             preserveScroll: true,
@@ -89,7 +91,7 @@ const deny = (id) => {
     clearRowErrors(id);
     processingByPayment[id].deny = true;
     router.post(
-        route('admin.payments.deny', id),
+        route(`${routeBase}.payments.deny`, id),
         {
             denial_reason: denyReasons[id] ?? '',
         },
@@ -176,7 +178,8 @@ function paymentStatusTone(status) {
                                 Payment #{{ item.id }} — {{ item.document_request?.reference_no }}
                             </p>
                             <p class="text-sm text-slate-600">
-                                {{ item.user?.fullname }} | {{ item.document_request?.document_type?.name }} | PHP
+                                {{ item.user?.fullname || item.document_request?.requester_name || 'Public requestor' }}
+                                | {{ item.document_request?.document_type?.name }} | PHP
                                 {{ Number(item.total_amount).toFixed(2) }}
                             </p>
                             <div class="mt-2 flex items-center gap-2 text-sm text-slate-600">

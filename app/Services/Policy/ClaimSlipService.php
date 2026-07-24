@@ -6,7 +6,9 @@ use App\Models\ClaimSlip;
 use App\Models\DocumentRequest;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ClaimSlipService
 {
@@ -31,6 +33,14 @@ class ClaimSlipService
                     'state' => 'ready',
                 ]
             );
+
+            $relativePath = 'pdfs/claim-slips/'.$request->id.'/claim-slip-'.$slip->id.'.pdf';
+            $pdf = Pdf::loadView('pdf.claim-slip', [
+                'slip' => $slip->load('documentRequest.items.documentType'),
+                'generatedAt' => now(),
+            ])->setPaper('a4');
+            Storage::disk('local')->put($relativePath, $pdf->output());
+            $slip->update(['pdf_path' => $relativePath]);
 
             ActivityLogger::log(
                 'claim_slip_issued',

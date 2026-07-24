@@ -25,6 +25,9 @@ class DocumentRequest extends Model
         'requester_contact_number',
         'requester_student_id',
         'requester_course',
+        'academic_program_id',
+        'academic_program_snapshot',
+        'academic_department_code_snapshot',
         'requester_year_level',
         'requester_graduation_or_last_sem',
         'document_type_id',
@@ -33,6 +36,7 @@ class DocumentRequest extends Model
         'fee_snapshot',
         'status',
         'processing_stage',
+        'workflow_stage',
         'intake_mode',
         'denial_reason',
         'approved_by',
@@ -40,6 +44,16 @@ class DocumentRequest extends Model
         'released_at',
         'purpose',
         'extra_data',
+        'requester_profile',
+        'fulfillment_method',
+        'delivery_address',
+        'is_proxy_request',
+        'tracking_access_hash',
+        'shipping_fee',
+        'quote_total',
+        'quote_notes',
+        'evaluated_by',
+        'evaluated_at',
 
         'sla_start_at',
         'sla_paused_at',
@@ -72,12 +86,17 @@ class DocumentRequest extends Model
             'hd_received_at' => 'datetime',
             'transfer_exception_decided_at' => 'datetime',
             'payment_verified_at' => 'datetime',
+            'evaluated_at' => 'datetime',
             'requires_hd_return' => 'boolean',
             'transfer_exception_requested' => 'boolean',
             'transfer_exception_approved' => 'boolean',
             'requester_year_level' => 'integer',
             'fee_snapshot' => 'decimal:2',
             'extra_data' => 'array',
+            'requester_profile' => 'array',
+            'is_proxy_request' => 'boolean',
+            'shipping_fee' => 'decimal:2',
+            'quote_total' => 'decimal:2',
         ];
     }
 
@@ -94,41 +113,73 @@ class DocumentRequest extends Model
         });
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return BelongsTo<DocumentType, $this>
+     */
     public function documentType(): BelongsTo
     {
         return $this->belongsTo(DocumentType::class);
     }
 
+    /**
+     * @return BelongsTo<AcademicProgram, $this>
+     */
+    public function academicProgram(): BelongsTo
+    {
+        return $this->belongsTo(AcademicProgram::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
 
+    /**
+     * @return HasMany<Payment, $this>
+     */
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
     }
 
+    /**
+     * @return HasMany<Clearance, $this>
+     */
     public function clearances(): HasMany
     {
         return $this->hasMany(Clearance::class);
     }
 
+    /**
+     * @return HasMany<RequestRequirement, $this>
+     */
     public function requirements(): HasMany
     {
         return $this->hasMany(RequestRequirement::class);
     }
 
+    /**
+     * @return HasOne<ClaimSlip, $this>
+     */
     public function claimSlip(): HasOne
     {
         return $this->hasOne(ClaimSlip::class);
     }
 
+    /**
+     * @return HasMany<DocumentRequestItem, $this>
+     */
     public function items(): HasMany
     {
         return $this->hasMany(DocumentRequestItem::class);

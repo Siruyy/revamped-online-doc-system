@@ -1,10 +1,10 @@
 # Phase 15 — Public Request Intake
 
-> **Goal:** Replace requestor-facing student account registration with public document request submission, upfront receipt upload, admin validation, and reference-number tracking.
+> **Goal:** Replace requestor-facing student account registration with public document request submission, registrar evaluation, sequential clearance, later payment, and reference-number tracking.
 
-**Status:** Partially implemented. Client feedback on 2026-06-23 requests that students/requestors go directly to a request page, fill request details, upload required attachments and payment receipt, then receive a reference number. Existing student routes/pages remain in code for now but are hidden from public navigation.
+**Status:** Active closeout. The revised client workflow from 2026-07-24 is implemented. Existing student routes/pages remain in code for compatibility but are hidden from public navigation.
 
-**Latest closeout note:** Public intake, reference tracking, private file serving, package validation, public clearance compatibility, `/register` redirect, staff public-snapshot search fallbacks, and the cached-config CSP fix are implemented in code. Keep this phase open only for manual browser/realtime/email verification and any later cleanup of legacy authenticated-student pages/routes.
+**Latest closeout note:** Public intake now follows registrar review → document-specific sequential clearance → payment upload → accounting validation → processing → claim slip → release. Program-to-dean routing, secure follow-up uploads, revised registrar fees, claim-slip PDFs, progress email, and report filters are implemented. BEC remains explicitly deferred. Keep this phase open for manual browser/realtime/email verification.
 
 **Supersedes for requestors:** Phase 02 student self-registration and Phase 03 authenticated student request/payment pages remain historical implementation, but they are no longer the desired public request workflow.
 
@@ -271,6 +271,40 @@ npm run build
 ```
 
 **Acceptance:**
-- [ ] Public request submission, tracking, admin validation, and private file serving tests pass.
-- [ ] Existing auth/staff/admin/department/SuperAdmin tests still pass.
-- [ ] Final diff reviewed for accidental deletion of hidden student pages/routes.
+- [x] Public request submission, tracking, admin validation, and private file serving tests pass.
+- [x] Existing auth/staff/admin/department/SuperAdmin tests still pass.
+- [x] Final diff reviewed for accidental deletion of hidden student pages/routes.
+
+## Agent Task 15.10 — Revised Client Workflow (2026-07-24)
+
+**Delegate to:** backend-patterns + frontend-patterns + database-migrations + security-review
+
+**Read first:**
+- `docs/16-policy-matrix.md`
+- `app/Services/PublicDocumentRequestService.php`
+- `app/Services/PaymentService.php`
+- `app/Services/ClearanceService.php`
+- `resources/js/Pages/Public/RequestDocument.vue`
+
+**Files likely touched:**
+- `database/migrations/2026_07_24_000001_add_revised_public_request_workflow.php`
+- `app/Services/PublicRequestWorkflowService.php`
+- `app/Http/Controllers/Public/WorkflowActionController.php`
+- `resources/js/Pages/Public/TrackResult.vue`
+- `tests/Feature/Public/RevisedPublicWorkflowTest.php`
+
+**Steps:**
+- [x] Add the client-provided course catalog and department-specific dean routing; keep BSIT and BSCS under CSD.
+- [x] Expand public intake with personal, preliminary education, employment, delivery/proxy, 2×2 photo, and PSA fields.
+- [x] Remove upfront payment and add a locked registrar quote with page, authentication, documentary-stamp, and shipping amounts.
+- [x] Route certifications to dean + accounting, Form 137 to registrar + accounting, and other records to all offices with accounting last.
+- [x] Add recoverable `needs_action` clearance states and access-code-protected requirement/payment uploads.
+- [x] Add accounting payment validation, seven-stage tracking, claim-slip PDF download, progress email, and report document-type filters.
+- [x] Defer BEC document types from public intake.
+
+**Acceptance:**
+- [x] New public submissions contain no payment row until clearance completes.
+- [x] Clearance steps cannot be signed out of sequence.
+- [x] Public mutation and claim-slip endpoints require the request's private access code.
+- [x] `php artisan test` passes.
+- [x] Pint, PHPStan, ESLint, and Vite build pass.

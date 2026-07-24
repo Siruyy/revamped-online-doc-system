@@ -7,6 +7,7 @@ use App\Http\Requests\Department\DenyClearanceRequest;
 use App\Http\Requests\Department\SignClearanceRequest;
 use App\Models\Clearance;
 use App\Services\ClearanceService;
+use App\Services\PublicRequestWorkflowService;
 use App\Support\ClearanceSignatories;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,10 @@ class ClearanceController extends Controller
         $this->authorize('viewAny', Clearance::class);
 
         $user = $request->user();
-        $currentSignatory = ClearanceSignatories::columns($user->role);
+        $isDynamicOnly = $user->role === 'accounting';
+        $currentSignatory = $isDynamicOnly
+            ? ['label' => 'Accounting Office', 'status' => 'status', 'signed_at' => 'signed_at']
+            : ClearanceSignatories::columns($user->role);
         $statusColumn = $currentSignatory['status'];
 
         $status = $request->string('status')->toString() ?: 'pending';
@@ -30,7 +34,19 @@ class ClearanceController extends Controller
                 'user:id,fullname,course,year_level,student_id',
                 'documentRequest:id,reference_no,status,requester_name,requester_student_id,requester_course,requester_year_level',
             ])
-            ->where($statusColumn, $status)
+            ->where(function ($query) use ($user, $status, $statusColumn, $isDynamicOnly) {
+                $query->whereHas('steps', function ($steps) use ($user, $status) {
+                    $steps->where('office_code', $user->role)->where('status', $status);
+
+                    if ($user->role === 'dean' && $user->academicDepartment) {
+                        $steps->where('department_code', $user->academicDepartment->code);
+                    }
+                });
+
+                if (! $isDynamicOnly) {
+                    $query->orWhere(fn ($legacy) => $legacy->whereDoesntHave('steps')->where($statusColumn, $status));
+                }
+            })
             ->when($request->string('course')->toString(), function ($q, $course) {
                 $q->where(function ($inner) use ($course) {
                     $inner->whereHas('user', fn ($userQuery) => $userQuery->where('course', $course))
@@ -58,6 +74,12 @@ class ClearanceController extends Controller
             ->latest()
             ->paginate(15)
             ->withQueryString();
+        $clearances->getCollection()->each(function (Clearance $clearance) use ($user): void {
+            $step = $clearance->steps()->where('office_code', $user->role)
+                ->when($user->role === 'dean' && $user->academicDepartment, fn ($query) => $query->where('department_code', $user->academicDepartment->code))
+                ->first();
+            $clearance->setAttribute('current_step_status', $step?->status);
+        });
 
         return Inertia::render('Department/Clearances/Index', [
             'clearances' => $clearances,
@@ -84,30 +106,43 @@ class ClearanceController extends Controller
             ...collect(ClearanceSignatories::signerRelations())
                 ->map(fn (string $relation): string => "{$relation}:id,fullname")
                 ->all(),
+            'steps.signer:id,fullname',
         ]);
 
-        $currentSignatory = ClearanceSignatories::columns($request->user()->role);
+        $currentStep = $clearance->steps->first(function ($step) use ($request) {
+            if ($step->office_code !== $request->user()->role) {
+                return false;
+            }
+
+            return $step->office_code !== 'dean'
+                || ! $step->department_code
+                || $request->user()->academicDepartment?->code === $step->department_code;
+        });
+        $currentSignatory = $currentStep
+            ? ['label' => $currentStep->label, 'status' => 'status', 'signed_at' => 'signed_at']
+            : ClearanceSignatories::columns($request->user()->role);
 
         return Inertia::render('Department/Clearances/Show', [
             'clearance' => $clearance,
             'department' => $request->user()->role,
             'currentSignatory' => $currentSignatory,
             'signatories' => ClearanceSignatories::definitions(),
+            'currentStep' => $currentStep,
         ]);
     }
 
-    public function sign(SignClearanceRequest $request, Clearance $clearance, ClearanceService $clearanceService): RedirectResponse
+    public function sign(SignClearanceRequest $request, Clearance $clearance, ClearanceService $clearanceService, PublicRequestWorkflowService $workflow): RedirectResponse
     {
         $department = $request->user()->role;
         $this->authorize('signOwnDepartment', $clearance);
 
         try {
-            $clearanceService->signFor(
-                $clearance,
-                $request->user(),
-                $department,
-                $request->validated('remarks')
-            );
+            $step = $clearance->steps()->where('office_code', $department)
+                ->when($department === 'dean' && $request->user()->academicDepartment, fn ($query) => $query->where('department_code', $request->user()->academicDepartment->code))
+                ->first();
+            $step
+                ? $workflow->signStep($step, $request->user(), $request->validated('remarks'))
+                : $clearanceService->signFor($clearance, $request->user(), $department, $request->validated('remarks'));
         } catch (\Throwable $exception) {
             return back()->withErrors(['sign' => $exception->getMessage()]);
         }
@@ -115,22 +150,22 @@ class ClearanceController extends Controller
         return back()->with('status', 'Clearance marked as cleared.');
     }
 
-    public function deny(DenyClearanceRequest $request, Clearance $clearance, ClearanceService $clearanceService): RedirectResponse
+    public function deny(DenyClearanceRequest $request, Clearance $clearance, ClearanceService $clearanceService, PublicRequestWorkflowService $workflow): RedirectResponse
     {
         $department = $request->user()->role;
         $this->authorize('rejectDepartment', $clearance);
 
         try {
-            $clearanceService->denyFor(
-                $clearance,
-                $request->user(),
-                $department,
-                $request->validated('remarks')
-            );
+            $step = $clearance->steps()->where('office_code', $department)
+                ->when($department === 'dean' && $request->user()->academicDepartment, fn ($query) => $query->where('department_code', $request->user()->academicDepartment->code))
+                ->first();
+            $step
+                ? $workflow->requestAction($step, $request->user(), $request->validated('remarks'))
+                : $clearanceService->denyFor($clearance, $request->user(), $department, $request->validated('remarks'));
         } catch (\Throwable $exception) {
             return back()->withErrors(['deny' => $exception->getMessage()]);
         }
 
-        return back()->with('status', 'Clearance denied for your department.');
+        return back()->with('status', 'The requestor was asked to provide corrected information.');
     }
 }

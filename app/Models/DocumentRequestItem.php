@@ -17,6 +17,14 @@ class DocumentRequestItem extends Model
         'page_count_snapshot',
         'fee_per_page_snapshot',
         'line_total',
+        'authentication_requested',
+        'documentary_stamp_requested',
+        'semester_requested',
+        'evaluated_page_count',
+        'base_amount',
+        'authentication_amount',
+        'documentary_stamp_amount',
+        'evaluation_notes',
     ];
 
     protected function casts(): array
@@ -26,6 +34,12 @@ class DocumentRequestItem extends Model
             'page_count_snapshot' => 'integer',
             'fee_per_page_snapshot' => 'decimal:2',
             'line_total' => 'decimal:2',
+            'authentication_requested' => 'boolean',
+            'documentary_stamp_requested' => 'boolean',
+            'evaluated_page_count' => 'integer',
+            'base_amount' => 'decimal:2',
+            'authentication_amount' => 'decimal:2',
+            'documentary_stamp_amount' => 'decimal:2',
         ];
     }
 

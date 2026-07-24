@@ -28,6 +28,9 @@ class RequestRequirement extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<DocumentRequest, $this>
+     */
     public function documentRequest(): BelongsTo
     {
         return $this->belongsTo(DocumentRequest::class);

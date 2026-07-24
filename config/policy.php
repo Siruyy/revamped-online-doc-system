@@ -95,7 +95,7 @@ return [
         'tor' => [
             'name' => 'Transcript of Records',
             'category' => 'Academic',
-            'fee' => 140.00,
+            'fee' => 165.00,
             'fee_formula' => 'per_page',
             'sla_days' => 14,
             'submission_window' => 'registrar_window_5',
@@ -108,7 +108,7 @@ return [
         'tor_transfer' => [
             'name' => 'Transcript of Records (valid for Transfer)',
             'category' => 'Academic',
-            'fee' => 140.00,
+            'fee' => 165.00,
             'fee_formula' => 'per_page',
             'sla_days' => 14,
             'submission_window' => 'registrar_window_5',
@@ -121,7 +121,7 @@ return [
         'diploma' => [
             'name' => 'Diploma',
             'category' => 'Academic',
-            'fee' => 15.00,
+            'fee' => 0.00,
             'fee_formula' => 'per_5_copies',
             'sla_days' => 5,
             'submission_window' => 'registrar_window_5',
@@ -134,13 +134,13 @@ return [
         'diploma_reissue_college' => [
             'name' => 'Diploma Re-issuance (College / Graduate)',
             'category' => 'Academic',
-            'fee' => 310.00,
+            'fee' => 365.00,
             'fee_formula' => 'flat',
             'sla_days' => 5,
             'submission_window' => 'registrar_window_5',
             'release_channel' => 'registrar_window_9',
             'offices' => ['president', 'dean', 'alumni', 'guidance', 'sao', 'library', 'registrar', 'accounting'],
-            'requirements' => ['affidavit_of_loss', 'valid_id_photocopy_claimant'],
+            'requirements' => ['valid_id_photocopy_claimant'],
             'flags' => [],
         ],
 
@@ -153,14 +153,14 @@ return [
             'submission_window' => 'annex_principal',
             'release_channel' => 'annex_principal',
             'offices' => ['registrar', 'accounting'],
-            'requirements' => ['affidavit_of_loss', 'valid_id_photocopy_claimant'],
+            'requirements' => ['valid_id_photocopy_claimant'],
             'flags' => ['basic_ed'],
         ],
 
         'special_order' => [
             'name' => 'Special Order',
             'category' => 'Academic',
-            'fee' => 100.00,
+            'fee' => 0.00,
             'fee_formula' => 'flat',
             'sla_days' => 5,
             'submission_window' => 'registrar_window_5',
@@ -174,7 +174,7 @@ return [
         'cert_transfer_credential' => [
             'name' => 'Certificate of Transfer Credential (Honorable Dismissal)',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -187,7 +187,7 @@ return [
         'cert_graduation' => [
             'name' => 'Certificate of Graduation',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -200,7 +200,7 @@ return [
         'cert_enrollment' => [
             'name' => 'Certificate of Enrollment',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -213,7 +213,7 @@ return [
         'cert_units_earned' => [
             'name' => 'Certificate of Units Earned',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -226,7 +226,7 @@ return [
         'cert_gwa' => [
             'name' => 'Certificate of General Weighted Average (GWA)',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -239,7 +239,7 @@ return [
         'cert_car' => [
             'name' => 'Certificate of Complete Academic Requirements (CAR)',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -252,7 +252,7 @@ return [
         'cert_medium' => [
             'name' => 'Certificate of Medium of Instruction',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -265,7 +265,7 @@ return [
         'cert_grades' => [
             'name' => 'Certificate of Grades',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -278,7 +278,7 @@ return [
         'cert_serial' => [
             'name' => 'Certificate of Serial Number (NSTP)',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -291,7 +291,7 @@ return [
         'cert_special_class' => [
             'name' => 'Certificate of Special Class',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -304,7 +304,7 @@ return [
         'cert_permit_cross_enroll' => [
             'name' => 'Certificate of Permit to Cross-Enroll',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -317,7 +317,7 @@ return [
         'cert_no_objection' => [
             'name' => 'Certificate of No Objection (CNO)',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -330,7 +330,7 @@ return [
         'cert_no_scholarship' => [
             'name' => 'Certificate of No Scholarship',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -343,7 +343,7 @@ return [
         'cert_appearance' => [
             'name' => 'Certificate of Appearance',
             'category' => 'Certification',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -357,7 +357,7 @@ return [
         'form_137a_personal' => [
             'name' => 'Form 137-A (Personal Copy)',
             'category' => 'BasicEd',
-            'fee' => 130.00,
+            'fee' => 155.00,
             'fee_formula' => 'flat',
             'sla_days' => 5,
             'submission_window' => 'registrar_window_6',
@@ -370,7 +370,7 @@ return [
         'form_137a_transfer' => [
             'name' => 'Form 137-A (Valid for Transfer)',
             'category' => 'BasicEd',
-            'fee' => 130.00,
+            'fee' => 155.00,
             'fee_formula' => 'flat',
             'sla_days' => 5,
             'submission_window' => 'registrar_window_6',
@@ -383,7 +383,7 @@ return [
         'cert_basic_ed' => [
             'name' => 'Certification (Basic Education)',
             'category' => 'BasicEd',
-            'fee' => 100.00,
+            'fee' => 120.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'annex_principal',
@@ -396,13 +396,13 @@ return [
         'form_138_reissue' => [
             'name' => 'Form 138 Re-issuance (Report Card)',
             'category' => 'BasicEd',
-            'fee' => 100.00,
+            'fee' => 240.00,
             'fee_formula' => 'flat',
             'sla_days' => 5,
             'submission_window' => 'annex_principal',
             'release_channel' => 'annex_principal',
             'offices' => ['registrar', 'accounting'],
-            'requirements' => ['affidavit_of_loss'],
+            'requirements' => [],
             'flags' => ['basic_ed'],
         ],
 
@@ -449,7 +449,7 @@ return [
         'authentication' => [
             'name' => 'Authentication of School Records',
             'category' => 'Special',
-            'fee' => 15.00,
+            'fee' => 20.00,
             'fee_formula' => 'per_set',
             'sla_days' => 2,
             'submission_window' => 'registrar_window_4',
@@ -462,7 +462,7 @@ return [
         'statement_of_account' => [
             'name' => 'Statement of Account',
             'category' => 'Special',
-            'fee' => 65.00,
+            'fee' => 80.00,
             'fee_formula' => 'flat',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -475,7 +475,7 @@ return [
         'grades_printout' => [
             'name' => 'Grades Print-Out',
             'category' => 'Special',
-            'fee' => 15.00,
+            'fee' => 20.00,
             'fee_formula' => 'per_page',
             'sla_days' => 3,
             'submission_window' => 'registrar_window_5',
@@ -492,6 +492,18 @@ return [
     |--------------------------------------------------------------------------
     */
     'requirements' => [
+        'photo_2x2' => [
+            'label' => 'Recent 2×2 ID photo',
+            'hint' => 'Use a white background and collared shirt.',
+        ],
+        'psa_birth_certificate' => [
+            'label' => 'PSA birth certificate',
+            'hint' => 'Upload a clear scan or photo.',
+        ],
+        'marriage_certificate' => [
+            'label' => 'Marriage certificate',
+            'hint' => 'Required when civil status is married.',
+        ],
         'affidavit_of_loss' => [
             'label' => 'Notarized Affidavit of Loss',
             'hint' => 'From a lawyer. PDF or clear image.',

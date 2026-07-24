@@ -4,13 +4,13 @@ This folder tracks remaining work for the Laravel 13 + Inertia + Vue rewrite.
 
 ## Current State
 
-Core MVP exists for setup, schema, auth, student, admin, department, SuperAdmin, realtime/notifications, PDF/export, UI polish, and hardening flows. Client feedback on 2026-06-23 changes the requestor workflow: public document requests should no longer require student account registration. The new active priority is replacing the student self-service intake with a public request + receipt + reference tracking flow while keeping existing student routes hidden but not deleted.
+Core MVP exists for setup, schema, auth, student, admin, department, SuperAdmin, realtime/notifications, PDF/export, UI polish, and hardening flows. The 2026-07-24 client revision is implemented: public submission, registrar quote, sequential clearance, later payment, accounting validation, processing, claim slip, and release. Existing student routes remain hidden but are not deleted.
 
 ## Active Phases
 
 | # | Phase | File | Status | Suggested Delegate |
 |---|-------|------|:------:|--------------------|
-| 15 | Public Request Intake | [`phase-15-public-request-intake.md`](./phase-15-public-request-intake.md) | Not started | backend + frontend + security |
+| 15 | Public Request Intake | [`phase-15-public-request-intake.md`](./phase-15-public-request-intake.md) | Active closeout | backend + frontend + security |
 | 08 | Messaging | [`phase-08-messaging.md`](./phase-08-messaging.md) | Deferred | backend + frontend |
 | 12 | Deployment | [`phase-12-deployment.md`](./phase-12-deployment.md) | Skipped for current scope | deployment |
 | 13 | Legacy Data Migration | [`phase-13-legacy-data-migration.md`](./phase-13-legacy-data-migration.md) | Skipped for current scope | database + migration |

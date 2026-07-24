@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DocumentRequest;
 use App\Models\RequestRequirement;
 use App\Services\PaymentService;
+use App\Services\PublicRequestWorkflowService;
 use App\Services\RequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -76,9 +77,9 @@ class RequestController extends Controller
         $documentRequest->load([
             'user:id,fullname,email,course,year_level,student_id,contact_number,academic_status',
             'documentType',
-            'items.documentType:id,name,category,fee,fee_formula,default_page_count',
+            'items.documentType:id,code,name,category,fee,fee_formula,default_page_count',
             'payments',
-            'clearances',
+            'clearances.steps.signer:id,fullname',
             'requirements',
             'claimSlip',
         ]);
@@ -154,6 +155,54 @@ class RequestController extends Controller
         }
 
         return back()->with('status', 'Request and payment approved successfully.');
+    }
+
+    public function evaluate(Request $request, DocumentRequest $documentRequest, PublicRequestWorkflowService $workflow): RedirectResponse
+    {
+        $this->authorize('approve', $documentRequest);
+        $validated = $request->validate([
+            'shipping_fee' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'quote_notes' => ['nullable', 'string', 'max:1000'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.id' => ['required', 'integer'],
+            'items.*.page_count' => ['required', 'integer', 'min:1', 'max:500'],
+            'items.*.base_amount' => ['required', 'numeric', 'min:0', 'max:999999.99'],
+            'items.*.authentication_amount' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'items.*.documentary_stamp_amount' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'items.*.evaluation_notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        try {
+            $workflow->evaluate($documentRequest, $request->user(), $validated);
+        } catch (\Throwable $exception) {
+            return back()->withErrors(['evaluation' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Quote locked and clearance routing started.');
+    }
+
+    public function signRegistrarClearance(
+        Request $request,
+        DocumentRequest $documentRequest,
+        PublicRequestWorkflowService $workflow,
+    ): RedirectResponse {
+        $this->authorize('updateStage', $documentRequest);
+        $validated = $request->validate([
+            'remarks' => ['nullable', 'string', 'max:500'],
+        ]);
+        $step = $documentRequest->clearances()
+            ->firstOrFail()
+            ->steps()
+            ->where('office_code', 'registrar')
+            ->firstOrFail();
+
+        try {
+            $workflow->signStep($step, $request->user(), $validated['remarks'] ?? null);
+        } catch (\Throwable $exception) {
+            return back()->withErrors(['registrar_clearance' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Registrar clearance signed.');
     }
 
     public function denyWithPayment(Request $request, DocumentRequest $documentRequest, RequestService $requestService, PaymentService $paymentService): RedirectResponse

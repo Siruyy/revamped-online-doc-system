@@ -14,6 +14,7 @@ const page = usePage();
 const banner = computed(() => page.props.flash?.banner ?? null);
 const roleOptions = [
     { value: 'admin', label: 'Admin' },
+    { value: 'accounting', label: 'Accounting Office' },
     { value: 'dean', label: 'Dean' },
     { value: 'president', label: 'Office of the President' },
     { value: 'librarian', label: 'Librarian' },

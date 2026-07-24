@@ -1,783 +1,581 @@
 <script setup>
 import FileUploadField from '@/Components/Public/FileUploadField.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import {
     ArrowLeftIcon,
     ArrowRightIcon,
-    BanknotesIcon,
     CheckCircleIcon,
-    ClipboardDocumentCheckIcon,
-    DocumentTextIcon,
-    MinusCircleIcon,
-    PlusCircleIcon,
-    ShieldCheckIcon,
+    ChevronDownIcon,
+    MinusIcon,
+    PlusIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     documentTypeGroups: { type: Object, required: true },
-    paymentProfile: { type: Object, default: null },
+    programs: { type: Array, required: true },
     uploadLimits: { type: Object, default: () => ({}) },
 });
 
-const steps = [
-    { label: 'Choose documents', description: 'Select records and copies.' },
-    { label: 'Requestor details', description: 'Tell us who the request is for.' },
-    { label: 'Upload requirements', description: 'Attach required IDs or forms.' },
-    { label: 'Payment receipt', description: 'Add payment details and receipt.' },
-    { label: 'Review & submit', description: 'Confirm before sending.' },
-];
-
+const steps = ['Documents', 'Personal data', 'Education & release', 'Requirements', 'Review'];
 const step = ref(1);
-const cart = ref({});
-const mobileSummaryOpen = ref(false);
-
-const categoryOrder = ['Academic', 'Certification', 'BasicEd', 'Special'];
-const sortedGroups = computed(() =>
-    Object.entries(props.documentTypeGroups || {}).sort(([a], [b]) => {
-        const ia = categoryOrder.indexOf(a);
-        const ib = categoryOrder.indexOf(b);
-        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-    }),
-);
-const allDocumentTypes = computed(() => Object.values(props.documentTypeGroups || {}).flat());
-const cartItems = computed(() =>
-    Object.entries(cart.value)
-        .map(([id, data]) => {
-            const type = allDocumentTypes.value.find((doc) => doc.id === Number(id));
-            if (!type) return null;
-            const pageCount = type.default_page_count || 1;
-            const lineTotal = Number(type.fee || 0) * pageCount * data.copies;
-            return { type, copies: data.copies, pageCount, lineTotal };
-        })
-        .filter(Boolean),
-);
-const requirementList = computed(() => {
-    const map = new Map();
-    cartItems.value.forEach((item) => {
-        (item.type.requirements || []).forEach((requirement) => map.set(requirement.key, requirement));
-    });
-    return Array.from(map.values());
-});
-const grandTotal = computed(() => cartItems.value.reduce((sum, item) => sum + item.lineTotal, 0));
-
+const selected = ref({});
+const openCategories = ref(new Set(['Academic']));
 const form = useForm({
     requester_name: '',
     requester_email: '',
     requester_contact_number: '',
     requester_student_id: '',
-    requester_course: '',
+    academic_program_id: '',
     requester_year_level: '',
     requester_graduation_or_last_sem: '',
-    items: [],
+    birth_date: '',
+    birth_place: '',
+    sex: '',
+    civil_status: '',
+    citizenship: 'Filipino',
+    home_address: '',
+    father_name: '',
+    mother_maiden_name: '',
+    parents_address: '',
+    guardian_name: '',
+    guardian_address: '',
+    education: {
+        elementary: { school: '', address: '', year: '' },
+        junior_high: { school: '', address: '', year: '' },
+        senior_high: { school: '', address: '', year: '' },
+    },
+    employment_status: 'not_employed',
+    company_name: '',
+    company_address: '',
     purpose: '',
+    fulfillment_method: 'pickup',
+    delivery_address: '',
+    is_proxy_request: false,
+    items: [],
     requirements: {},
-    payment_method: '',
-    payment_reference_number: '',
-    receipt: null,
 });
-const clientFileErrors = ref({});
 
-const currentStep = computed(() => steps[step.value - 1]);
-const selectedRequirementFilesCount = computed(
-    () => requirementList.value.filter((requirement) => form.requirements[requirement.key]).length,
+const allTypes = computed(() => Object.values(props.documentTypeGroups).flat());
+const cart = computed(() =>
+    Object.entries(selected.value)
+        .map(([id, values]) => {
+            const type = allTypes.value.find((item) => item.id === Number(id));
+            return type ? { type, ...values } : null;
+        })
+        .filter(Boolean),
 );
-const missingRequirementCount = computed(() =>
-    Math.max(requirementList.value.length - selectedRequirementFilesCount.value, 0),
-);
-const hasReceipt = computed(() => Boolean(form.receipt));
-const maxFileBytes = computed(() => Number(props.uploadLimits?.max_file_bytes || 5 * 1024 * 1024));
-const maxTotalBytes = computed(() => {
-    const limit = Number(props.uploadLimits?.max_total_bytes || 0);
-
-    return limit > 0 ? limit : null;
-});
-const fileUploadHint = computed(() => `Upload a clear JPG, PNG, or PDF up to ${formatFileSize(maxFileBytes.value)}.`);
-const selectedUploadBytes = computed(() => {
-    const requirementBytes = Object.values(form.requirements || {}).reduce((sum, file) => sum + (file?.size || 0), 0);
-
-    return requirementBytes + (form.receipt?.size || 0);
-});
-const totalUploadError = computed(() => {
-    if (!maxTotalBytes.value || selectedUploadBytes.value <= maxTotalBytes.value) return '';
-
-    return `Selected uploads total ${formatFileSize(selectedUploadBytes.value)}. Please keep all selected files under ${formatFileSize(maxTotalBytes.value)}.`;
-});
-const blockingUploadError = computed(
-    () => totalUploadError.value || Object.values(clientFileErrors.value).find(Boolean) || '',
-);
-const submitErrors = computed(() => Object.entries(form.errors));
-const hasSubmitErrors = computed(() => Boolean(blockingUploadError.value) || submitErrors.value.length > 0);
-const firstErrorMessage = computed(() => blockingUploadError.value || submitErrors.value[0]?.[1] || '');
-const paymentInstructionSteps = computed(() => {
-    const instructions = props.paymentProfile?.instructions || '';
-    if (!instructions) return [];
-
-    const matches = Array.from(instructions.matchAll(/(?:^|\s)(\d+\.\s.*?)(?=\s\d+\.|$)/gs));
-
-    if (matches.length <= 1) return [];
-
-    return matches.map((match) => match[1].trim());
-});
-
-watch(requirementList, (requirements) => {
-    const keys = requirements.map((requirement) => requirement.key);
-    Object.keys(form.requirements).forEach((key) => {
-        if (!keys.includes(key)) delete form.requirements[key];
-    });
-});
-
-function toggleDoc(type) {
-    if (cart.value[type.id]) {
-        delete cart.value[type.id];
-        return;
-    }
-
-    cart.value[type.id] = { copies: 1 };
-}
-
-function setCopies(typeId, value) {
-    if (!cart.value[typeId]) return;
-    cart.value[typeId].copies = Math.max(1, Math.min(20, Number(value) || 1));
-}
-
-function formatPeso(value) {
-    return `PHP ${Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function formatFileSize(bytes) {
-    const megabytes = Number(bytes || 0) / (1024 * 1024);
-
-    if (megabytes >= 1) {
-        return `${Number.isInteger(megabytes) ? megabytes.toFixed(0) : megabytes.toFixed(1)} MB`;
-    }
-
-    return `${Math.ceil(Number(bytes || 0) / 1024)} KB`;
-}
-
-function validateUpload(field, file) {
-    delete clientFileErrors.value[field];
-
-    if (!file) return true;
-
-    if (file.size > maxFileBytes.value) {
-        clientFileErrors.value[field] =
-            `${file.name} is ${formatFileSize(file.size)}. The limit is ${formatFileSize(maxFileBytes.value)}.`;
-
-        return false;
-    }
-
-    return true;
-}
-
-function setRequirementFile(requirement, file) {
-    const field = `requirements.${requirement.key}`;
-
-    form.requirements[requirement.key] = validateUpload(field, file) ? file : null;
-}
-
-function setReceiptFile(file) {
-    form.receipt = validateUpload('receipt', file) ? file : null;
-}
-
-function errorStep(field) {
-    if (field === 'items' || field.startsWith('items.')) return 1;
-    if (
+const requirementList = computed(() => {
+    const map = new Map([
+        ['photo_2x2', { key: 'photo_2x2', label: 'Recent 2×2 ID photo', hint: 'White background and collared shirt.' }],
         [
-            'requester_name',
-            'requester_email',
-            'requester_contact_number',
-            'requester_student_id',
-            'requester_course',
-            'requester_year_level',
-            'requester_graduation_or_last_sem',
-            'purpose',
-        ].includes(field)
-    )
-        return 2;
-    if (field.startsWith('requirements.')) return 3;
-    if (['payment_method', 'payment_reference_number', 'receipt'].includes(field)) return 4;
+            'psa_birth_certificate',
+            { key: 'psa_birth_certificate', label: 'PSA birth certificate', hint: 'Clear JPG, PNG, or PDF.' },
+        ],
+    ]);
+    cart.value.forEach((item) =>
+        item.type.requirements.forEach((requirement) => map.set(requirement.key, requirement)),
+    );
+    if (form.civil_status === 'Married')
+        map.set('marriage_certificate', {
+            key: 'marriage_certificate',
+            label: 'Marriage certificate',
+            hint: 'Required for married requestors.',
+        });
+    if (form.is_proxy_request) {
+        map.set('authorization_letter', {
+            key: 'authorization_letter',
+            label: 'Authorization letter',
+            hint: 'Signed by the document owner.',
+        });
+        map.set('spa', {
+            key: 'spa',
+            label: 'Special Power of Attorney',
+            hint: 'Required for an authorized representative.',
+        });
+    }
+    return [...map.values()];
+});
+const selectedProgram = computed(() =>
+    props.programs.find((program) => program.id === Number(form.academic_program_id)),
+);
+const errorSummary = computed(() => Object.values(form.errors)[0]);
 
-    return 5;
+function toggleCategory(category) {
+    const next = new Set(openCategories.value);
+    next.has(category) ? next.delete(category) : next.add(category);
+    openCategories.value = next;
 }
 
-function submit() {
-    if (blockingUploadError.value) {
-        step.value = totalUploadError.value
-            ? 4
-            : errorStep(Object.keys(clientFileErrors.value).find(Boolean) || 'receipt');
-
-        return;
+function toggleDocument(type) {
+    if (selected.value[type.id]) {
+        delete selected.value[type.id];
+    } else {
+        selected.value[type.id] = {
+            copies: 1,
+            authentication_requested: false,
+            documentary_stamp_requested: false,
+            semester_requested: '',
+        };
     }
+}
 
-    form.items = cartItems.value.map((item) => ({ document_type_id: item.type.id, copies: item.copies }));
-    form.post(route('public.requests.store'), {
-        forceFormData: true,
-        preserveScroll: true,
-        onError: (errors) => {
-            const firstField = Object.keys(errors)[0];
-            if (firstField) step.value = errorStep(firstField);
-        },
-    });
+function changeCopies(id, amount) {
+    selected.value[id].copies = Math.max(1, Math.min(20, selected.value[id].copies + amount));
 }
 
 function canContinue() {
-    if (step.value === 1) return cartItems.value.length > 0;
+    if (step.value === 1) return cart.value.length > 0;
     if (step.value === 2) {
         return (
             form.requester_name &&
             form.requester_email &&
             form.requester_contact_number &&
-            form.requester_course &&
+            form.academic_program_id &&
             form.requester_year_level &&
             form.requester_graduation_or_last_sem &&
-            form.purpose.trim().length >= 5
+            form.birth_date &&
+            form.birth_place &&
+            form.sex &&
+            form.civil_status &&
+            form.citizenship &&
+            form.home_address
         );
     }
-    if (step.value === 3) return missingRequirementCount.value === 0;
-    if (step.value === 4) return form.payment_method && hasReceipt.value && !blockingUploadError.value;
-
+    if (step.value === 3) {
+        const educationComplete = Object.values(form.education).every(
+            (entry) => entry.school && entry.address && entry.year,
+        );
+        const employmentComplete =
+            form.employment_status === 'not_employed' || (form.company_name && form.company_address);
+        const deliveryComplete = form.fulfillment_method === 'pickup' || form.delivery_address;
+        return educationComplete && employmentComplete && deliveryComplete && form.purpose.length >= 5;
+    }
+    if (step.value === 4) return requirementList.value.every((requirement) => form.requirements[requirement.key]);
     return true;
 }
 
-function requirementMissing(requirement) {
-    return step.value >= 3 && !form.requirements[requirement.key];
+function next() {
+    if (canContinue() && step.value < steps.length) step.value += 1;
+}
+
+function submit() {
+    form.items = cart.value.map((item) => ({
+        document_type_id: item.type.id,
+        copies: item.copies,
+        authentication_requested: item.authentication_requested,
+        documentary_stamp_requested: item.documentary_stamp_requested,
+        semester_requested: item.semester_requested || null,
+    }));
+    form.post(route('public.requests.store'), {
+        forceFormData: true,
+        preserveScroll: true,
+        onError: () => {
+            const field = Object.keys(form.errors)[0] || '';
+            if (field.startsWith('items')) step.value = 1;
+            else if (
+                field.startsWith('education') ||
+                ['purpose', 'fulfillment_method', 'delivery_address'].includes(field)
+            )
+                step.value = 3;
+            else if (field.startsWith('requirements')) step.value = 4;
+            else step.value = 2;
+        },
+    });
+}
+
+function feeNote(type) {
+    if (['diploma', 'special_order'].includes(type.code)) return 'Registrar will provide the official amount.';
+    if (type.fee_formula === 'per_page')
+        return `Starts at ₱${Number(type.fee).toFixed(2)} per page; final pages are evaluated by the registrar.`;
+    return `Reference rate ₱${Number(type.fee).toFixed(2)}; final quote follows review.`;
 }
 </script>
 
 <template>
-    <Head title="Request Document" />
-
+    <Head title="Request Documents" />
     <main class="min-h-screen bg-slate-50 text-slate-900">
-        <section class="border-b border-slate-200 bg-white">
-            <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-                <Link href="/" class="inline-flex items-center gap-2 text-sm font-semibold text-brand-700">
+        <header class="border-b border-slate-200 bg-white">
+            <div class="mx-auto max-w-6xl px-4 py-7 sm:px-6 lg:px-8">
+                <Link href="/" class="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-700">
                     <ArrowLeftIcon class="h-4 w-4" /> Back to home
                 </Link>
-                <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_0.75fr] lg:items-end">
-                    <div>
-                        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-brand-700">Public intake</p>
-                        <h1 class="mt-3 font-display text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-                            Request documents without creating an account.
-                        </h1>
-                        <p class="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                            Submit requestor details, selected documents, required attachments, and your offline payment
-                            receipt in one secure form. Save the reference number after submission.
-                        </p>
-                    </div>
-                    <div class="rounded-3xl bg-slate-950 p-5 text-white shadow-xl">
-                        <p class="text-sm font-semibold text-brand-100">Estimated total</p>
-                        <p class="mt-2 font-display text-4xl font-bold">{{ formatPeso(grandTotal) }}</p>
-                        <p class="mt-2 text-sm text-slate-300">
-                            {{ cartItems.length }} selected document{{ cartItems.length === 1 ? '' : 's' }}
-                        </p>
-                    </div>
+                <div class="mt-5 max-w-3xl">
+                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-700">
+                        Office of the Registrar
+                    </p>
+                    <h1 class="mt-2 font-display text-3xl font-bold tracking-tight sm:text-5xl">
+                        Request your academic records
+                    </h1>
+                    <p class="mt-3 text-base leading-7 text-slate-600">
+                        Submit the request first. The registrar will verify page counts, authentication, documentary
+                        stamps, and delivery before giving you a locked amount. Payment comes after clearance.
+                    </p>
                 </div>
             </div>
-        </section>
+        </header>
 
         <form class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8" @submit.prevent="submit">
             <div
-                v-if="hasSubmitErrors"
-                class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"
+                v-if="errorSummary"
                 role="alert"
+                class="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"
             >
-                <p class="font-semibold">Please fix the highlighted information before submitting.</p>
-                <p class="mt-1">{{ firstErrorMessage }}</p>
+                <strong>Please review the highlighted information.</strong> {{ errorSummary }}
             </div>
 
-            <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:hidden">
-                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Step {{ step }} of {{ steps.length }}
-                </p>
-                <p class="mt-1 font-display text-xl font-bold text-slate-950">{{ currentStep.label }}</p>
-                <p class="mt-1 text-sm text-slate-600">{{ currentStep.description }}</p>
-            </div>
-
-            <ol class="mb-8 hidden grid-cols-5 gap-3 md:grid">
-                <li
-                    v-for="(item, index) in steps"
-                    :key="item.label"
-                    class="rounded-2xl border px-4 py-3 text-sm"
-                    :class="
-                        step === index + 1
-                            ? 'border-brand-300 bg-brand-50 text-brand-800'
-                            : step > index + 1
-                              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                              : 'border-slate-200 bg-white text-slate-500'
-                    "
-                >
-                    <span
-                        class="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-bold"
+            <ol class="mb-8 grid grid-cols-5 gap-1" aria-label="Request progress">
+                <li v-for="(label, index) in steps" :key="label" class="min-w-0">
+                    <div :class="['h-1.5 rounded-full', index + 1 <= step ? 'bg-brand-700' : 'bg-slate-200']" />
+                    <p
+                        :class="[
+                            'mt-2 truncate text-xs font-semibold',
+                            index + 1 === step ? 'text-brand-800' : 'text-slate-500',
+                        ]"
                     >
-                        {{ index + 1 }}
-                    </span>
-                    <span class="block font-semibold">{{ item.label }}</span>
-                    <span class="mt-1 block text-xs leading-5">{{ item.description }}</span>
+                        {{ index + 1 }}. {{ label }}
+                    </p>
                 </li>
             </ol>
 
-            <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
-                <div class="space-y-6">
-                    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:hidden">
-                        <button
-                            type="button"
-                            class="flex w-full items-center justify-between gap-3 text-left text-sm font-semibold text-slate-900"
-                            @click="mobileSummaryOpen = !mobileSummaryOpen"
+            <section v-if="step === 1" class="space-y-5">
+                <div>
+                    <h2 class="font-display text-2xl font-bold">Choose documents</h2>
+                    <p class="mt-1 text-sm text-slate-600">
+                        Certification options are grouped so the list stays easy to scan.
+                    </p>
+                </div>
+                <div
+                    v-for="(types, category) in documentTypeGroups"
+                    :key="category"
+                    class="overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                >
+                    <button
+                        type="button"
+                        class="flex min-h-14 w-full items-center justify-between px-5 text-left font-semibold"
+                        :aria-expanded="openCategories.has(category)"
+                        @click="toggleCategory(category)"
+                    >
+                        <span
+                            >{{ category }}
+                            <span class="ml-1 text-sm font-normal text-slate-500">({{ types.length }})</span></span
                         >
-                            Request summary
-                            <span>{{ mobileSummaryOpen ? 'Hide' : 'Show' }}</span>
-                        </button>
-                        <div v-if="mobileSummaryOpen" class="mt-4 space-y-3 text-sm">
-                            <p class="flex justify-between">
-                                <span>Documents</span>
-                                <strong>{{ cartItems.length }}</strong>
-                            </p>
-                            <p class="flex justify-between">
-                                <span>Missing requirements</span>
-                                <strong>{{ missingRequirementCount }}</strong>
-                            </p>
-                            <p class="flex justify-between">
-                                <span>Receipt</span>
-                                <strong>{{ hasReceipt ? 'Selected' : 'Missing' }}</strong>
-                            </p>
-                            <p class="flex justify-between border-t border-slate-100 pt-3">
-                                <span>Total</span>
-                                <strong>{{ formatPeso(grandTotal) }}</strong>
-                            </p>
-                        </div>
-                    </div>
-
-                    <section v-if="step === 1" class="space-y-6">
-                        <div
-                            v-for="[category, docs] in sortedGroups"
-                            :key="category"
-                            class="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200"
+                        <ChevronDownIcon
+                            :class="['h-5 w-5 transition-transform', openCategories.has(category) && 'rotate-180']"
+                        />
+                    </button>
+                    <div
+                        v-if="openCategories.has(category)"
+                        class="grid gap-3 border-t border-slate-100 p-4 md:grid-cols-2"
+                    >
+                        <article
+                            v-for="type in types"
+                            :key="type.id"
+                            :class="[
+                                'rounded-xl border p-4',
+                                selected[type.id] ? 'border-brand-500 bg-brand-50' : 'border-slate-200',
+                            ]"
                         >
-                            <div class="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
-                                <DocumentTextIcon class="h-5 w-5 text-brand-700" />
-                                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-600">
-                                    {{ category }}
-                                </h2>
-                            </div>
-                            <div class="divide-y divide-slate-100">
-                                <article
-                                    v-for="doc in docs"
-                                    :key="doc.id"
-                                    class="grid gap-4 px-5 py-4 md:grid-cols-[1fr_auto]"
-                                    :class="cart[doc.id] ? 'bg-brand-50/60' : 'bg-white'"
-                                >
-                                    <label class="flex cursor-pointer gap-3">
-                                        <input
-                                            :checked="!!cart[doc.id]"
-                                            type="checkbox"
-                                            class="mt-1 h-5 w-5 rounded text-brand-600 focus:ring-brand-500"
-                                            @change="toggleDoc(doc)"
-                                        />
-                                        <span>
-                                            <span class="block font-semibold text-slate-950">{{ doc.name }}</span>
-                                            <span class="mt-1 block text-sm leading-6 text-slate-500">
-                                                {{ doc.description }}
-                                            </span>
-                                            <span class="mt-2 block text-sm font-semibold text-brand-700">
-                                                {{ formatPeso(Number(doc.fee) * (doc.default_page_count || 1)) }} base ·
-                                                {{ doc.sla_days }} working days
-                                            </span>
-                                            <span
-                                                v-if="cart[doc.id]"
-                                                class="mt-1 block text-sm font-bold text-slate-950"
-                                            >
-                                                Subtotal:
-                                                {{
-                                                    formatPeso(
-                                                        Number(doc.fee) *
-                                                            (doc.default_page_count || 1) *
-                                                            cart[doc.id].copies,
-                                                    )
-                                                }}
-                                            </span>
-                                        </span>
-                                    </label>
-                                    <div v-if="cart[doc.id]" class="flex items-center gap-2 md:justify-end">
+                            <label class="flex cursor-pointer items-start gap-3">
+                                <input
+                                    type="checkbox"
+                                    :checked="Boolean(selected[type.id])"
+                                    class="mt-1 rounded border-slate-300 text-brand-700 focus:ring-brand-600"
+                                    @change="toggleDocument(type)"
+                                />
+                                <span>
+                                    <span class="block font-semibold">{{ type.name }}</span>
+                                    <span class="mt-1 block text-xs leading-5 text-slate-600">{{ feeNote(type) }}</span>
+                                    <span class="block text-xs text-slate-500"
+                                        >{{ type.sla_days }} working day{{ type.sla_days === 1 ? '' : 's' }} after
+                                        official filing</span
+                                    >
+                                </span>
+                            </label>
+                            <div v-if="selected[type.id]" class="mt-4 space-y-3 border-t border-brand-200 pt-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium">Copies</span>
+                                    <div class="flex items-center gap-2">
                                         <button
                                             type="button"
-                                            class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-slate-500 hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
-                                            @click="setCopies(doc.id, cart[doc.id].copies - 1)"
+                                            class="grid h-11 w-11 place-items-center rounded-lg border border-slate-300 bg-white"
+                                            aria-label="Decrease copies"
+                                            @click="changeCopies(type.id, -1)"
                                         >
-                                            <MinusCircleIcon class="h-7 w-7" />
+                                            <MinusIcon class="h-4 w-4" />
                                         </button>
-                                        <input
-                                            :value="cart[doc.id].copies"
-                                            type="number"
-                                            min="1"
-                                            max="20"
-                                            class="min-h-11 w-20 rounded-xl border-slate-300 text-center text-sm"
-                                            @input="setCopies(doc.id, $event.target.value)"
-                                        />
+                                        <span class="w-6 text-center font-semibold">{{
+                                            selected[type.id].copies
+                                        }}</span>
                                         <button
                                             type="button"
-                                            class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-slate-500 hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
-                                            @click="setCopies(doc.id, cart[doc.id].copies + 1)"
+                                            class="grid h-11 w-11 place-items-center rounded-lg border border-slate-300 bg-white"
+                                            aria-label="Increase copies"
+                                            @click="changeCopies(type.id, 1)"
                                         >
-                                            <PlusCircleIcon class="h-7 w-7" />
+                                            <PlusIcon class="h-4 w-4" />
                                         </button>
                                     </div>
-                                </article>
-                            </div>
-                        </div>
-                        <p v-if="form.errors.items" class="text-sm text-rose-600">{{ form.errors.items }}</p>
-                    </section>
-
-                    <section
-                        v-else-if="step === 2"
-                        class="grid gap-5 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 md:grid-cols-2"
-                    >
-                        <div>
-                            <label class="text-sm font-semibold text-slate-700" for="requester_name">Full name *</label>
-                            <input
-                                id="requester_name"
-                                v-model="form.requester_name"
-                                class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
-                                required
-                            />
-                            <p v-if="form.errors.requester_name" class="mt-1 text-sm text-rose-600">
-                                {{ form.errors.requester_name }}
-                            </p>
-                        </div>
-                        <div>
-                            <label class="text-sm font-semibold text-slate-700" for="requester_email">Email *</label>
-                            <input
-                                id="requester_email"
-                                v-model="form.requester_email"
-                                type="email"
-                                class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
-                                required
-                            />
-                            <p v-if="form.errors.requester_email" class="mt-1 text-sm text-rose-600">
-                                {{ form.errors.requester_email }}
-                            </p>
-                        </div>
-                        <div>
-                            <label class="text-sm font-semibold text-slate-700" for="requester_contact_number">
-                                Contact number *
-                            </label>
-                            <input
-                                id="requester_contact_number"
-                                v-model="form.requester_contact_number"
-                                class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
-                                required
-                            />
-                            <p v-if="form.errors.requester_contact_number" class="mt-1 text-sm text-rose-600">
-                                {{ form.errors.requester_contact_number }}
-                            </p>
-                        </div>
-                        <div>
-                            <label class="text-sm font-semibold text-slate-700" for="requester_course">Course *</label>
-                            <input
-                                id="requester_course"
-                                v-model="form.requester_course"
-                                class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
-                                required
-                            />
-                            <p v-if="form.errors.requester_course" class="mt-1 text-sm text-rose-600">
-                                {{ form.errors.requester_course }}
-                            </p>
-                        </div>
-                        <div>
-                            <label class="text-sm font-semibold text-slate-700" for="requester_year_level">
-                                Year level *
-                            </label>
-                            <input
-                                id="requester_year_level"
-                                v-model="form.requester_year_level"
-                                type="number"
-                                min="1"
-                                max="8"
-                                class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
-                                required
-                            />
-                            <p v-if="form.errors.requester_year_level" class="mt-1 text-sm text-rose-600">
-                                {{ form.errors.requester_year_level }}
-                            </p>
-                        </div>
-                        <div>
-                            <label class="text-sm font-semibold text-slate-700" for="requester_student_id">
-                                ID number
-                            </label>
-                            <input
-                                id="requester_student_id"
-                                v-model="form.requester_student_id"
-                                class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
-                                placeholder="Optional"
-                            />
-                            <p v-if="form.errors.requester_student_id" class="mt-1 text-sm text-rose-600">
-                                {{ form.errors.requester_student_id }}
-                            </p>
-                        </div>
-                        <div>
-                            <label class="text-sm font-semibold text-slate-700" for="requester_graduation_or_last_sem">
-                                Date of graduation / last semester attended *
-                            </label>
-                            <input
-                                id="requester_graduation_or_last_sem"
-                                v-model="form.requester_graduation_or_last_sem"
-                                class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
-                                placeholder="e.g. March 2026 or 2nd Sem 2025-2026"
-                                required
-                            />
-                            <p v-if="form.errors.requester_graduation_or_last_sem" class="mt-1 text-sm text-rose-600">
-                                {{ form.errors.requester_graduation_or_last_sem }}
-                            </p>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="text-sm font-semibold text-slate-700" for="purpose">Purpose *</label>
-                            <textarea
-                                id="purpose"
-                                v-model="form.purpose"
-                                rows="4"
-                                maxlength="500"
-                                class="mt-2 w-full rounded-xl border-slate-300"
-                                required
-                            />
-                            <p v-if="form.errors.purpose" class="mt-1 text-sm text-rose-600">
-                                {{ form.errors.purpose }}
-                            </p>
-                        </div>
-                    </section>
-
-                    <section v-else-if="step === 3" class="space-y-4">
-                        <div
-                            class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-600"
-                        >
-                            <ClipboardDocumentCheckIcon class="h-5 w-5 text-brand-700" /> Required attachments
-                        </div>
-                        <FileUploadField
-                            v-for="requirement in requirementList"
-                            :id="`requirement-${requirement.key}`"
-                            :key="requirement.key"
-                            :label="requirement.label"
-                            :hint="requirement.hint ? `${requirement.hint} ${fileUploadHint}` : fileUploadHint"
-                            :error="
-                                clientFileErrors[`requirements.${requirement.key}`] ||
-                                form.errors[`requirements.${requirement.key}`]
-                            "
-                            :missing="requirementMissing(requirement)"
-                            required
-                            @change="(file) => setRequirementFile(requirement, file)"
-                        />
-                        <p
-                            v-if="!requirementList.length"
-                            class="rounded-2xl bg-white p-4 text-sm text-slate-600 shadow-sm ring-1 ring-slate-200"
-                        >
-                            No extra requirement files are needed for the selected documents.
-                        </p>
-                    </section>
-
-                    <section v-else-if="step === 4" class="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
-                        <div class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                            <div class="flex items-center gap-2 font-semibold text-slate-950">
-                                <BanknotesIcon class="h-5 w-5 text-brand-700" /> Payment instructions
-                            </div>
-                            <div v-if="paymentProfile" class="mt-4 space-y-2 text-sm text-slate-600">
-                                <p>
-                                    <strong>{{ paymentProfile.bank_name }}</strong>
-                                </p>
-                                <p>{{ paymentProfile.account_name }} · {{ paymentProfile.account_number }}</p>
-                                <ol v-if="paymentInstructionSteps.length" class="list-decimal space-y-1 pl-5 leading-6">
-                                    <li v-for="instruction in paymentInstructionSteps" :key="instruction">
-                                        {{ instruction.replace(/^\d+\.\s*/, '') }}
-                                    </li>
-                                </ol>
-                                <p v-else-if="paymentProfile.instructions" class="whitespace-pre-line">
-                                    {{ paymentProfile.instructions }}
-                                </p>
-                                <img
-                                    v-if="paymentProfile.qr_url"
-                                    :src="paymentProfile.qr_url"
-                                    alt="Payment QR code"
-                                    class="mt-3 max-h-48 rounded-2xl border border-slate-200"
-                                />
-                            </div>
-                            <p v-else class="mt-3 text-sm text-slate-600">
-                                Payment profile is not configured. Ask the registrar for payment instructions before
-                                submitting.
-                            </p>
-                        </div>
-                        <div class="space-y-4">
-                            <div class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                                <label class="text-sm font-semibold text-slate-700" for="payment_method">
-                                    Payment method *
-                                </label>
-                                <input
-                                    id="payment_method"
-                                    v-model="form.payment_method"
-                                    placeholder="GCash, bank transfer, cash deposit"
-                                    class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
-                                    required
-                                />
-                                <p v-if="form.errors.payment_method" class="mt-1 text-sm text-rose-600">
-                                    {{ form.errors.payment_method }}
-                                </p>
-                                <label
-                                    class="mt-4 block text-sm font-semibold text-slate-700"
-                                    for="payment_reference_number"
+                                </div>
+                                <label class="flex min-h-11 items-center gap-2 text-sm"
+                                    ><input
+                                        v-model="selected[type.id].authentication_requested"
+                                        type="checkbox"
+                                        class="rounded text-brand-700"
+                                    />
+                                    Request authentication</label
                                 >
-                                    Payment reference
-                                </label>
-                                <input
-                                    id="payment_reference_number"
-                                    v-model="form.payment_reference_number"
-                                    placeholder="Optional transaction/reference number"
-                                    class="mt-2 min-h-11 w-full rounded-xl border-slate-300"
-                                />
-                            </div>
-                            <FileUploadField
-                                id="payment-receipt"
-                                label="Payment receipt"
-                                :hint="`Upload the receipt image or PDF. ${fileUploadHint}`"
-                                :error="clientFileErrors.receipt || form.errors.receipt"
-                                :missing="!hasReceipt"
-                                required
-                                @change="setReceiptFile"
-                            />
-                            <p v-if="totalUploadError" class="text-sm text-rose-600">{{ totalUploadError }}</p>
-                        </div>
-                    </section>
-
-                    <section v-else class="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
-                        <div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                            <h2 class="font-display text-2xl font-bold text-slate-950">Review before submitting</h2>
-                            <ul class="mt-5 divide-y divide-slate-100 rounded-2xl border border-slate-200">
-                                <li
-                                    v-for="item in cartItems"
-                                    :key="item.type.id"
-                                    class="flex justify-between gap-4 p-4 text-sm"
+                                <label class="flex min-h-11 items-center gap-2 text-sm"
+                                    ><input
+                                        v-model="selected[type.id].documentary_stamp_requested"
+                                        type="checkbox"
+                                        class="rounded text-brand-700"
+                                    />
+                                    Include documentary stamp</label
                                 >
-                                    <span>{{ item.type.name }} x {{ item.copies }}</span>
-                                    <strong>{{ formatPeso(item.lineTotal) }}</strong>
-                                </li>
-                            </ul>
-                            <dl class="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-                                <div>
-                                    <dt class="text-slate-500">Requestor</dt>
-                                    <dd class="font-semibold text-slate-900">{{ form.requester_name }}</dd>
-                                </div>
-                                <div>
-                                    <dt class="text-slate-500">Course / year</dt>
-                                    <dd class="font-semibold text-slate-900">
-                                        {{ form.requester_course }} Y{{ form.requester_year_level }}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt class="text-slate-500">ID number</dt>
-                                    <dd class="font-semibold text-slate-900">
-                                        {{ form.requester_student_id || 'Not provided' }}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt class="text-slate-500">Graduation / last semester</dt>
-                                    <dd class="font-semibold text-slate-900">
-                                        {{ form.requester_graduation_or_last_sem }}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt class="text-slate-500">Requirements</dt>
-                                    <dd class="font-semibold text-slate-900">
-                                        {{ selectedRequirementFilesCount }} of {{ requirementList.length }} selected
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt class="text-slate-500">Payment method</dt>
-                                    <dd class="font-semibold text-slate-900">{{ form.payment_method }}</dd>
-                                </div>
-                                <div>
-                                    <dt class="text-slate-500">Receipt</dt>
-                                    <dd class="font-semibold text-slate-900">
-                                        {{ hasReceipt ? 'Selected' : 'Missing' }}
-                                    </dd>
-                                </div>
-                            </dl>
-                            <p class="mt-4 text-sm text-slate-600">
-                                Reference tracking starts after submission. Keep the generated reference number.
-                            </p>
-                        </div>
-                        <div class="rounded-3xl bg-slate-950 p-6 text-white shadow-xl">
-                            <ShieldCheckIcon class="h-9 w-9 text-brand-200" />
-                            <p class="mt-4 text-sm text-slate-300">Total to verify</p>
-                            <p class="mt-1 font-display text-4xl font-bold">{{ formatPeso(grandTotal) }}</p>
-                            <button
-                                type="submit"
-                                class="mt-6 inline-flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-accent-500 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-accent-600 disabled:opacity-60"
-                                :disabled="form.processing"
-                            >
-                                {{ form.processing ? 'Submitting request...' : 'Submit public request' }}
-                                <CheckCircleIcon class="h-5 w-5" />
-                            </button>
-                            <p v-if="blockingUploadError" class="mt-3 text-sm text-rose-200">
-                                {{ blockingUploadError }}
-                            </p>
-                            <p v-if="form.errors.items" class="mt-3 text-sm text-rose-200">{{ form.errors.items }}</p>
-                        </div>
-                    </section>
-
-                    <div class="flex items-center justify-between gap-3">
-                        <button
-                            v-if="step > 1"
-                            type="button"
-                            class="inline-flex min-h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700"
-                            @click="step -= 1"
-                        >
-                            <ArrowLeftIcon class="h-5 w-5" /> Back
-                        </button>
-                        <span v-else></span>
-                        <button
-                            v-if="step < steps.length"
-                            type="button"
-                            class="inline-flex min-h-12 items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 disabled:opacity-50"
-                            :disabled="!canContinue()"
-                            @click="step += 1"
-                        >
-                            Continue <ArrowRightIcon class="h-5 w-5" />
-                        </button>
+                                <label v-if="type.code === 'cert_enrollment'" class="block text-sm font-medium">
+                                    Semester requested
+                                    <input
+                                        v-model="selected[type.id].semester_requested"
+                                        class="mt-1 min-h-11 w-full rounded-lg border-slate-300"
+                                        placeholder="e.g. First Semester 2025–2026"
+                                    />
+                                </label>
+                            </div>
+                        </article>
                     </div>
                 </div>
+            </section>
 
-                <aside class="hidden lg:block">
-                    <div class="sticky top-24 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                        <h2 class="font-display text-lg font-bold text-slate-950">Request summary</h2>
-                        <ul v-if="cartItems.length" class="mt-4 divide-y divide-slate-100">
-                            <li v-for="item in cartItems" :key="item.type.id" class="py-3 text-sm">
-                                <div class="flex justify-between gap-3">
-                                    <span class="font-medium text-slate-900">{{ item.type.name }}</span>
-                                    <span>{{ item.copies }}x</span>
-                                </div>
-                                <p class="mt-1 text-right font-semibold text-slate-950">
-                                    {{ formatPeso(item.lineTotal) }}
-                                </p>
-                            </li>
-                        </ul>
-                        <p v-else class="mt-4 rounded-2xl bg-slate-50 p-3 text-sm text-slate-500">
-                            Select at least one document to start.
-                        </p>
-                        <dl class="mt-4 space-y-3 border-t border-slate-100 pt-4 text-sm">
-                            <div class="flex justify-between gap-3">
-                                <dt class="text-slate-500">Missing requirements</dt>
-                                <dd class="font-semibold text-slate-900">{{ missingRequirementCount }}</dd>
-                            </div>
-                            <div class="flex justify-between gap-3">
-                                <dt class="text-slate-500">Receipt</dt>
-                                <dd class="font-semibold text-slate-900">{{ hasReceipt ? 'Selected' : 'Missing' }}</dd>
-                            </div>
-                            <div class="flex justify-between gap-3 border-t border-slate-100 pt-3">
-                                <dt class="font-semibold text-slate-900">Total</dt>
-                                <dd class="font-display text-lg font-bold text-slate-950">
-                                    {{ formatPeso(grandTotal) }}
-                                </dd>
-                            </div>
-                        </dl>
+            <section v-else-if="step === 2" class="space-y-6">
+                <div>
+                    <h2 class="font-display text-2xl font-bold">Personal data</h2>
+                    <p class="mt-1 text-sm text-slate-600">Use details that match your school records.</p>
+                </div>
+                <div class="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 sm:grid-cols-2">
+                    <label class="sm:col-span-2"
+                        >Full name<input v-model="form.requester_name" autocomplete="name" class="field"
+                    /></label>
+                    <label
+                        >Email address<input
+                            v-model="form.requester_email"
+                            type="email"
+                            autocomplete="email"
+                            class="field"
+                    /></label>
+                    <label
+                        >Contact number<input
+                            v-model="form.requester_contact_number"
+                            type="tel"
+                            autocomplete="tel"
+                            class="field"
+                    /></label>
+                    <label>Student ID (if available)<input v-model="form.requester_student_id" class="field" /></label>
+                    <label
+                        >Program / course<select v-model="form.academic_program_id" class="field">
+                            <option value="" disabled>Select program</option>
+                            <option v-for="program in programs" :key="program.id" :value="program.id">
+                                {{ program.code }} — {{ program.name }}
+                            </option>
+                        </select></label
+                    >
+                    <label
+                        >Year level<select v-model="form.requester_year_level" class="field">
+                            <option value="" disabled>Select year</option>
+                            <option v-for="year in 8" :key="year" :value="year">{{ year }}</option>
+                        </select></label
+                    >
+                    <label
+                        >Graduation year / last term attended<input
+                            v-model="form.requester_graduation_or_last_sem"
+                            class="field"
+                    /></label>
+                    <label>Birth date<input v-model="form.birth_date" type="date" class="field" /></label>
+                    <label>Birth place<input v-model="form.birth_place" class="field" /></label>
+                    <label
+                        >Sex<select v-model="form.sex" class="field">
+                            <option value="" disabled>Select</option>
+                            <option>Female</option>
+                            <option>Male</option>
+                            <option>Prefer not to say</option>
+                        </select></label
+                    >
+                    <label
+                        >Civil status<select v-model="form.civil_status" class="field">
+                            <option value="" disabled>Select</option>
+                            <option>Single</option>
+                            <option>Married</option>
+                            <option>Widowed</option>
+                            <option>Separated</option>
+                        </select></label
+                    >
+                    <label>Citizenship<input v-model="form.citizenship" class="field" /></label>
+                    <label class="sm:col-span-2"
+                        >Home address<textarea v-model="form.home_address" rows="2" class="field" />
+                    </label>
+                    <label>Father’s name<input v-model="form.father_name" class="field" /></label>
+                    <label>Mother’s maiden name<input v-model="form.mother_maiden_name" class="field" /></label>
+                    <label class="sm:col-span-2"
+                        >Parents’ address<input v-model="form.parents_address" class="field"
+                    /></label>
+                    <label>Guardian<input v-model="form.guardian_name" class="field" /></label>
+                    <label>Guardian’s address<input v-model="form.guardian_address" class="field" /></label>
+                </div>
+            </section>
+
+            <section v-else-if="step === 3" class="space-y-6">
+                <div>
+                    <h2 class="font-display text-2xl font-bold">Education and release details</h2>
+                    <p class="mt-1 text-sm text-slate-600">This mirrors the registrar’s records request form.</p>
+                </div>
+                <div class="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+                    <fieldset
+                        v-for="(label, key) in {
+                            elementary: 'Elementary',
+                            junior_high: 'Junior high school',
+                            senior_high: 'Senior high school',
+                        }"
+                        :key="key"
+                        class="grid gap-3 border-b border-slate-100 pb-4 sm:grid-cols-[1fr_1fr_8rem]"
+                    >
+                        <legend class="mb-2 font-semibold sm:col-span-3">{{ label }}</legend>
+                        <label>School<input v-model="form.education[key].school" class="field" /></label>
+                        <label>Address<input v-model="form.education[key].address" class="field" /></label>
+                        <label
+                            >Year<input v-model="form.education[key].year" inputmode="numeric" class="field"
+                        /></label>
+                    </fieldset>
+                    <label
+                        >Employment status<select v-model="form.employment_status" class="field">
+                            <option value="employed">Employed</option>
+                            <option value="not_employed">Not employed</option>
+                            <option value="self_employed">Self-employed</option>
+                        </select></label
+                    >
+                    <div v-if="form.employment_status !== 'not_employed'" class="grid gap-4 sm:grid-cols-2">
+                        <label>Company / business name<input v-model="form.company_name" class="field" /></label>
+                        <label>Company / business address<input v-model="form.company_address" class="field" /></label>
                     </div>
-                </aside>
+                    <label
+                        >Purpose<select v-model="form.purpose" class="field">
+                            <option value="" disabled>Select purpose</option>
+                            <option>Employment</option>
+                            <option>Board examination</option>
+                            <option>Further studies</option>
+                            <option>Transfer</option>
+                            <option>Passport or visa application</option>
+                            <option>Record evaluation</option>
+                            <option>Personal copy</option>
+                            <option>Other official purpose</option>
+                        </select></label
+                    >
+                    <fieldset>
+                        <legend class="font-semibold">How should the documents be released?</legend>
+                        <div class="mt-2 flex flex-wrap gap-4">
+                            <label class="flex min-h-11 items-center gap-2"
+                                ><input v-model="form.fulfillment_method" type="radio" value="pickup" /> Pickup</label
+                            ><label class="flex min-h-11 items-center gap-2"
+                                ><input v-model="form.fulfillment_method" type="radio" value="delivery" />
+                                Delivery</label
+                            >
+                        </div>
+                    </fieldset>
+                    <label v-if="form.fulfillment_method === 'delivery'"
+                        >Delivery address<textarea v-model="form.delivery_address" rows="2" class="field" />
+                    </label>
+                    <label class="flex min-h-11 items-center gap-2"
+                        ><input v-model="form.is_proxy_request" type="checkbox" class="rounded text-brand-700" /> A
+                        representative will process or claim this request</label
+                    >
+                </div>
+            </section>
+
+            <section v-else-if="step === 4" class="space-y-6">
+                <div>
+                    <h2 class="font-display text-2xl font-bold">Upload requirements</h2>
+                    <p class="mt-1 text-sm text-slate-600">
+                        Files remain private and are available only to authorized staff.
+                    </p>
+                </div>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <FileUploadField
+                        v-for="requirement in requirementList"
+                        :id="`requirement-${requirement.key}`"
+                        :key="requirement.key"
+                        :label="requirement.label"
+                        :hint="requirement.hint"
+                        :error="form.errors[`requirements.${requirement.key}`]"
+                        required
+                        @change="form.requirements[requirement.key] = $event"
+                    />
+                </div>
+            </section>
+
+            <section v-else class="space-y-6">
+                <div>
+                    <h2 class="font-display text-2xl font-bold">Review and submit</h2>
+                    <p class="mt-1 text-sm text-slate-600">
+                        No payment is due yet. The registrar will evaluate and lock your quote first.
+                    </p>
+                </div>
+                <div class="grid gap-5 md:grid-cols-2">
+                    <article class="rounded-2xl border border-slate-200 bg-white p-5">
+                        <h3 class="font-semibold">Requestor</h3>
+                        <p class="mt-2 text-sm leading-6 text-slate-600">
+                            {{ form.requester_name }}<br />{{ form.requester_email }}<br />{{ selectedProgram?.code }} —
+                            {{ selectedProgram?.name }}
+                        </p>
+                    </article>
+                    <article class="rounded-2xl border border-slate-200 bg-white p-5">
+                        <h3 class="font-semibold">Documents</h3>
+                        <ul class="mt-2 space-y-2 text-sm text-slate-600">
+                            <li v-for="item in cart" :key="item.type.id">{{ item.type.name }} × {{ item.copies }}</li>
+                        </ul>
+                    </article>
+                </div>
+                <div class="rounded-2xl border border-brand-200 bg-brand-50 p-5 text-sm leading-6 text-brand-950">
+                    <strong>What happens next:</strong> registrar review → sequential clearance → payment receipt →
+                    accounting validation → processing → ready for release. Working days exclude weekends, holidays, and
+                    official work suspensions.
+                </div>
+            </section>
+
+            <div class="mt-8 flex items-center justify-between border-t border-slate-200 pt-6">
+                <button
+                    v-if="step > 1"
+                    type="button"
+                    class="min-h-11 rounded-lg border border-slate-300 bg-white px-5 font-semibold"
+                    @click="step--"
+                >
+                    Back</button
+                ><span v-else />
+                <button
+                    v-if="step < steps.length"
+                    type="button"
+                    :disabled="!canContinue()"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-brand-700 px-5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    @click="next"
+                >
+                    Continue <ArrowRightIcon class="h-4 w-4" />
+                </button>
+                <button
+                    v-else
+                    type="submit"
+                    :disabled="form.processing"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-brand-700 px-5 font-semibold text-white disabled:opacity-50"
+                >
+                    <CheckCircleIcon class="h-5 w-5" />{{ form.processing ? 'Submitting…' : 'Submit request' }}
+                </button>
             </div>
         </form>
     </main>
 </template>
+
+<style scoped>
+label {
+    @apply text-sm font-medium text-slate-700;
+}
+.field {
+    @apply mt-1 min-h-11 w-full rounded-lg border-slate-300 bg-white text-base shadow-sm focus:border-brand-600 focus:ring-brand-600;
+}
+</style>

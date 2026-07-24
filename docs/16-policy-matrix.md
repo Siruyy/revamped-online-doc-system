@@ -3,6 +3,10 @@
 > Source of truth mapping every record type from [`SVCI_School_Records_Policy.md`](SVCI_School_Records_Policy.md)
 > to concrete system rules: requirements, offices, fees, SLA, and release flow.
 >
+> **2026-07-24 client revision:** the fee schedule effective 2026-04-01 and the new
+> public workflow supersede older amounts/routing below where they conflict.
+> BEC is deferred from public intake.
+>
 > This document drives seed data, the `RequestRulesEngine`, clearance routing, and the
 > student request wizard. If policy changes, update this matrix first, then the
 > `config/policy.php` file and `DocumentTypeSeeder`.
@@ -13,10 +17,10 @@ Record types sourced from policy sections 1, 3–11, 13, and 17.
 
 | Code | Name | Policy § | Category | Fee (PHP) | SLA (work days) | Submission Window | Release Window |
 |------|------|----------|----------|-----------|------------------|-------------------|----------------|
-| `tor` | Transcript of Records | §1.1, §13.1, §17 | Academic | `140.00 / page` | 14 | Window 5 | Window 9 |
-| `tor_transfer` | Transcript of Records (valid for Transfer) | §3, §13.1, §17 | Academic | `140.00 / page` | 14 (after receiving Honorable Dismissal lower portion) | Window 5 | Window 9 |
-| `diploma` | Diploma | §1.2, §13.1, §17 | Academic | `15.00 / 5 copies` (authentication) | 5 | Window 5 | Window 9 |
-| `diploma_reissue_college` | Diploma Re-issuance (College/Masteral/Doctoral) | §7.2.1, §17 | Academic | `310.00` | 5 | Window 5 | Window 9 |
+| `tor` | Transcript of Records | §1.1, §13.1, §17 | Academic | `165.00 / page` | 14 | Window 5 | Window 9 |
+| `tor_transfer` | Transcript of Records (valid for Transfer) | §3, §13.1, §17 | Academic | `165.00 / page` | 14 (after receiving Honorable Dismissal lower portion) | Window 5 | Window 9 |
+| `diploma` | Diploma | §1.2, §13.1, §17 | Academic | Registrar-entered; base fee not provided | 5 | Window 5 | Window 9 |
+| `diploma_reissue_college` | Diploma Re-issuance (College/Masteral/Doctoral) | §7.2.1, §17 | Academic | `365.00` | 5 | Window 5 | Window 9 |
 | `diploma_reissue_basic` | Diploma Re-issuance (Kinder/Elem/JHS/SHS) | §7.2.2, §17 | Academic | `310.00` | 5 | OP (Annex) | OP (Annex) |
 | `cert_transfer_credential` | Certificate of Transfer Credential (Honorable Dismissal) | §1.3.1, §17 | Certification | `100.00` | 3 | Window 5 | Window 9 |
 | `cert_graduation` | Certificate of Graduation | §1.3.2 | Certification | `100.00` | 3 | Window 5 | Window 9 |
@@ -32,18 +36,18 @@ Record types sourced from policy sections 1, 3–11, 13, and 17.
 | `cert_no_objection` | Certificate of No Objection (CNO) | §1.3.12, §16 | Certification | `100.00` | 3 | Window 5 | Window 9 |
 | `cert_no_scholarship` | Certificate of No Scholarship | §1.3.13 | Certification | `100.00` | 3 | Window 5 | Window 9 |
 | `cert_appearance` | Certificate of Appearance | §1.3.14 | Certification | `100.00` | 3 | Window 5 | Window 9 |
-| `special_order` | Special Order | §1.4, §17 | Academic | `100.00` (re-issuance) | 5 | Window 5 | Window 9 |
-| `form_137a_personal` | Form 137-A (Personal Copy) | §4.1, §17 | BasicEd | `130.00` | 5 | Window 6 | Window 6 |
-| `form_137a_transfer` | Form 137-A (Valid for Transfer) | §4.2 | BasicEd | `130.00` | 5 | Window 6 | Window 6 |
+| `special_order` | Special Order | §1.4, §17 | Academic | Registrar-entered; reissue `120.00` | 5 | Window 5 | Window 9 |
+| `form_137a_personal` | Form 137-A (Personal Copy) | §4.1, §17 | BasicEd | `155.00` | 5 | Window 6 | Window 6 |
+| `form_137a_transfer` | Form 137-A (Valid for Transfer) | §4.2 | BasicEd | `155.00` | 5 | Window 6 | Window 6 |
 | `cert_basic_ed` | Certification (Basic Education Curriculum) | §1.6, §5 | BasicEd | `100.00` | 3 | OP (Annex) | OP (Annex) |
 | `form_138` | Form 138 (Report Card) BasicEd | §1.7, §13.1 | BasicEd | `100.00` | 5 | OP (Annex) | OP (Annex) |
-| `form_138_reissue` | Form 138 Re-issuance | §6, §17 | BasicEd | `100.00` (penalty) | 5 | OP (Annex) | OP (Annex) |
+| `form_138_reissue` | Form 138 Re-issuance | §6, §17 | BasicEd | `240.00` | 5 | OP (Annex) | OP (Annex) |
 | `enrollment_survey` | Enrollment Population Survey | §1.8, §10, §13.1 | Special | `0.00` (policy does not list fee) | 2 | Registrar face-to-face | Registrar face-to-face |
 | `records_verification` | Request for Student Records Verification | §1.9, §11 | Special | `100.00` (certification) | 3 | Registrar or `registrarsoffice@gmail.com` | Personal or email |
 | `cav` | CAV (Certification, Authentication, Verification) | §8, §17 | Special | `140.00` (w/ doc stamp) per certification | 3 | Window 1 | Window 1 |
-| `authentication` | Authentication of Records | §9, §17 | Special | `15.00` per set (TOR) / `15.00 / 5` diploma-SO | 2 | Window 4 | Window 4 |
-| `statement_of_account` | Statement of Account | §17 | Special | `65.00` | 3 | Window 5 | Window 5 |
-| `grades_printout` | Grades Print-Out | §17 | Special | `15.00 / page` | 3 | Window 5 | Window 5 |
+| `authentication` | Authentication of Records | §9, §17 | Special | `20.00` per set (TOR) / `20.00 / 5` diploma-SO | 2 | Window 4 | Window 4 |
+| `statement_of_account` | Statement of Account | §17 | Special | `80.00` | 3 | Window 5 | Window 5 |
+| `grades_printout` | Grades Print-Out | §17 | Special | `20.00 / page` | 3 | Window 5 | Window 5 |
 
 > Fee notes: the system stores a canonical fee and an optional `fee_formula` key
 > (`per_page`, `per_set`, `per_5_copies`, `flat`) so the wizard can compute
@@ -65,7 +69,9 @@ a new `offices` reference table:
 
 | Record Type(s) | Required Clearance Offices |
 |----------------|-----------------------------|
-| `tor`, `tor_transfer`, `diploma`, `diploma_reissue_college`, `cert_*` (college-level), `special_order`, **all College / Graduate records**, **deceased records (§15)** | `president`, `dean`, `alumni`, `guidance`, `sao`, `library`, `registrar`, `accounting` |
+| College/graduate certifications | Program `dean`, then `accounting` |
+| `form_137a_personal`, `form_137a_transfer` | `registrar`, then `accounting` |
+| Other College / Graduate records | `president`, program `dean`, `sao`, `guidance`, `library`, `alumni`, `accounting` (strict sequence) |
 | `form_137a_personal`, `form_137a_transfer` | `registrar`, `accounting` |
 | `cert_basic_ed`, `form_138`, `form_138_reissue`, `diploma_reissue_basic` | `registrar`, `accounting` (Principal/BasicEd releases) |
 | `cav` | `registrar`, `accounting` |
@@ -78,7 +84,9 @@ Mandatory uploads are policy-driven.
 
 | Requirement Key | Applies To | Required | Rule |
 |-----------------|-----------|----------|------|
-| `affidavit_of_loss` | `diploma_reissue_*`, `form_138_reissue` | Yes | Notarized affidavit (§6, §7) |
+| `photo_2x2` | All public requests | Yes | Recent photo, white background, collared shirt |
+| `psa_birth_certificate` | All public requests | Yes | Clear scan or photo |
+| `marriage_certificate` | Married requestors | Conditional | Required when civil status is married |
 | `official_request_letter` | `form_137a_transfer` | Yes | Bears original School Principal/Registrar signature (§4.2) |
 | `authenticated_tor` | `cav` | Yes (graduates and non-graduates) | §8.1 |
 | `authenticated_diploma` | `cav` | Yes (graduates only) | §8.1.1 |
@@ -140,8 +148,7 @@ Applies at the `release` stage of every request:
   - Form 137-A and Form 138: 5
   - Survey of Data: 2
 - Business days only — holidays and weekends excluded (§13.2).
-- `sla_start_at` is set the moment the request becomes `approved` (post-payment
-  approval), not at submission.
+- `sla_start_at` is set after accounting validates payment and registrar processing begins.
 - Admin can mark `sla_paused_at` with a reason (enrollment period, graduation
   week, board exams) per §13.2 notes. Elapsed time resumes on `sla_resumed_at`.
 - The public tracking page, legacy student dashboard, and admin queues render `expected_release_on` as

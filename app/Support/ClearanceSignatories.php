@@ -103,7 +103,7 @@ class ClearanceSignatories
      */
     public static function roleOptions(bool $includeStudentAndSuperAdmin = false): array
     {
-        $roles = ['admin', ...self::roles()];
+        $roles = ['admin', 'accounting', ...self::roles()];
 
         if ($includeStudentAndSuperAdmin) {
             $roles = ['student', ...$roles, 'superadmin'];

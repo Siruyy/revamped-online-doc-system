@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Public;
 
+use App\Models\AcademicProgram;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\Payment;
@@ -9,6 +10,7 @@ use App\Models\PaymentProfile;
 use App\Models\User;
 use App\Notifications\WorkflowStatusNotification;
 use App\Support\FileUploadLimits;
+use Database\Seeders\AcademicProgramSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
@@ -57,7 +59,7 @@ class PublicRequestSubmissionTest extends TestCase
         $this->assertNull($request->requester_graduation_or_last_sem);
     }
 
-    public function test_public_request_requires_requestor_details_items_and_receipt(): void
+    public function test_public_request_requires_requestor_details_items_and_profile_data(): void
     {
         $response = $this->from('/request-document')->post('/request-document', []);
 
@@ -66,13 +68,14 @@ class PublicRequestSubmissionTest extends TestCase
             'requester_name',
             'requester_email',
             'requester_contact_number',
-            'requester_course',
+            'academic_program_id',
             'requester_year_level',
             'requester_graduation_or_last_sem',
             'items',
             'purpose',
-            'payment_method',
-            'receipt',
+            'birth_date',
+            'education',
+            'fulfillment_method',
         ]);
     }
 
@@ -85,7 +88,10 @@ class PublicRequestSubmissionTest extends TestCase
         ]);
 
         $response = $this->from('/request-document')->post('/request-document', $this->validPayload($documentType, [
-            'requirements' => [],
+            'requirements' => [
+                'photo_2x2' => UploadedFile::fake()->image('photo.jpg'),
+                'psa_birth_certificate' => UploadedFile::fake()->create('psa.pdf', 1, 'application/pdf'),
+            ],
         ]));
 
         $response->assertRedirect('/request-document');
@@ -101,20 +107,20 @@ class PublicRequestSubmissionTest extends TestCase
         ]);
 
         $response = $this->from('/request-document')->post('/request-document', $this->validPayload($documentType, [
-            'receipt' => UploadedFile::fake()->create('receipt.txt', 1, 'text/plain'),
             'requirements' => [
                 'valid_id_photocopy_claimant' => UploadedFile::fake()->create('id.txt', 1, 'text/plain'),
+                'photo_2x2' => UploadedFile::fake()->image('photo.jpg'),
+                'psa_birth_certificate' => UploadedFile::fake()->create('psa.pdf', 1, 'application/pdf'),
             ],
         ]));
 
         $response->assertRedirect('/request-document');
         $response->assertSessionHasErrors([
-            'receipt',
             'requirements.valid_id_photocopy_claimant',
         ]);
     }
 
-    public function test_public_request_submission_stores_request_payment_and_private_files(): void
+    public function test_public_request_submission_stores_unevaluated_request_and_private_files(): void
     {
         Storage::fake('local');
 
@@ -127,8 +133,6 @@ class PublicRequestSubmissionTest extends TestCase
         $response = $this->post('/request-document', $this->validPayload($documentType));
 
         $documentRequest = DocumentRequest::query()->firstOrFail();
-        $payment = Payment::query()->firstOrFail();
-
         $response->assertRedirect(route('public.requests.submitted', $documentRequest->reference_no));
 
         $this->assertSame(0, User::query()->count());
@@ -141,23 +145,15 @@ class PublicRequestSubmissionTest extends TestCase
         $this->assertSame('BSIT', $documentRequest->requester_course);
         $this->assertSame(3, $documentRequest->requester_year_level);
         $this->assertSame('2nd Sem 2025-2026', $documentRequest->requester_graduation_or_last_sem);
-        $this->assertSame(150.0, (float) $documentRequest->fee_snapshot);
+        $this->assertSame(0.0, (float) $documentRequest->fee_snapshot);
+        $this->assertSame('registrar_review', $documentRequest->workflow_stage);
+        $this->assertSame(0, Payment::query()->count());
 
-        $this->assertNull($payment->user_id);
-        $this->assertSame($documentRequest->id, $payment->document_request_id);
-        $this->assertSame('pending_approval', $payment->status);
-        $this->assertSame('GCash', $payment->payment_method);
-        $this->assertSame('GCASH-12345', $payment->reference_number);
-        $this->assertSame(150.0, (float) $payment->total_amount);
-        $this->assertNotNull($payment->submitted_at);
-
-        $requirement = $documentRequest->requirements()->firstOrFail();
+        $requirement = $documentRequest->requirements()->where('requirement_key', 'valid_id_photocopy_claimant')->firstOrFail();
         $this->assertSame('valid_id_photocopy_claimant', $requirement->requirement_key);
         $this->assertSame('submitted', $requirement->status);
 
-        $this->assertStringStartsWith("payment-receipts/public/{$documentRequest->id}/", $payment->receipt_path);
         $this->assertStringStartsWith("request-requirements/public/{$documentRequest->id}/", $requirement->file_path);
-        Storage::disk('local')->assertExists($payment->receipt_path);
         Storage::disk('local')->assertExists($requirement->file_path);
     }
 
@@ -217,8 +213,8 @@ class PublicRequestSubmissionTest extends TestCase
 
         $documentRequest = DocumentRequest::query()->firstOrFail();
 
-        $this->assertSame(1, $documentRequest->requirements()->count());
-        $this->assertCount(1, Storage::disk('local')->allFiles("request-requirements/public/{$documentRequest->id}"));
+        $this->assertSame(1, $documentRequest->requirements()->where('requirement_key', 'valid_id_photocopy_claimant')->count());
+        $this->assertCount(3, Storage::disk('local')->allFiles("request-requirements/public/{$documentRequest->id}"));
     }
 
     public function test_admin_can_preview_public_payment_receipt_inline(): void
@@ -337,15 +333,15 @@ class PublicRequestSubmissionTest extends TestCase
         $tooLargeKilobytes = FileUploadLimits::publicIntakeMaxFileKilobytes() + 1;
 
         $response = $this->from('/request-document')->post('/request-document', $this->validPayload($documentType, [
-            'receipt' => UploadedFile::fake()->create('receipt.pdf', $tooLargeKilobytes, 'application/pdf'),
             'requirements' => [
                 'valid_id_photocopy_claimant' => UploadedFile::fake()->create('valid-id.pdf', $tooLargeKilobytes, 'application/pdf'),
+                'photo_2x2' => UploadedFile::fake()->image('photo.jpg'),
+                'psa_birth_certificate' => UploadedFile::fake()->create('psa.pdf', 1, 'application/pdf'),
             ],
         ]));
 
         $response->assertRedirect('/request-document');
         $response->assertSessionHasErrors([
-            'receipt',
             'requirements.valid_id_photocopy_claimant',
         ]);
     }
@@ -393,24 +389,44 @@ class PublicRequestSubmissionTest extends TestCase
      */
     private function validPayload(DocumentType $documentType, array $overrides = []): array
     {
+        $this->seed(AcademicProgramSeeder::class);
+        $program = AcademicProgram::query()->where('code', 'BSIT')->firstOrFail();
+
         return array_replace([
             'requester_name' => 'Public Requestor',
             'requester_email' => 'requestor@example.test',
             'requester_contact_number' => '09171234567',
             'requester_student_id' => null,
-            'requester_course' => 'BSIT',
+            'academic_program_id' => $program->id,
             'requester_year_level' => 3,
             'requester_graduation_or_last_sem' => '2nd Sem 2025-2026',
+            'birth_date' => '2000-01-01',
+            'birth_place' => 'Dipolog City',
+            'sex' => 'Female',
+            'civil_status' => 'Single',
+            'citizenship' => 'Filipino',
+            'home_address' => 'Dipolog City',
+            'father_name' => 'Father',
+            'mother_maiden_name' => 'Mother',
+            'parents_address' => 'Dipolog City',
+            'guardian_name' => 'Guardian',
+            'guardian_address' => 'Dipolog City',
+            'education' => [
+                'elementary' => ['school' => 'Elementary', 'address' => 'Dipolog', 'year' => '2012'],
+                'junior_high' => ['school' => 'Junior High', 'address' => 'Dipolog', 'year' => '2016'],
+                'senior_high' => ['school' => 'Senior High', 'address' => 'Dipolog', 'year' => '2018'],
+            ],
+            'employment_status' => 'not_employed',
             'items' => [[
                 'document_type_id' => $documentType->id,
                 'copies' => 1,
             ]],
             'purpose' => 'For employment requirements',
-            'payment_method' => 'GCash',
-            'payment_reference_number' => 'GCASH-12345',
-            'receipt' => UploadedFile::fake()->image('receipt.jpg'),
+            'fulfillment_method' => 'pickup',
             'requirements' => [
                 'valid_id_photocopy_claimant' => UploadedFile::fake()->image('valid-id.jpg'),
+                'photo_2x2' => UploadedFile::fake()->image('photo.jpg'),
+                'psa_birth_certificate' => UploadedFile::fake()->create('psa.pdf', 1, 'application/pdf'),
             ],
         ], $overrides);
     }

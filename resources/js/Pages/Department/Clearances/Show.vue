@@ -10,22 +10,36 @@ const props = defineProps({
     department: { type: String, required: true },
     currentSignatory: { type: Object, required: true },
     signatories: { type: Array, required: true },
+    currentStep: { type: Object, default: null },
 });
 
 const page = usePage();
 const banner = computed(() => page.props.flash?.banner ?? null);
 const deptStatusKey = computed(() => `${props.department}_status`);
 const deptRemarksKey = computed(() => `${props.department}_remarks`);
-const canAct = computed(() => props.clearance[deptStatusKey.value] === 'pending');
-const signatoryCards = computed(() =>
-    props.signatories.map((signatory) => ({
-        ...signatory,
-        statusValue: props.clearance[signatory.status],
-        remarksValue: props.clearance[signatory.remarks],
-        signedAtValue: props.clearance[signatory.signed_at],
-        signerName: props.clearance[signatory.signer_payload]?.fullname,
-    })),
+const canAct = computed(() =>
+    props.currentStep ? props.currentStep.status === 'pending' : props.clearance[deptStatusKey.value] === 'pending',
 );
+const signatoryCards = computed(() =>
+    props.currentStep || props.clearance.steps?.length
+        ? (props.clearance.steps || []).map((step) => ({
+              role: step.office_code,
+              label: step.label,
+              statusValue: step.status,
+              remarksValue: step.remarks,
+              signedAtValue: step.signed_at,
+              signerName: step.signer?.fullname,
+          }))
+        : props.signatories.map((signatory) => ({
+              ...signatory,
+              statusValue: props.clearance[signatory.status],
+              remarksValue: props.clearance[signatory.remarks],
+              signedAtValue: props.clearance[signatory.signed_at],
+              signerName: props.clearance[signatory.signer_payload]?.fullname,
+          })),
+);
+const departmentStatus = computed(() => props.currentStep?.status || props.clearance[deptStatusKey.value]);
+const departmentRemarks = computed(() => props.currentStep?.remarks || props.clearance[deptRemarksKey.value]);
 const isPublicClearance = computed(() => !props.clearance.user_id);
 const requestRequirements = computed(() => props.clearance.document_request?.requirements ?? []);
 
@@ -196,14 +210,9 @@ const signingSummary = computed(() => ({
                 </div>
                 <p class="text-sm text-slate-600">
                     Current status:
-                    <StatusBadge
-                        :tone="statusTone(clearance[deptStatusKey])"
-                        :label="statusLabel(clearance[deptStatusKey])"
-                    />
+                    <StatusBadge :tone="statusTone(departmentStatus)" :label="statusLabel(departmentStatus)" />
                 </p>
-                <p v-if="clearance[deptRemarksKey]" class="text-xs text-slate-500">
-                    Remarks: {{ clearance[deptRemarksKey] }}
-                </p>
+                <p v-if="departmentRemarks" class="text-xs text-slate-500">Remarks: {{ departmentRemarks }}</p>
 
                 <form class="space-y-2 border-t border-slate-100 pt-4" @submit.prevent="submitSign">
                     <label class="text-xs font-semibold uppercase text-slate-500"
@@ -227,11 +236,10 @@ const signingSummary = computed(() => ({
 
                 <form class="space-y-2 border-t border-slate-100 pt-4" @submit.prevent="submitDeny">
                     <label class="text-xs font-semibold uppercase text-slate-500"
-                        >Deny (remarks required, min 10 characters)</label
+                        >Request correction (remarks required, min 10 characters)</label
                     >
                     <p class="text-xs leading-5 text-slate-500">
-                        Denial remarks are visible through public tracking and may stop the request until registrar
-                        staff follow up.
+                        The requestor sees these recovery instructions in tracking and can upload a corrected file.
                     </p>
                     <textarea
                         v-model="denyForm.remarks"
@@ -245,7 +253,7 @@ const signingSummary = computed(() => ({
                         class="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500 disabled:opacity-50"
                         :disabled="denyForm.processing"
                     >
-                        Deny with remarks
+                        Send correction request
                     </button>
                 </form>
             </section>

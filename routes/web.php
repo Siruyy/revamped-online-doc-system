@@ -4,6 +4,7 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\DocumentRequestController as PublicDocumentRequestController;
 use App\Http\Controllers\Public\TrackDocumentController;
+use App\Http\Controllers\Public\WorkflowActionController;
 use App\Models\User;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,14 @@ Route::get('/track-document', [TrackDocumentController::class, 'create'])
 Route::post('/track-document', [TrackDocumentController::class, 'show'])
     ->middleware('throttle:public-tracking')
     ->name('track-document.show');
+Route::middleware('throttle:public-requests')->group(function () {
+    Route::post('/public/requests/{documentRequest:reference_no}/requirements/{requirement}', [WorkflowActionController::class, 'uploadRequirement'])
+        ->name('public.requests.requirements.upload');
+    Route::post('/public/requests/{documentRequest:reference_no}/payment', [WorkflowActionController::class, 'uploadPayment'])
+        ->name('public.requests.payment.upload');
+    Route::post('/public/requests/{documentRequest:reference_no}/claim-slip', [WorkflowActionController::class, 'downloadClaimSlip'])
+        ->name('public.requests.claim-slip.download');
+});
 Route::get('/public/files/payment-qr/{paymentProfile}', [FileController::class, 'publicPaymentQr'])
     ->name('public.files.payment-qr');
 
@@ -67,7 +76,7 @@ Route::middleware(['auth', 'role:admin', 'approved', 'verified'])
     ->name('admin.')
     ->group(base_path('routes/admin.php'));
 
-Route::middleware(['auth', 'role:dean|president|librarian|student_affairs|alumni|guidance', 'approved', 'verified'])
+Route::middleware(['auth', 'role:dean|president|librarian|student_affairs|alumni|guidance|accounting', 'approved', 'verified'])
     ->prefix('department')
     ->name('department.')
     ->group(base_path('routes/department.php'));

@@ -26,6 +26,8 @@ Route::get('/requests', [RequestController::class, 'index'])->name('requests.ind
 Route::get('/requests/{documentRequest}', [RequestController::class, 'show'])->name('requests.show');
 Route::middleware('throttle:sensitive-actions')->group(function () {
     Route::post('/requests/{documentRequest}/approve', [RequestController::class, 'approve'])->name('requests.approve');
+    Route::post('/requests/{documentRequest}/evaluate', [RequestController::class, 'evaluate'])->name('requests.evaluate');
+    Route::post('/requests/{documentRequest}/registrar-clearance', [RequestController::class, 'signRegistrarClearance'])->name('requests.registrar-clearance');
     Route::post('/requests/{documentRequest}/deny', [RequestController::class, 'deny'])->name('requests.deny');
     Route::post('/requests/{documentRequest}/approve-with-payment', [RequestController::class, 'approveWithPayment'])->name('requests.approve-with-payment');
     Route::post('/requests/{documentRequest}/deny-with-payment', [RequestController::class, 'denyWithPayment'])->name('requests.deny-with-payment');

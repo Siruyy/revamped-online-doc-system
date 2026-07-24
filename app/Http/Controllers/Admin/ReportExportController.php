@@ -30,9 +30,9 @@ class ReportExportController extends Controller
             return [
                 $documentRequest->id,
                 $documentRequest->reference_no,
-                $user?->fullname,
-                $user?->email,
-                $user?->course,
+                $documentRequest->user_id ? $user->fullname : $documentRequest->requester_name,
+                $documentRequest->user_id ? $user->email : $documentRequest->requester_email,
+                $documentRequest->user_id ? $user->course : $documentRequest->requester_course,
                 $documentType?->name,
                 $documentRequest->status,
                 $documentRequest->processing_stage,
@@ -80,7 +80,10 @@ class ReportExportController extends Controller
         return DocumentRequest::query()
             ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->when($request->string('status')->toString(), fn ($query, $status) => $query->where('status', $status))
-            ->when($request->string('course')->toString(), fn ($query, $course) => $query->whereHas('user', fn ($q) => $q->where('course', $course)));
+            ->when($request->string('course')->toString(), fn ($query, $course) => $query->where(fn ($scope) => $scope
+                ->whereHas('user', fn ($q) => $q->where('course', $course))
+                ->orWhere('requester_course', $course)))
+            ->when($request->integer('document_type'), fn ($query, $type) => $query->whereHas('items', fn ($items) => $items->where('document_type_id', $type)));
     }
 
     /**
@@ -93,7 +96,11 @@ class ReportExportController extends Controller
 
         return Payment::query()
             ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
-            ->when($request->string('course')->toString(), fn ($query, $course) => $query->whereHas('user', fn ($q) => $q->where('course', $course)));
+            ->when($request->string('course')->toString(), fn ($query, $course) => $query->whereHas('documentRequest', fn ($requestQuery) => $requestQuery
+                ->where(fn ($scope) => $scope
+                    ->whereHas('user', fn ($q) => $q->where('course', $course))
+                    ->orWhere('requester_course', $course))))
+            ->when($request->integer('document_type'), fn ($query, $type) => $query->whereHas('documentRequest.items', fn ($items) => $items->where('document_type_id', $type)));
     }
 
     private function formatDate(mixed $value): ?string

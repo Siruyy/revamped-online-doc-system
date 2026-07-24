@@ -22,12 +22,6 @@ parameters:
         # Model types without exhaustive relation templates in every model.
         -
             identifier: property.notFound
-            path: app/Http/Controllers/Student/DashboardController.php
-        -
-            identifier: argument.type
-            path: app/Http/Controllers/Student/RequestController.php
-        -
-            identifier: property.notFound
             path: app/Policies/PaymentPolicy.php
         -
             identifier: property.notFound
@@ -47,12 +41,6 @@ parameters:
         -
             identifier: argument.type
             path: app/Services/Policy/ClaimSlipService.php
-        -
-            identifier: property.notFound
-            path: app/Services/RequestService.php
-        -
-            identifier: argument.type
-            path: app/Services/RequestService.php
         # Package facade stubs do not expose the Intervention Image v3 read API.
         -
             identifier: staticMethod.notFound

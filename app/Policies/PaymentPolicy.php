@@ -9,12 +9,12 @@ class PaymentPolicy
 {
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'superadmin'], true);
+        return in_array($user->role, ['admin', 'accounting', 'superadmin'], true);
     }
 
     public function view(User $user, Payment $payment): bool
     {
-        if (in_array($user->role, ['admin', 'superadmin'], true)) {
+        if (in_array($user->role, ['admin', 'accounting', 'superadmin'], true)) {
             return true;
         }
 
@@ -53,11 +53,13 @@ class PaymentPolicy
 
     public function approve(User $user, Payment $payment): bool
     {
-        return in_array($user->role, ['admin', 'superadmin'], true);
+        return in_array($user->role, ['accounting', 'superadmin'], true)
+            || ($user->role === 'admin' && $payment->documentRequest?->intake_mode !== 'public');
     }
 
     public function deny(User $user, Payment $payment): bool
     {
-        return in_array($user->role, ['admin', 'superadmin'], true);
+        return in_array($user->role, ['accounting', 'superadmin'], true)
+            || ($user->role === 'admin' && $payment->documentRequest?->intake_mode !== 'public');
     }
 }

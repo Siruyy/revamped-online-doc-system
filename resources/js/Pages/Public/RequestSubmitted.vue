@@ -4,6 +4,7 @@ import { ClipboardDocumentIcon, DocumentMagnifyingGlassIcon, HomeIcon } from '@h
 
 defineProps({
     reference: { type: String, required: true },
+    trackingAccessCode: { type: String, default: null },
 });
 </script>
 
@@ -28,9 +29,22 @@ defineProps({
                         {{ reference }}
                     </p>
                 </div>
+                <div
+                    v-if="trackingAccessCode"
+                    class="mt-4 rounded-3xl border border-dashed border-amber-300 bg-amber-50 px-5 py-5 text-center"
+                >
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-800">Private access code</p>
+                    <p class="mt-2 font-mono text-2xl font-bold tracking-widest text-amber-950">
+                        {{ trackingAccessCode }}
+                    </p>
+                    <p class="mt-2 text-xs leading-5 text-amber-900">
+                        Save this once-only code. You will need it to upload requested corrections or your payment
+                        receipt.
+                    </p>
+                </div>
                 <p class="mt-6 text-sm leading-6 text-slate-600">
-                    Use this reference on the Track Document page. Staff will validate your requirements and payment
-                    receipt before processing starts. No private file links are shown here.
+                    Use the reference on the Track Document page. The registrar will evaluate the amount, then the
+                    request moves through clearance before payment opens.
                 </p>
                 <div class="mt-8 grid gap-3 sm:grid-cols-2">
                     <Link

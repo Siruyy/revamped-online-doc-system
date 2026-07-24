@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\AcademicProgram;
 use App\Models\DocumentRequest;
 use App\Models\DocumentRequestItem;
 use App\Models\DocumentType;
-use App\Models\Payment;
 use App\Models\RequestRequirement;
 use App\Models\User;
 use App\Notifications\WorkflowStatusNotification;
@@ -17,11 +17,9 @@ use Illuminate\Support\Str;
 
 class PublicDocumentRequestService
 {
-    public function __construct(private RequestService $requests) {}
-
     /**
      * @param  array<string, mixed>  $data
-     * @return array{request: DocumentRequest, payment: Payment}
+     * @return array{request: DocumentRequest, access_code: string}
      */
     public function create(array $data): array
     {
@@ -36,6 +34,7 @@ class PublicDocumentRequestService
             $documentTypes = DocumentType::query()
                 ->whereIn('id', $documentTypeIds)
                 ->where('is_active', true)
+                ->where('category', '!=', 'BasicEd')
                 ->get()
                 ->keyBy('id');
 
@@ -43,28 +42,28 @@ class PublicDocumentRequestService
                 throw new \RuntimeException('One or more selected document types are inactive or unavailable.');
             }
 
+            $program = AcademicProgram::query()->with('department')
+                ->whereKey($data['academic_program_id'])
+                ->where('is_active', true)
+                ->firstOrFail();
             $resolvedItems = [];
 
             foreach ($items as $item) {
                 /** @var DocumentType $type */
                 $type = $documentTypes->get((int) $item['document_type_id']);
                 $copies = max(1, (int) $item['copies']);
-                $pageCount = max(1, (int) ($type->default_page_count ?: 1));
-                $feePerPage = (float) $type->fee;
-                $lineTotal = $this->requests->computeLineTotal($type, $pageCount, $copies);
-
                 $resolvedItems[] = [
                     'type' => $type,
                     'copies' => $copies,
-                    'page_count' => $pageCount,
-                    'fee_per_page' => $feePerPage,
-                    'line_total' => $lineTotal,
+                    'authentication_requested' => (bool) ($item['authentication_requested'] ?? false),
+                    'documentary_stamp_requested' => (bool) ($item['documentary_stamp_requested'] ?? false),
+                    'semester_requested' => $item['semester_requested'] ?? null,
                 ];
             }
 
-            $totalFee = array_sum(array_column($resolvedItems, 'line_total'));
             /** @var DocumentType $primaryType */
             $primaryType = $resolvedItems[0]['type'];
+            $accessCode = strtoupper(Str::random(10));
 
             $documentRequest = DocumentRequest::query()->create([
                 'reference_no' => $this->generateReferenceNumber(),
@@ -73,17 +72,42 @@ class PublicDocumentRequestService
                 'requester_email' => $data['requester_email'] ?? null,
                 'requester_contact_number' => $data['requester_contact_number'],
                 'requester_student_id' => $data['requester_student_id'] ?? null,
-                'requester_course' => $data['requester_course'],
+                'requester_course' => $program->code,
+                'academic_program_id' => $program->id,
+                'academic_program_snapshot' => $program->displayName(),
+                'academic_department_code_snapshot' => $program->department->code,
                 'requester_year_level' => $data['requester_year_level'],
                 'requester_graduation_or_last_sem' => $data['requester_graduation_or_last_sem'],
                 'document_type_id' => $primaryType->id,
                 'quantity' => array_sum(array_column($resolvedItems, 'copies')),
                 'page_count' => null,
-                'fee_snapshot' => $totalFee,
+                'fee_snapshot' => 0,
                 'status' => 'pending',
                 'processing_stage' => 'not_started',
+                'workflow_stage' => 'registrar_review',
                 'intake_mode' => 'public',
                 'purpose' => $data['purpose'],
+                'requester_profile' => [
+                    'birth_date' => $data['birth_date'],
+                    'birth_place' => $data['birth_place'],
+                    'sex' => $data['sex'],
+                    'civil_status' => $data['civil_status'],
+                    'citizenship' => $data['citizenship'],
+                    'home_address' => $data['home_address'],
+                    'father_name' => $data['father_name'] ?? null,
+                    'mother_maiden_name' => $data['mother_maiden_name'] ?? null,
+                    'parents_address' => $data['parents_address'] ?? null,
+                    'guardian_name' => $data['guardian_name'] ?? null,
+                    'guardian_address' => $data['guardian_address'] ?? null,
+                    'education' => $data['education'],
+                    'employment_status' => $data['employment_status'],
+                    'company_name' => $data['company_name'] ?? null,
+                    'company_address' => $data['company_address'] ?? null,
+                ],
+                'fulfillment_method' => $data['fulfillment_method'],
+                'delivery_address' => $data['delivery_address'] ?? null,
+                'is_proxy_request' => (bool) ($data['is_proxy_request'] ?? false),
+                'tracking_access_hash' => hash('sha256', $accessCode),
                 'requires_hd_return' => collect($resolvedItems)->contains(
                     fn (array $item): bool => $item['type']->hasFlag('requires_hd_return')
                 ),
@@ -95,41 +119,32 @@ class PublicDocumentRequestService
                     'document_request_id' => $documentRequest->id,
                     'document_type_id' => $item['type']->id,
                     'copies' => $item['copies'],
-                    'page_count_snapshot' => $item['page_count'],
-                    'fee_per_page_snapshot' => $item['fee_per_page'],
-                    'line_total' => $item['line_total'],
+                    'page_count_snapshot' => 1,
+                    'fee_per_page_snapshot' => 0,
+                    'line_total' => 0,
+                    'authentication_requested' => $item['authentication_requested'],
+                    'documentary_stamp_requested' => $item['documentary_stamp_requested'],
+                    'semester_requested' => $item['semester_requested'],
                 ]);
             }
 
             $requiredKeys = collect($resolvedItems)
                 ->flatMap(fn (array $item): array => (array) $item['type']->requirements)
+                ->merge(['photo_2x2', 'psa_birth_certificate'])
+                ->when($data['civil_status'] === 'Married', fn ($keys) => $keys->push('marriage_certificate'))
+                ->when((bool) ($data['is_proxy_request'] ?? false), fn ($keys) => $keys->push('authorization_letter')->push('spa'))
                 ->unique()
                 ->values()
                 ->all();
 
             $this->seedSubmittedRequirements($documentRequest, $requiredKeys, (array) ($data['requirements'] ?? []));
 
-            /** @var UploadedFile $receipt */
-            $receipt = $data['receipt'];
-            $receiptPath = $this->storeUploadedFile($receipt, "payment-receipts/public/{$documentRequest->id}");
-
-            $payment = Payment::query()->create([
-                'user_id' => null,
-                'document_request_id' => $documentRequest->id,
-                'total_amount' => $totalFee,
-                'receipt_path' => $receiptPath,
-                'payment_method' => $data['payment_method'],
-                'reference_number' => $data['payment_reference_number'] ?? null,
-                'status' => 'pending_approval',
-                'submitted_at' => now(),
-            ]);
-
             ActivityLogger::log(
                 'public_request_submitted',
                 "Public request {$documentRequest->reference_no} was submitted by {$documentRequest->requester_name}.",
                 null,
                 null,
-                ['document_request_id' => $documentRequest->id, 'payment_id' => $payment->id]
+                ['document_request_id' => $documentRequest->id]
             );
 
             Notification::send(
@@ -139,11 +154,17 @@ class PublicDocumentRequestService
                     'title' => 'New public document request',
                     'message' => "{$documentRequest->requester_name} submitted a public document request.",
                     'document_request_id' => $documentRequest->id,
-                    'payment_id' => $payment->id,
                 ]),
             );
+            Notification::route('mail', $documentRequest->requester_email)
+                ->notify(new WorkflowStatusNotification([
+                    'type' => 'public_request_received',
+                    'title' => 'Your SVCI document request was received',
+                    'message' => "Reference: {$documentRequest->reference_no}. Private access code: {$accessCode}. Save both; the access code is required for corrections, payment, and the claim slip.",
+                    'url' => route('track-document', ['reference_no' => $documentRequest->reference_no]),
+                ]));
 
-            return ['request' => $documentRequest->refresh(), 'payment' => $payment->refresh()];
+            return ['request' => $documentRequest->refresh(), 'access_code' => $accessCode];
         });
     }
 

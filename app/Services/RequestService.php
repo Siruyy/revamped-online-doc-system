@@ -665,6 +665,14 @@ class RequestService
 
         $updates = ['processing_stage' => $stage];
 
+        if ($documentRequest->intake_mode === 'public') {
+            $updates['workflow_stage'] = match ($stage) {
+                'processing' => 'processing',
+                'ready_for_pickup' => 'ready',
+                'released' => 'released',
+            };
+        }
+
         if ($stage === 'released') {
             $updates['status'] = 'completed';
             $updates['released_at'] = now();
@@ -702,6 +710,13 @@ class RequestService
                 'processing_stage' => $documentRequest->processing_stage,
                 'status' => $documentRequest->status,
             ]));
+        } elseif ($documentRequest->intake_mode === 'public') {
+            $this->notifyPublicRequestor($documentRequest, [
+                'type' => 'request_stage_updated',
+                'title' => 'Your document request moved forward',
+                'message' => "Request {$documentRequest->reference_no} is now ".str_replace('_', ' ', $documentRequest->workflow_stage).'.',
+                'url' => route('track-document', ['reference_no' => $documentRequest->reference_no]),
+            ]);
         }
 
         return $documentRequest;

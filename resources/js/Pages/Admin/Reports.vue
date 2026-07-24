@@ -6,6 +6,7 @@ import { computed, reactive } from 'vue';
 const props = defineProps({
     summary: { type: Object, required: true },
     filters: { type: Object, required: true },
+    documentTypes: { type: Array, required: true },
 });
 
 const form = reactive({
@@ -13,6 +14,7 @@ const form = reactive({
     to: props.filters.to || '',
     status: props.filters.status || '',
     course: props.filters.course || '',
+    document_type: props.filters.document_type || '',
 });
 
 const applyFilters = () => {
@@ -24,6 +26,7 @@ const exportFilters = computed(() => ({
     to: form.to,
     status: form.status,
     course: form.course,
+    document_type: form.document_type,
 }));
 </script>
 
@@ -36,7 +39,7 @@ const exportFilters = computed(() => ({
         </template>
 
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
-            <section class="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4">
+            <section class="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-5">
                 <input v-model="form.from" type="date" class="rounded-md border-slate-300 text-sm shadow-sm" />
                 <input v-model="form.to" type="date" class="rounded-md border-slate-300 text-sm shadow-sm" />
                 <select v-model="form.status" class="rounded-md border-slate-300 text-sm shadow-sm">
@@ -53,7 +56,11 @@ const exportFilters = computed(() => ({
                     placeholder="Course"
                     class="rounded-md border-slate-300 text-sm shadow-sm"
                 />
-                <div class="flex flex-wrap items-center gap-2 md:col-span-4">
+                <select v-model="form.document_type" class="rounded-md border-slate-300 text-sm shadow-sm">
+                    <option value="">All document types</option>
+                    <option v-for="type in documentTypes" :key="type.id" :value="type.id">{{ type.name }}</option>
+                </select>
+                <div class="flex flex-wrap items-center gap-2 md:col-span-5">
                     <button
                         type="button"
                         class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"

@@ -19,7 +19,7 @@ class PaymentController extends Controller
         $payments = Payment::query()
             ->with([
                 'user:id,fullname,course,year_level,student_id',
-                'documentRequest:id,reference_no,status,document_type_id,fee_snapshot',
+                'documentRequest:id,reference_no,status,document_type_id,fee_snapshot,requester_name',
                 'documentRequest.documentType:id,name',
                 'documentRequest.items.documentType:id,name',
             ])

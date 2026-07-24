@@ -7,6 +7,7 @@ use App\Support\ClearanceSignatories;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -27,6 +28,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role',
+        'academic_department_id',
         'status',
         'course',
         'year_level',
@@ -81,6 +83,14 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Clearance::class);
     }
 
+    /**
+     * @return BelongsTo<AcademicDepartment, $this>
+     */
+    public function academicDepartment(): BelongsTo
+    {
+        return $this->belongsTo(AcademicDepartment::class);
+    }
+
     public function sentMessages(): HasMany
     {
         return $this->hasMany(Message::class, 'sender_id');
@@ -110,7 +120,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function scopeStaff(Builder $query): Builder
     {
-        return $query->whereIn('role', ['admin', ...ClearanceSignatories::roles(), 'superadmin']);
+        return $query->whereIn('role', ['admin', 'accounting', ...ClearanceSignatories::roles(), 'superadmin']);
     }
 
     public function scopePending(Builder $query): Builder
@@ -135,7 +145,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isDepartment(): bool
     {
-        return ClearanceSignatories::isSignatoryRole($this->role);
+        return ClearanceSignatories::isSignatoryRole($this->role) || $this->role === 'accounting';
     }
 
     public function isSuperAdmin(): bool
@@ -153,7 +163,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return match ($this->role) {
             'student' => 'student.dashboard',
             'admin' => 'admin.dashboard',
-            'dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance' => 'department.dashboard',
+            'dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance', 'accounting' => 'department.dashboard',
             'superadmin' => 'superadmin.dashboard',
             default => 'login',
         };

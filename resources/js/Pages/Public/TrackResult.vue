@@ -1,14 +1,62 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import FileUploadField from '@/Components/Public/FileUploadField.vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import axios from 'axios';
+import { ref } from 'vue';
 import { ArrowLeftIcon, CheckCircleIcon, ClockIcon, XCircleIcon } from '@heroicons/vue/24/outline';
 
-defineProps({
+const props = defineProps({
     // Laravel/Inertia payload keeps the public contract as snake_case.
     // eslint-disable-next-line vue/prop-name-casing
     reference_no: { type: String, required: true },
     notFound: { type: Boolean, default: false },
     result: { type: Object, default: null },
 });
+const accessCode = ref('');
+const requirementFiles = ref({});
+const paymentForm = useForm({ access_code: '', payment_method: '', reference_number: '', receipt: null });
+const requirementForm = useForm({ access_code: '', file: null });
+const downloadingClaimSlip = ref(false);
+const claimSlipError = ref('');
+
+function uploadRequirement(requirement) {
+    requirementForm.access_code = accessCode.value;
+    requirementForm.file = requirementFiles.value[requirement.id] || null;
+    requirementForm.post(route('public.requests.requirements.upload', [props.reference_no, requirement.id]), {
+        forceFormData: true,
+        preserveScroll: true,
+    });
+}
+
+function uploadPayment() {
+    paymentForm.access_code = accessCode.value;
+    paymentForm.post(route('public.requests.payment.upload', props.reference_no), {
+        forceFormData: true,
+        preserveScroll: true,
+    });
+}
+
+async function downloadClaimSlip() {
+    claimSlipError.value = '';
+    downloadingClaimSlip.value = true;
+    try {
+        const response = await axios.post(
+            route('public.requests.claim-slip.download', props.reference_no),
+            { access_code: accessCode.value },
+            { responseType: 'blob' },
+        );
+        const url = URL.createObjectURL(response.data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `SVCI-Claim-Slip-${props.result.claim_slip.claim_number}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+    } catch {
+        claimSlipError.value = 'The private access code is incorrect or the claim slip is unavailable.';
+    } finally {
+        downloadingClaimSlip.value = false;
+    }
+}
 
 function statusLabel(value) {
     return String(value || '').replaceAll('_', ' ');
@@ -78,14 +126,147 @@ function timelineTone(state) {
                     </div>
 
                     <div
-                        v-if="result.clearance && result.clearance.overall_status !== 'completed'"
+                        v-if="
+                            result.clearance &&
+                            result.clearance.overall_status !== 'completed' &&
+                            !result.action_requirements?.length
+                        "
                         class="rounded-2xl bg-sky-50 p-4 text-sm leading-6 text-sky-900 ring-1 ring-sky-100"
                     >
-                        <p class="font-semibold">No action needed from you</p>
+                        <p class="font-semibold">Clearance is moving through the required offices</p>
                         <p class="mt-1">
                             School staff are handling clearance from the request attachments you already submitted.
                         </p>
                     </div>
+
+                    <div v-if="result.clearance?.steps?.length" class="rounded-2xl border border-slate-200 p-5">
+                        <h2 class="font-semibold text-slate-900">Clearance detail</h2>
+                        <ol class="mt-4 space-y-3">
+                            <li
+                                v-for="(clearanceStep, index) in result.clearance.steps"
+                                :key="`${clearanceStep.label}-${index}`"
+                                class="flex items-start gap-3 text-sm"
+                            >
+                                <span
+                                    :class="[
+                                        'mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold',
+                                        clearanceStep.status === 'cleared'
+                                            ? 'bg-emerald-100 text-emerald-800'
+                                            : clearanceStep.status === 'needs_action'
+                                              ? 'bg-rose-100 text-rose-800'
+                                              : 'bg-slate-100 text-slate-600',
+                                    ]"
+                                    >{{ index + 1 }}</span
+                                >
+                                <span
+                                    ><strong>{{ clearanceStep.label }}</strong
+                                    ><span class="ml-2 capitalize text-slate-500">{{
+                                        statusLabel(clearanceStep.status)
+                                    }}</span
+                                    ><span v-if="clearanceStep.remarks" class="mt-1 block text-rose-700">{{
+                                        clearanceStep.remarks
+                                    }}</span></span
+                                >
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div
+                        v-if="result.action_requirements?.length"
+                        class="space-y-4 rounded-2xl border border-rose-200 bg-rose-50 p-5"
+                    >
+                        <div>
+                            <h2 class="font-semibold text-rose-950">A correction is needed</h2>
+                            <p class="mt-1 text-sm text-rose-800">
+                                Enter the private access code saved when you submitted, then replace each requested
+                                file.
+                            </p>
+                        </div>
+                        <label class="block text-sm font-semibold text-rose-950"
+                            >Private access code<input
+                                v-model="accessCode"
+                                autocomplete="one-time-code"
+                                class="mt-1 min-h-11 w-full rounded-lg border-rose-300 bg-white font-mono uppercase"
+                        /></label>
+                        <form
+                            v-for="requirement in result.action_requirements"
+                            :key="requirement.id"
+                            class="rounded-xl bg-white p-4"
+                            @submit.prevent="uploadRequirement(requirement)"
+                        >
+                            <p class="font-semibold">{{ requirement.label }}</p>
+                            <p class="mt-1 text-sm text-rose-700">{{ requirement.notes }}</p>
+                            <FileUploadField
+                                :id="`replacement-${requirement.id}`"
+                                class="mt-3"
+                                label="Replacement file"
+                                required
+                                @change="requirementFiles[requirement.id] = $event"
+                            />
+                            <button
+                                type="submit"
+                                :disabled="
+                                    requirementForm.processing || !requirementFiles[requirement.id] || !accessCode
+                                "
+                                class="mt-3 min-h-11 rounded-lg bg-rose-700 px-4 text-sm font-semibold text-white disabled:opacity-40"
+                            >
+                                Upload correction
+                            </button>
+                        </form>
+                    </div>
+
+                    <form
+                        v-if="result.payment_open"
+                        class="space-y-4 rounded-2xl border border-brand-200 bg-brand-50 p-5"
+                        @submit.prevent="uploadPayment"
+                    >
+                        <div>
+                            <h2 class="font-semibold text-brand-950">Submit payment receipt</h2>
+                            <p class="mt-1 text-sm text-brand-900">
+                                Quoted total: PHP
+                                {{
+                                    result.payment?.total_amount ||
+                                    result.documents.reduce((sum, item) => sum + Number(item.line_total), 0).toFixed(2)
+                                }}
+                            </p>
+                        </div>
+                        <label class="block text-sm font-semibold"
+                            >Private access code<input
+                                v-model="accessCode"
+                                autocomplete="one-time-code"
+                                class="mt-1 min-h-11 w-full rounded-lg border-brand-300 font-mono uppercase"
+                        /></label>
+                        <label class="block text-sm font-semibold"
+                            >Payment method<input
+                                v-model="paymentForm.payment_method"
+                                class="mt-1 min-h-11 w-full rounded-lg border-brand-300"
+                                placeholder="e.g. GCash or bank deposit"
+                        /></label>
+                        <label class="block text-sm font-semibold"
+                            >Payment reference (optional)<input
+                                v-model="paymentForm.reference_number"
+                                class="mt-1 min-h-11 w-full rounded-lg border-brand-300"
+                        /></label>
+                        <FileUploadField
+                            id="payment-receipt"
+                            label="Payment receipt"
+                            required
+                            :error="paymentForm.errors.receipt"
+                            @change="paymentForm.receipt = $event"
+                        />
+                        <button
+                            type="submit"
+                            :disabled="
+                                paymentForm.processing ||
+                                !accessCode ||
+                                !paymentForm.payment_method ||
+                                !paymentForm.receipt
+                            "
+                            class="min-h-11 rounded-lg bg-brand-700 px-5 font-semibold text-white disabled:opacity-40"
+                        >
+                            {{ paymentForm.processing ? 'Uploading…' : 'Submit receipt' }}
+                        </button>
+                    </form>
 
                     <div
                         v-if="result.denial_reason"
@@ -105,6 +286,21 @@ function timelineTone(state) {
                             Claim number: <strong>{{ result.claim_slip.claim_number }}</strong>
                         </p>
                         <p v-if="result.claim_slip.claim_date">Pickup date: {{ result.claim_slip.claim_date }}</p>
+                        <label class="mt-3 block font-semibold"
+                            >Private access code<input
+                                v-model="accessCode"
+                                autocomplete="one-time-code"
+                                class="mt-1 min-h-11 w-full rounded-lg border-emerald-300 bg-white font-mono uppercase text-slate-900"
+                        /></label>
+                        <button
+                            type="button"
+                            :disabled="!accessCode || downloadingClaimSlip"
+                            class="mt-3 min-h-11 rounded-lg bg-emerald-700 px-4 font-semibold text-white disabled:opacity-40"
+                            @click="downloadClaimSlip"
+                        >
+                            {{ downloadingClaimSlip ? 'Preparing…' : 'Download claim slip' }}
+                        </button>
+                        <p v-if="claimSlipError" class="mt-2 text-rose-700">{{ claimSlipError }}</p>
                     </div>
 
                     <div
@@ -115,7 +311,7 @@ function timelineTone(state) {
                         <p class="mt-1">This request has been released. Keep the reference number for your records.</p>
                     </div>
 
-                    <ol class="grid gap-3 md:grid-cols-5">
+                    <ol class="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
                         <li
                             v-for="stage in result.timeline"
                             :key="stage.key"
@@ -165,6 +361,14 @@ function timelineTone(state) {
                             </p>
                             <p v-if="result.claim_slip.claim_date">{{ result.claim_slip.claim_date }}</p>
                         </div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-100 p-4 text-sm text-slate-700">
+                        Need help? Contact the Registrar at <strong>{{ result.registrar_contact.phone }}</strong> or
+                        <a
+                            :href="`mailto:${result.registrar_contact.email}`"
+                            class="font-semibold text-brand-700 underline"
+                            >{{ result.registrar_contact.email }}</a
+                        >.
                     </div>
                 </div>
             </div>

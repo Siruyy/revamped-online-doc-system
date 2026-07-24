@@ -7,7 +7,6 @@ use App\Models\DocumentRequest;
 use App\Models\RequestRequirement;
 use App\Models\User;
 use App\Support\ClearanceSignatories;
-use Illuminate\Database\Eloquent\Model;
 
 class RequestRequirementPolicy
 {
@@ -35,8 +34,7 @@ class RequestRequirementPolicy
         }
 
         return $documentRequest->clearances->contains(
-            fn (Model $clearance): bool => $clearance instanceof Clearance
-                && in_array($clearance->overall_status, ['in_progress', 'completed', 'denied'], true)
+            fn (Clearance $clearance): bool => in_array($clearance->overall_status, ['in_progress', 'completed', 'denied'], true)
         );
     }
 }

@@ -19,7 +19,7 @@ class DocumentTypeSeeder extends Seeder
                     'description' => $spec['name'].' — per registrar policy.',
                     'category' => $spec['category'],
                     'fee' => $spec['fee'],
-                    'fee_formula' => 'per_page',
+                    'fee_formula' => $spec['fee_formula'] ?? 'flat',
                     'default_page_count' => $spec['default_page_count'] ?? 1,
                     'processing_days' => $spec['sla_days'] ?? 3,
                     'submission_window' => $spec['submission_window'] ?? null,

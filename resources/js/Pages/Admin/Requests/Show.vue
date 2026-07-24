@@ -57,6 +57,36 @@ const requestItems = computed(() => {
         },
     ];
 });
+const evaluationForm = useForm({
+    shipping_fee: Number(props.request.shipping_fee || 0),
+    quote_notes: props.request.quote_notes || '',
+    items: (props.request.items || []).map((item) => ({
+        id: item.id,
+        page_count: item.evaluated_page_count || item.page_count_snapshot || 1,
+        base_amount: Number(
+            item.base_amount ??
+                (item.document_type?.fee_formula === 'per_page'
+                    ? Number(item.document_type?.fee || 0) *
+                      Number(item.page_count_snapshot || 1) *
+                      Number(item.copies || 1)
+                    : Number(item.document_type?.fee || 0) * Number(item.copies || 1)),
+        ),
+        authentication_amount: Number(
+            item.authentication_amount ||
+                (item.authentication_requested
+                    ? 20 *
+                      (['diploma', 'special_order'].includes(item.document_type?.code)
+                          ? Math.ceil(Number(item.copies || 1) / 5)
+                          : Number(item.copies || 1))
+                    : 0),
+        ),
+        documentary_stamp_amount: Number(
+            item.documentary_stamp_amount || (item.documentary_stamp_requested ? 40 * Number(item.copies || 1) : 0),
+        ),
+        evaluation_notes: item.evaluation_notes || '',
+    })),
+});
+const registrarClearanceForm = useForm({ remarks: '' });
 const requestItemsTotal = computed(() =>
     requestItems.value.reduce((sum, item) => sum + Number(item.line_total || 0), 0),
 );
@@ -74,6 +104,19 @@ const canApprovePackage = computed(
         props.request.status === 'pending' &&
         allReqsValidated.value &&
         paymentPendingApproval.value,
+);
+const canEvaluate = computed(
+    () =>
+        isPublicRequest.value &&
+        props.request.workflow_stage === 'registrar_review' &&
+        props.request.status === 'pending',
+);
+const registrarStep = computed(() => clearance.value?.steps?.find((step) => step.office_code === 'registrar'));
+const canSignRegistrarClearance = computed(
+    () =>
+        isPublicRequest.value &&
+        props.request.workflow_stage === 'clearance' &&
+        registrarStep.value?.status === 'pending',
 );
 const canDeny = computed(() => ['pending', 'approved'].includes(props.request.status));
 const canUpdateStage = computed(() => props.request.status === 'approved');
@@ -151,6 +194,16 @@ function approve() {
 
 function approvePackage() {
     approvePackageForm.post(route(`${routeBase.value}.requests.approve-with-payment`, props.request.id));
+}
+
+function evaluateRequest() {
+    evaluationForm.post(route(`${routeBase.value}.requests.evaluate`, props.request.id), { preserveScroll: true });
+}
+
+function signRegistrarClearance() {
+    registrarClearanceForm.post(route(`${routeBase.value}.requests.registrar-clearance`, props.request.id), {
+        preserveScroll: true,
+    });
 }
 
 function deny() {
@@ -655,10 +708,117 @@ function fmtPeso(value) {
                         v-if="isPublicRequest"
                         class="mt-3 rounded-lg bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-900 ring-1 ring-sky-100"
                     >
-                        Approve request + payment only after validating attachments and receipt. If any requested
-                        document requires clearance, approval automatically starts the internal department clearance
-                        workflow.
+                        Validate the initial requirements, enter the final item amounts, and lock the quote. Clearance
+                        begins next; payment is collected only after accounting completes the last clearance step.
                     </div>
+                    <form v-if="canEvaluate" class="mt-4 space-y-4" @submit.prevent="evaluateRequest">
+                        <div
+                            v-for="(line, index) in evaluationForm.items"
+                            :key="line.id"
+                            class="space-y-3 rounded-xl border border-slate-200 p-3"
+                        >
+                            <p class="text-sm font-semibold">
+                                {{ requestItems[index]?.document_type?.name || `Item ${index + 1}` }}
+                            </p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="text-xs font-medium"
+                                    >Pages<input
+                                        v-model.number="line.page_count"
+                                        type="number"
+                                        min="1"
+                                        max="500"
+                                        class="mt-1 min-h-11 w-full rounded-md border-slate-300 text-sm"
+                                /></label>
+                                <label class="text-xs font-medium"
+                                    >Base amount<input
+                                        v-model.number="line.base_amount"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        class="mt-1 min-h-11 w-full rounded-md border-slate-300 text-sm"
+                                /></label>
+                                <label class="text-xs font-medium"
+                                    >Authentication<input
+                                        v-model.number="line.authentication_amount"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        class="mt-1 min-h-11 w-full rounded-md border-slate-300 text-sm"
+                                /></label>
+                                <label class="text-xs font-medium"
+                                    >Doc. stamp<input
+                                        v-model.number="line.documentary_stamp_amount"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        class="mt-1 min-h-11 w-full rounded-md border-slate-300 text-sm"
+                                /></label>
+                            </div>
+                            <label class="block text-xs font-medium"
+                                >Line note<input
+                                    v-model="line.evaluation_notes"
+                                    class="mt-1 min-h-11 w-full rounded-md border-slate-300 text-sm"
+                            /></label>
+                        </div>
+                        <label class="block text-xs font-medium"
+                            >Shipping fee<input
+                                v-model.number="evaluationForm.shipping_fee"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                class="mt-1 min-h-11 w-full rounded-md border-slate-300 text-sm"
+                        /></label>
+                        <label class="block text-xs font-medium"
+                            >Quote notes<textarea
+                                v-model="evaluationForm.quote_notes"
+                                rows="2"
+                                class="mt-1 w-full rounded-md border-slate-300 text-sm"
+                            />
+                        </label>
+                        <p v-if="evaluationForm.errors.evaluation" class="text-xs text-rose-700">
+                            {{ evaluationForm.errors.evaluation }}
+                        </p>
+                        <button
+                            type="submit"
+                            :disabled="evaluationForm.processing || !allReqsValidated"
+                            class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white disabled:opacity-40"
+                        >
+                            <CheckCircleIcon class="h-5 w-5" />{{
+                                evaluationForm.processing ? 'Locking quote…' : 'Lock quote & start clearance'
+                            }}
+                        </button>
+                        <p v-if="!allReqsValidated" class="text-xs text-amber-800">
+                            Validate all submitted requirements first.
+                        </p>
+                    </form>
+                    <form
+                        v-if="canSignRegistrarClearance"
+                        class="mt-4 space-y-3 rounded-xl border border-sky-200 bg-sky-50 p-3"
+                        @submit.prevent="signRegistrarClearance"
+                    >
+                        <p class="text-sm font-semibold text-sky-950">Registrar clearance</p>
+                        <p class="text-xs leading-5 text-sky-800">
+                            This document requires the Registrar to clear it before Accounting.
+                        </p>
+                        <label class="block text-xs font-medium text-sky-950"
+                            >Remarks (optional)<textarea
+                                v-model="registrarClearanceForm.remarks"
+                                rows="2"
+                                class="mt-1 w-full rounded-md border-sky-200 text-sm"
+                            />
+                        </label>
+                        <p v-if="registrarClearanceForm.errors.registrar_clearance" class="text-xs text-rose-700">
+                            {{ registrarClearanceForm.errors.registrar_clearance }}
+                        </p>
+                        <button
+                            type="submit"
+                            :disabled="registrarClearanceForm.processing"
+                            class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-sky-700 px-4 text-sm font-semibold text-white disabled:opacity-40"
+                        >
+                            <CheckCircleIcon class="h-5 w-5" />
+                            {{ registrarClearanceForm.processing ? 'Signing…' : 'Sign registrar clearance' }}
+                        </button>
+                    </form>
                     <div class="mt-3 flex flex-col gap-2">
                         <div
                             v-if="approvePackageForm.hasErrors"

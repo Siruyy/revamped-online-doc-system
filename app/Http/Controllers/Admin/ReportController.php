@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\DocumentRequest;
+use App\Models\DocumentType;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -17,15 +18,23 @@ class ReportController extends Controller
         $to = $request->date('to') ?? now();
         $status = $request->string('status')->toString();
         $course = $request->string('course')->toString();
+        $documentType = $request->integer('document_type');
 
         $requestQuery = DocumentRequest::query()
             ->whereBetween('created_at', [$from->startOfDay(), $to->endOfDay()])
             ->when($status, fn ($query) => $query->where('status', $status))
-            ->when($course, fn ($query) => $query->whereHas('user', fn ($q) => $q->where('course', $course)));
+            ->when($course, fn ($query) => $query->where(fn ($scope) => $scope
+                ->whereHas('user', fn ($q) => $q->where('course', $course))
+                ->orWhere('requester_course', $course)))
+            ->when($documentType, fn ($query) => $query->whereHas('items', fn ($items) => $items->where('document_type_id', $documentType)));
 
         $paymentQuery = Payment::query()
             ->whereBetween('created_at', [$from->startOfDay(), $to->endOfDay()])
-            ->when($course, fn ($query) => $query->whereHas('user', fn ($q) => $q->where('course', $course)));
+            ->when($course, fn ($query) => $query->whereHas('documentRequest', fn ($requestQuery) => $requestQuery
+                ->where(fn ($scope) => $scope
+                    ->whereHas('user', fn ($q) => $q->where('course', $course))
+                    ->orWhere('requester_course', $course))))
+            ->when($documentType, fn ($query) => $query->whereHas('documentRequest.items', fn ($items) => $items->where('document_type_id', $documentType)));
 
         $summary = [
             'requests_total' => (clone $requestQuery)->count(),
@@ -43,7 +52,9 @@ class ReportController extends Controller
                 'to' => $to->toDateString(),
                 'status' => $status,
                 'course' => $course,
+                'document_type' => $documentType ?: '',
             ],
+            'documentTypes' => DocumentType::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
         ]);
     }
 }

@@ -95,7 +95,16 @@ class PaymentService
             $docRequest = $payment->documentRequest;
 
             if ($docRequest) {
-                $this->initiateClearanceIfNeeded($docRequest, $payment);
+                if ($docRequest->intake_mode === 'public' && $docRequest->workflow_stage !== 'submitted') {
+                    $docRequest->update([
+                        'workflow_stage' => 'processing',
+                        'status' => 'approved',
+                        'processing_stage' => 'processing',
+                        'payment_verified_at' => now(),
+                    ]);
+                } else {
+                    $this->initiateClearanceIfNeeded($docRequest, $payment);
+                }
             }
         }
 
@@ -116,6 +125,14 @@ class PaymentService
                 'message' => 'Your payment receipt was approved.',
                 'payment_id' => $payment->id,
             ]));
+        } elseif ($payment->documentRequest?->requester_email) {
+            Notification::route('mail', $payment->documentRequest->requester_email)
+                ->notify(new WorkflowStatusNotification([
+                    'type' => 'payment_approved',
+                    'title' => 'Payment approved',
+                    'message' => "Accounting approved payment for {$payment->documentRequest->reference_no}. The registrar is now processing the documents.",
+                    'url' => route('track-document', ['reference_no' => $payment->documentRequest->reference_no]),
+                ]));
         }
 
         return $payment->refresh();
@@ -133,6 +150,10 @@ class PaymentService
             'approved_at' => now(),
             'denial_reason' => $reason,
         ]);
+
+        if ($payment->documentRequest?->intake_mode === 'public') {
+            $payment->documentRequest->update(['workflow_stage' => 'awaiting_payment']);
+        }
 
         ActivityLogger::log(
             'payment_denied',
@@ -152,6 +173,14 @@ class PaymentService
                 'payment_id' => $payment->id,
                 'reason' => $reason,
             ]));
+        } elseif ($payment->documentRequest?->requester_email) {
+            Notification::route('mail', $payment->documentRequest->requester_email)
+                ->notify(new WorkflowStatusNotification([
+                    'type' => 'payment_denied',
+                    'title' => 'Payment receipt needs replacement',
+                    'message' => "Accounting could not validate the receipt for {$payment->documentRequest->reference_no}: {$reason}",
+                    'url' => route('track-document', ['reference_no' => $payment->documentRequest->reference_no]),
+                ]));
         }
 
         return $payment->refresh();

@@ -23,6 +23,16 @@ class ClearancePolicy
             return $clearance->user_id === $user->id;
         }
 
+        if ($clearance->steps()->exists()) {
+            return $clearance->steps()->where(function ($query) use ($user) {
+                $query->where('office_code', $user->role);
+
+                if ($user->role === 'dean' && $user->academicDepartment) {
+                    $query->where('department_code', $user->academicDepartment->code);
+                }
+            })->exists();
+        }
+
         $statusColumn = $this->departmentStatusColumn($user);
 
         if ($statusColumn) {
@@ -47,6 +57,16 @@ class ClearancePolicy
     {
         if ($clearance->overall_status !== 'in_progress') {
             return false;
+        }
+
+        if ($clearance->steps()->exists()) {
+            return $clearance->steps()->where('office_code', $user->role)
+                ->when(
+                    $user->role === 'dean' && $user->academicDepartment,
+                    fn ($query) => $query->where('department_code', $user->academicDepartment->code),
+                )
+                ->where('status', 'pending')
+                ->exists();
         }
 
         if (! ClearanceSignatories::isSignatoryRole($user->role)) {
@@ -75,6 +95,10 @@ class ClearancePolicy
      */
     public function signOwnDepartment(User $user, Clearance $clearance): bool
     {
+        if ($clearance->steps()->exists()) {
+            return $this->sign($user, $clearance);
+        }
+
         $column = $this->departmentColumn($user);
 
         if (! $column) {

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Department\ClearanceController;
 use App\Http\Controllers\Department\DashboardController;
 use App\Http\Controllers\Department\FaqController;
@@ -20,6 +21,12 @@ Route::get('/clearances/{clearance}', [ClearanceController::class, 'show'])->nam
 Route::middleware('throttle:sensitive-actions')->group(function () {
     Route::post('/clearances/{clearance}/sign', [ClearanceController::class, 'sign'])->name('clearances.sign');
     Route::post('/clearances/{clearance}/deny', [ClearanceController::class, 'deny'])->name('clearances.deny');
+});
+
+Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+Route::middleware('throttle:sensitive-actions')->group(function () {
+    Route::post('/payments/{payment}/approve', [PaymentController::class, 'approve'])->name('payments.approve');
+    Route::post('/payments/{payment}/deny', [PaymentController::class, 'deny'])->name('payments.deny');
 });
 
 Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');

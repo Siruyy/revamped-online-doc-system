@@ -49,6 +49,7 @@ function badge(status) {
             pending: 'bg-amber-100 text-amber-800',
             cleared: 'bg-emerald-100 text-emerald-800',
             denied: 'bg-rose-100 text-rose-800',
+            needs_action: 'bg-rose-100 text-rose-800',
             completed: 'bg-emerald-100 text-emerald-800',
         }[status] ?? 'bg-slate-100 text-slate-600'
     );
@@ -62,6 +63,7 @@ const requestorCourseYear = (row) => {
     return `${course} · Y${year}`;
 };
 const requestorStudentId = (row) => row.user?.student_id || row.document_request?.requester_student_id || '—';
+const rowStatus = (row) => row.current_step_status || row[props.departmentStatusColumn];
 </script>
 
 <template>
@@ -85,7 +87,8 @@ const requestorStudentId = (row) => row.user?.student_id || row.document_request
                     <select v-model="form.status" class="rounded-lg border-slate-300 text-sm shadow-sm md:col-span-2">
                         <option value="pending">Pending</option>
                         <option value="cleared">Cleared</option>
-                        <option value="denied">Denied</option>
+                        <option value="needs_action">Needs action</option>
+                        <option value="denied">Denied (legacy)</option>
                     </select>
                     <input
                         v-model="form.course"
@@ -153,10 +156,10 @@ const requestorStudentId = (row) => row.user?.student_id || row.document_request
                             <span
                                 :class="[
                                     'inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
-                                    badge(row[departmentStatusColumn]),
+                                    badge(rowStatus(row)),
                                 ]"
                             >
-                                {{ row[departmentStatusColumn] }}
+                                {{ rowStatus(row) }}
                             </span>
                         </div>
 
@@ -227,10 +230,10 @@ const requestorStudentId = (row) => row.user?.student_id || row.document_request
                                         <span
                                             :class="[
                                                 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
-                                                badge(row[departmentStatusColumn]),
+                                                badge(rowStatus(row)),
                                             ]"
                                         >
-                                            {{ row[departmentStatusColumn] }}
+                                            {{ rowStatus(row) }}
                                         </span>
                                     </td>
                                     <td class="px-5 py-3">

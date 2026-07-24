@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Public\StorePublicDocumentRequest;
+use App\Models\AcademicProgram;
 use App\Models\DocumentType;
 use App\Models\PaymentProfile;
 use App\Services\Policy\RequestRulesEngine;
@@ -19,6 +20,7 @@ class DocumentRequestController extends Controller
     {
         $documentTypes = DocumentType::query()
             ->where('is_active', true)
+            ->where('category', '!=', 'BasicEd')
             ->orderBy('category')
             ->orderBy('name')
             ->get([
@@ -60,6 +62,19 @@ class DocumentRequestController extends Controller
             ->groupBy('category');
 
         $paymentProfile = PaymentProfile::active();
+        $programs = AcademicProgram::query()->with('department:id,code,name')
+            ->where('is_active', true)
+            ->orderBy('level')
+            ->orderBy('name')
+            ->orderBy('major')
+            ->get()
+            ->map(fn (AcademicProgram $program): array => [
+                'id' => $program->id,
+                'code' => $program->code,
+                'name' => $program->displayName(),
+                'department_code' => $program->department->code,
+                'department_name' => $program->department->name,
+            ]);
 
         return Inertia::render('Public/RequestDocument', [
             'documentTypeGroups' => $documentTypes,
@@ -75,6 +90,7 @@ class DocumentRequestController extends Controller
             'requirementsCatalog' => config('policy.requirements'),
             'releaseChannels' => config('policy.release_channels'),
             'uploadLimits' => FileUploadLimits::publicIntakePayload(),
+            'programs' => $programs,
         ]);
     }
 
@@ -90,13 +106,15 @@ class DocumentRequestController extends Controller
             ])->withInput();
         }
 
-        return redirect()->route('public.requests.submitted', $result['request']->reference_no);
+        return redirect()->route('public.requests.submitted', $result['request']->reference_no)
+            ->with('tracking_access_code', $result['access_code']);
     }
 
     public function submitted(string $reference): Response
     {
         return Inertia::render('Public/RequestSubmitted', [
             'reference' => $reference,
+            'trackingAccessCode' => session('tracking_access_code'),
         ]);
     }
 }

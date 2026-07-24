@@ -6,6 +6,7 @@ use App\Support\ClearanceSignatories;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Clearance extends Model
 {
@@ -83,9 +84,20 @@ class Clearance extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return BelongsTo<DocumentRequest, $this>
+     */
     public function documentRequest(): BelongsTo
     {
         return $this->belongsTo(DocumentRequest::class);
+    }
+
+    /**
+     * @return HasMany<ClearanceStep, $this>
+     */
+    public function steps(): HasMany
+    {
+        return $this->hasMany(ClearanceStep::class)->orderBy('sequence');
     }
 
     public function teacherSigner(): BelongsTo
@@ -135,12 +147,23 @@ class Clearance extends Model
 
     public function isComplete(): bool
     {
+        if ($this->steps()->exists()) {
+            return $this->steps()->where('status', '!=', 'cleared')->doesntExist();
+        }
+
         return collect(ClearanceSignatories::definitions())
             ->every(fn (array $signatory): bool => $this->{$signatory['status']} === 'cleared');
     }
 
     public function recomputeOverallStatus(): self
     {
+        if ($this->steps()->exists()) {
+            $this->overall_status = $this->isComplete() ? 'completed' : 'in_progress';
+            $this->completed_at = $this->isComplete() ? ($this->completed_at ?? now()) : null;
+
+            return $this;
+        }
+
         $statuses = collect(ClearanceSignatories::definitions())
             ->map(fn (array $signatory): mixed => $this->{$signatory['status']})
             ->all();
