@@ -3,6 +3,7 @@
 namespace App\Http\Requests\SuperAdmin;
 
 use App\Support\ClearanceSignatories;
+use App\Support\Usernames;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -18,6 +19,8 @@ class UpdateSuperAdminUserRequest extends FormRequest
     {
         $year = $this->input('year_level');
         $this->merge([
+            'username' => Usernames::normalize($this->input('username')),
+            'email' => strtolower(trim((string) $this->input('email'))),
             'year_level' => $year === '' || $year === null ? null : (int) $year,
             'course' => $this->input('course') === '' ? null : $this->input('course'),
             'student_id' => $this->input('student_id') === '' ? null : $this->input('student_id'),
@@ -34,6 +37,7 @@ class UpdateSuperAdminUserRequest extends FormRequest
 
         return [
             'fullname' => ['required', 'string', 'max:150'],
+            'username' => Usernames::rules($userId),
             'email' => ['required', 'string', 'lowercase', 'email', 'max:150', Rule::unique('users', 'email')->ignore($userId)],
             'role' => ['required', Rule::in(ClearanceSignatories::roleOptions(includeStudentAndSuperAdmin: true))],
             'status' => ['required', Rule::in(['pending', 'active', 'suspended', 'rejected'])],
@@ -42,6 +46,14 @@ class UpdateSuperAdminUserRequest extends FormRequest
             'student_id' => ['nullable', 'string', 'max:50', Rule::unique('users', 'student_id')->ignore($userId)],
             'contact_number' => ['nullable', 'string', 'max:30'],
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return Usernames::messages();
     }
 
     public function withValidator(Validator $validator): void

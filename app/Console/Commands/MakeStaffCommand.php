@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use App\Support\ClearanceSignatories;
+use App\Support\Usernames;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -31,17 +32,21 @@ class MakeStaffCommand extends Command
     {
         $email = (string) $this->argument('email');
         $role = (string) $this->argument('role');
+        $existingUser = User::withTrashed()->where('email', $email)->first();
+        $username = $this->ask('Username', Usernames::uniqueFromEmail($email, $existingUser?->id));
         $fullname = $this->ask('Full name', 'SVCI Staff');
         $password = $this->secret('Password (min 8 chars)');
         $allowedRoles = ClearanceSignatories::roleOptions();
 
         $validator = Validator::make(
-            ['email' => $email, 'role' => $role, 'password' => $password],
+            ['email' => $email, 'username' => Usernames::normalize($username), 'role' => $role, 'password' => $password],
             [
                 'email' => ['required', 'email'],
+                'username' => Usernames::rules($existingUser?->id),
                 'role' => ['required', 'in:'.implode(',', $allowedRoles)],
                 'password' => ['required', 'string', 'min:8'],
-            ]
+            ],
+            Usernames::messages(),
         );
 
         if ($validator->fails()) {
@@ -54,6 +59,7 @@ class MakeStaffCommand extends Command
             ['email' => $email],
             [
                 'fullname' => $fullname,
+                'username' => Usernames::normalize($username),
                 'password' => Hash::make($password),
                 'role' => $role,
                 'status' => 'active',

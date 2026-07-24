@@ -64,6 +64,7 @@ class SuperAdminManagementTest extends TestCase
         $this->actingAs($superAdmin)
             ->post(route('superadmin.users.store'), [
                 'fullname' => 'New Admin',
+                'username' => 'new.admin',
                 'email' => 'newadmin@example.test',
                 'role' => 'admin',
             ])
@@ -71,6 +72,7 @@ class SuperAdminManagementTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'email' => 'newadmin@example.test',
+            'username' => 'new.admin',
             'role' => 'admin',
             'status' => 'active',
         ]);
@@ -146,6 +148,7 @@ class SuperAdminManagementTest extends TestCase
         $this->actingAs($only)
             ->patch(route('superadmin.users.update', $only), [
                 'fullname' => $only->fullname,
+                'username' => $only->username,
                 'email' => $only->email,
                 'role' => 'admin',
                 'status' => 'active',

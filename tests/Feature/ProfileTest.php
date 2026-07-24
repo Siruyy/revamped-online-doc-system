@@ -29,7 +29,11 @@ class ProfileTest extends TestCase
             ->actingAs($user)
             ->patch('/profile', [
                 'name' => 'Test User',
+                'username' => 'test.user',
                 'email' => 'test@example.com',
+                'contact_number' => '09171234567',
+                'course' => 'BSIT',
+                'year_level' => 3,
             ]);
 
         $response
@@ -39,7 +43,11 @@ class ProfileTest extends TestCase
         $user->refresh();
 
         $this->assertSame('Test User', $user->name);
+        $this->assertSame('test.user', $user->username);
         $this->assertSame('test@example.com', $user->email);
+        $this->assertSame('09171234567', $user->contact_number);
+        $this->assertSame('BSIT', $user->course);
+        $this->assertSame(3, $user->year_level);
         $this->assertNull($user->email_verified_at);
     }
 
@@ -51,6 +59,7 @@ class ProfileTest extends TestCase
             ->actingAs($user)
             ->patch('/profile', [
                 'name' => 'Test User',
+                'username' => $user->username,
                 'email' => $user->email,
             ]);
 
@@ -59,6 +68,24 @@ class ProfileTest extends TestCase
             ->assertRedirect(route('student.profile.edit'));
 
         $this->assertNotNull($user->refresh()->email_verified_at);
+    }
+
+    public function test_username_must_be_unique_and_is_normalized(): void
+    {
+        User::factory()->create(['username' => 'already.taken']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->from('/profile')
+            ->patch('/profile', [
+                'name' => $user->name,
+                'username' => 'ALREADY.TAKEN',
+                'email' => $user->email,
+            ])
+            ->assertRedirect('/profile')
+            ->assertSessionHasErrors('username');
+
+        $this->assertNotSame('already.taken', $user->refresh()->username);
     }
 
     public function test_user_can_delete_their_account(): void

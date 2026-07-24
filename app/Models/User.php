@@ -25,6 +25,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'name',
         'fullname',
+        'username',
         'email',
         'password',
         'role',
@@ -177,6 +178,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function setNameAttribute(string $value): void
     {
         $this->attributes['fullname'] = $value;
+    }
+
+    public function setUsernameAttribute(string $value): void
+    {
+        $this->attributes['username'] = strtolower(trim($value));
     }
 
     public function sendPasswordResetNotification($token): void

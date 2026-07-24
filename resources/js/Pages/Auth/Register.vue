@@ -7,6 +7,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const form = useForm({
     name: '',
+    username: '',
     email: '',
     course: '',
     year_level: '',
@@ -49,6 +50,28 @@ const submit = () => {
                 </template>
             </FormField>
 
+            <FormField
+                id="username"
+                class="mt-4"
+                label="Username"
+                help="Use 3–30 lowercase letters, numbers, dots, hyphens, or underscores."
+                :error="form.errors.username"
+                required
+            >
+                <template #default="{ id, describedBy, invalid }">
+                    <TextInput
+                        :id="id"
+                        v-model="form.username"
+                        type="text"
+                        class="mt-1 block w-full"
+                        required
+                        autocomplete="username"
+                        :described-by="describedBy"
+                        :invalid="invalid"
+                    />
+                </template>
+            </FormField>
+
             <FormField id="email" class="mt-4" label="Email" :error="form.errors.email" required>
                 <template #default="{ id, describedBy, invalid }">
                     <TextInput
@@ -57,7 +80,7 @@ const submit = () => {
                         type="email"
                         class="mt-1 block w-full"
                         required
-                        autocomplete="username"
+                        autocomplete="email"
                         :described-by="describedBy"
                         :invalid="invalid"
                     />

@@ -16,7 +16,7 @@ defineProps({
 });
 
 const form = useForm({
-    email: '',
+    login: '',
     password: '',
     remember: false,
 });
@@ -45,12 +45,12 @@ const submit = () => {
         </div>
 
         <form :aria-busy="form.processing ? 'true' : undefined" @submit.prevent="submit">
-            <FormField id="email" label="Email" :error="form.errors.email" required>
+            <FormField id="login" label="Username or email" :error="form.errors.login" required>
                 <template #default="{ id, describedBy, invalid }">
                     <TextInput
                         :id="id"
-                        v-model="form.email"
-                        type="email"
+                        v-model="form.login"
+                        type="text"
                         class="mt-1 block w-full"
                         required
                         autofocus

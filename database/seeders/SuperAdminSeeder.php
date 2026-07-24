@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Support\Usernames;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -23,10 +24,17 @@ class SuperAdminSeeder extends Seeder
             return;
         }
 
+        $existingUserId = User::withTrashed()->where('email', $email)->value('id');
+        $username = env('SUPERADMIN_USERNAME');
+        $username = $username
+            ? Usernames::normalize((string) $username)
+            : Usernames::uniqueFromEmail($email, $existingUserId);
+
         User::updateOrCreate(
             ['email' => $email],
             [
                 'fullname' => $fullname,
+                'username' => $username,
                 'password' => Hash::make($password),
                 'role' => 'superadmin',
                 'status' => 'active',

@@ -35,6 +35,7 @@ class UserController extends Controller
             ->when($request->string('search')->toString(), function ($q, $search) {
                 $q->where(function ($inner) use ($search) {
                     $inner->where('fullname', 'like', "%{$search}%")
+                        ->orWhere('username', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
                         ->orWhere('student_id', 'like', "%{$search}%");
                 });
@@ -68,6 +69,7 @@ class UserController extends Controller
 
         $user = User::query()->create([
             'fullname' => $request->validated('fullname'),
+            'username' => $request->validated('username'),
             'email' => $request->validated('email'),
             'password' => Hash::make($plain),
             'role' => $request->validated('role'),
@@ -114,7 +116,7 @@ class UserController extends Controller
 
         return Inertia::render('SuperAdmin/Users/Edit', [
             'user' => $user->only([
-                'id', 'fullname', 'email', 'role', 'status', 'course', 'year_level',
+                'id', 'fullname', 'username', 'email', 'role', 'status', 'course', 'year_level',
                 'student_id', 'contact_number', 'email_verified_at', 'created_at',
             ]),
         ]);

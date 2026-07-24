@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\PaymentProfile;
 use App\Models\User;
 use App\Support\ClearanceSignatories;
+use App\Support\Usernames;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 
@@ -52,10 +53,13 @@ class E2eSeeder extends Seeder
 
     private function user(string $email, string $name, string $role, string $password): User
     {
+        $existingUserId = User::withTrashed()->where('email', $email)->value('id');
+
         return User::query()->updateOrCreate(
             ['email' => $email],
             [
                 'fullname' => $name,
+                'username' => Usernames::uniqueFromEmail($email, $existingUserId),
                 'password' => $password,
                 'role' => $role,
                 'status' => 'active',
@@ -70,10 +74,13 @@ class E2eSeeder extends Seeder
 
     private function student(string $email, string $name, string $studentId, string $password, User $approver): User
     {
+        $existingUserId = User::withTrashed()->where('email', $email)->value('id');
+
         return User::query()->updateOrCreate(
             ['email' => $email],
             [
                 'fullname' => $name,
+                'username' => Usernames::uniqueFromEmail($email, $existingUserId),
                 'password' => $password,
                 'role' => 'student',
                 'status' => 'active',

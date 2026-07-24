@@ -6,6 +6,7 @@ import { computed } from 'vue';
 
 const form = useForm({
     fullname: '',
+    username: '',
     email: '',
     role: 'admin',
 });
@@ -62,12 +63,33 @@ const submit = () => {
                         />
                     </template>
                 </FormField>
+                <FormField
+                    id="staff-username"
+                    label="Username"
+                    help="Use 3–30 lowercase letters, numbers, dots, hyphens, or underscores."
+                    :error="form.errors.username"
+                    required
+                >
+                    <template #default="{ id, describedBy, invalid }">
+                        <input
+                            :id="id"
+                            v-model="form.username"
+                            type="text"
+                            autocomplete="username"
+                            class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
+                            required
+                            :aria-describedby="describedBy"
+                            :aria-invalid="invalid ? 'true' : undefined"
+                        />
+                    </template>
+                </FormField>
                 <FormField id="staff-email" label="Email" :error="form.errors.email" required>
                     <template #default="{ id, describedBy, invalid }">
                         <input
                             :id="id"
                             v-model="form.email"
                             type="email"
+                            autocomplete="email"
                             class="mt-1 w-full rounded-md border-slate-300 text-sm shadow-sm"
                             required
                             :aria-describedby="describedBy"

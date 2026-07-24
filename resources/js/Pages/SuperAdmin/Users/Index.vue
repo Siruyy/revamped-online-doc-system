@@ -131,7 +131,7 @@ const bulkDelete = () => {
                 <input
                     v-model="filterForm.search"
                     type="search"
-                    placeholder="Search name, email, ID"
+                    placeholder="Search name, username, email, ID"
                     class="rounded-md border-slate-300 text-sm shadow-sm lg:col-span-2"
                 />
                 <select v-model="filterForm.role" class="rounded-md border-slate-300 text-sm shadow-sm">
@@ -224,7 +224,9 @@ const bulkDelete = () => {
                                     <span class="block truncate text-sm font-semibold text-slate-950">{{
                                         row.fullname
                                     }}</span>
-                                    <span class="mt-0.5 block truncate text-xs text-slate-500">{{ row.email }}</span>
+                                    <span class="mt-0.5 block truncate text-xs text-slate-500">
+                                        @{{ row.username }} · {{ row.email }}
+                                    </span>
                                 </span>
                             </label>
                             <span
@@ -273,6 +275,7 @@ const bulkDelete = () => {
                                         <input type="checkbox" class="rounded border-slate-300" @change="toggleAll" />
                                     </th>
                                     <th class="px-3 py-3 text-left font-semibold text-slate-700">Name</th>
+                                    <th class="px-3 py-3 text-left font-semibold text-slate-700">Username</th>
                                     <th class="px-3 py-3 text-left font-semibold text-slate-700">Email</th>
                                     <th class="px-3 py-3 text-left font-semibold text-slate-700">Role</th>
                                     <th class="px-3 py-3 text-left font-semibold text-slate-700">Status</th>
@@ -290,6 +293,7 @@ const bulkDelete = () => {
                                         />
                                     </td>
                                     <td class="px-3 py-3 text-slate-900">{{ row.fullname }}</td>
+                                    <td class="px-3 py-3 text-slate-600">@{{ row.username }}</td>
                                     <td class="px-3 py-3 text-slate-600">{{ row.email }}</td>
                                     <td class="px-3 py-3 capitalize text-slate-700">{{ row.role }}</td>
                                     <td class="px-3 py-3 capitalize text-slate-700">{{ row.status }}</td>

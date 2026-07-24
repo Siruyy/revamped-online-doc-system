@@ -17,7 +17,7 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_active_users_can_authenticate_using_the_login_screen(): void
+    public function test_active_users_can_authenticate_using_email(): void
     {
         $user = User::factory()->student()->create([
             'status' => 'active',
@@ -25,11 +25,28 @@ class AuthenticationTest extends TestCase
         ]);
 
         $response = $this->post('/login', [
-            'email' => $user->email,
+            'login' => $user->email,
             'password' => 'password',
         ]);
 
         $this->assertAuthenticated();
+        $response->assertRedirect(route('student.dashboard', absolute: false));
+    }
+
+    public function test_active_users_can_authenticate_using_username(): void
+    {
+        $user = User::factory()->student()->create([
+            'username' => 'student.login',
+            'status' => 'active',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->post('/login', [
+            'login' => 'STUDENT.LOGIN',
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
         $response->assertRedirect(route('student.dashboard', absolute: false));
     }
 
@@ -38,12 +55,12 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->pending()->create();
 
         $response = $this->from('/login')->post('/login', [
-            'email' => $user->email,
+            'login' => $user->username,
             'password' => 'password',
         ]);
 
         $this->assertGuest();
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHasErrors('login');
     }
 
     public function test_suspended_users_can_not_authenticate(): void
@@ -51,12 +68,12 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->suspended()->create();
 
         $response = $this->from('/login')->post('/login', [
-            'email' => $user->email,
+            'login' => $user->email,
             'password' => 'password',
         ]);
 
         $this->assertGuest();
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHasErrors('login');
     }
 
     public function test_account_is_locked_after_ten_failed_attempts(): void
@@ -65,20 +82,20 @@ class AuthenticationTest extends TestCase
 
         for ($i = 0; $i < 10; $i++) {
             $this->from('/login')->post('/login', [
-                'email' => $user->email,
+                'login' => $user->username,
                 'password' => 'wrong-password',
             ]);
         }
 
         $response = $this->from('/login')->post('/login', [
-            'email' => $user->email,
+            'login' => $user->username,
             'password' => 'wrong-password',
         ]);
 
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHasErrors('login');
         $this->assertStringContainsString(
             'Account locked due to repeated failed logins',
-            session('errors')->first('email')
+            session('errors')->first('login')
         );
     }
 

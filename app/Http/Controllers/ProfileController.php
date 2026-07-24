@@ -130,7 +130,7 @@ class ProfileController extends Controller
         return match ($user->role) {
             'student' => 'student.profile.edit',
             'admin' => 'admin.profile.edit',
-            'dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance' => 'department.profile.edit',
+            'dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance', 'accounting' => 'department.profile.edit',
             'superadmin' => 'superadmin.profile.edit',
             default => 'profile.edit',
         };
@@ -141,7 +141,7 @@ class ProfileController extends Controller
         return match ($role) {
             'student' => 'Student/Profile',
             'admin' => 'Admin/Profile',
-            'dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance' => 'Department/Profile',
+            'dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance', 'accounting' => 'Department/Profile',
             'superadmin' => 'SuperAdmin/Profile',
             default => 'Profile/Edit',
         };

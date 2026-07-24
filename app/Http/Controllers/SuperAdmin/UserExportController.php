@@ -23,6 +23,7 @@ class UserExportController extends Controller
             ->when($request->string('search')->toString(), function ($q, $search): void {
                 $q->where(function ($inner) use ($search): void {
                     $inner->where('fullname', 'like', "%{$search}%")
+                        ->orWhere('username', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
                         ->orWhere('student_id', 'like', "%{$search}%");
                 });
@@ -30,10 +31,11 @@ class UserExportController extends Controller
             ->orderBy('id');
 
         return $exports->stream('users-export.csv', $query, [
-            'ID', 'Full Name', 'Email', 'Role', 'Status', 'Course', 'Year', 'Created At', 'Approved At',
+            'ID', 'Full Name', 'Username', 'Email', 'Role', 'Status', 'Course', 'Year', 'Created At', 'Approved At',
         ], fn (User $user): array => [
             $user->id,
             $user->fullname,
+            $user->username,
             $user->email,
             $user->role,
             $user->status,

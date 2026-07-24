@@ -24,12 +24,13 @@ class CsvExportTest extends TestCase
         $this->assertStringContainsString('Export Student', $response->streamedContent());
     }
 
-    public function test_superadmin_users_export_has_exact_phase_nine_headings_and_approved_at(): void
+    public function test_superadmin_users_export_has_account_headings_and_approved_at(): void
     {
         $superadmin = User::factory()->superadmin()->create();
         $approvedAt = now()->setDate(2026, 5, 13)->setTime(9, 30);
         User::factory()->student()->create([
             'fullname' => 'Approved Export Student',
+            'username' => 'approved.export',
             'email' => 'approved-export@example.test',
             'approved_at' => $approvedAt,
         ]);
@@ -42,9 +43,10 @@ class CsvExportTest extends TestCase
         $rows = array_map('str_getcsv', explode("\n", trim($response->streamedContent())));
 
         $this->assertSame([
-            'ID', 'Full Name', 'Email', 'Role', 'Status', 'Course', 'Year', 'Created At', 'Approved At',
+            'ID', 'Full Name', 'Username', 'Email', 'Role', 'Status', 'Course', 'Year', 'Created At', 'Approved At',
         ], $rows[0]);
-        $this->assertSame($approvedAt->toDateTimeString(), $rows[1][8]);
+        $this->assertSame('approved.export', $rows[1][2]);
+        $this->assertSame($approvedAt->toDateTimeString(), $rows[1][9]);
     }
 
     public function test_superadmin_users_export_preserves_filters(): void

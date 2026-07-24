@@ -68,6 +68,7 @@ class PerformanceCheckCommand extends Command
             ['email' => 'performance-admin@example.test'],
             [
                 'fullname' => 'Performance Admin',
+                'username' => 'performance_admin',
                 'password' => Hash::make(Str::password(16)),
                 'role' => 'admin',
                 'status' => 'active',
@@ -87,6 +88,7 @@ class PerformanceCheckCommand extends Command
                 'course' => ['BSIT', 'BSA', 'BSBA', 'BSED'][$sequence->index % 4],
                 'year_level' => ($sequence->index % 4) + 1,
                 'email' => 'perf-student-'.$runId.'-'.$sequence->index.'@example.test',
+                'username' => 'perf_'.Str::substr(Str::replace('-', '', $runId), -12).'_'.$sequence->index,
                 'student_id' => 'PERF-'.Str::upper(Str::replace('-', '', $runId)).'-'.str_pad((string) ($sequence->index + 1), 6, '0', STR_PAD_LEFT),
             ],
         )->create(['status' => 'active', 'email_verified_at' => now()]);

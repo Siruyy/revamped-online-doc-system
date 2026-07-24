@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\AcademicDepartment;
 use App\Models\User;
 use App\Support\ClearanceSignatories;
+use App\Support\Usernames;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -15,10 +16,13 @@ class ClearanceSignatorySeeder extends Seeder
         $password = (string) env('SIGNATORY_DEFAULT_PASSWORD', 'password');
 
         foreach (ClearanceSignatories::SIGNATORIES as $role => $signatory) {
+            $existingUserId = User::withTrashed()->where('email', $signatory['seeded_email'])->value('id');
+
             User::query()->updateOrCreate(
                 ['email' => $signatory['seeded_email']],
                 [
                     'fullname' => $signatory['label'],
+                    'username' => Usernames::uniqueFromEmail($signatory['seeded_email'], $existingUserId),
                     'password' => Hash::make($password),
                     'role' => $role,
                     'status' => 'active',
@@ -32,10 +36,14 @@ class ClearanceSignatorySeeder extends Seeder
             );
         }
 
+        $accountingEmail = 'accounting@svci.test';
+        $accountingUserId = User::withTrashed()->where('email', $accountingEmail)->value('id');
+
         User::query()->updateOrCreate(
-            ['email' => 'accounting@svci.test'],
+            ['email' => $accountingEmail],
             [
                 'fullname' => 'Accounting Office',
+                'username' => Usernames::uniqueFromEmail($accountingEmail, $accountingUserId),
                 'password' => Hash::make($password),
                 'role' => 'accounting',
                 'status' => 'active',
@@ -45,10 +53,14 @@ class ClearanceSignatorySeeder extends Seeder
         );
 
         foreach (AcademicDepartment::query()->where('is_active', true)->get() as $department) {
+            $email = 'dean.'.strtolower($department->code).'@svci.test';
+            $existingUserId = User::withTrashed()->where('email', $email)->value('id');
+
             User::query()->updateOrCreate(
-                ['email' => 'dean.'.strtolower($department->code).'@svci.test'],
+                ['email' => $email],
                 [
                     'fullname' => "{$department->code} Dean",
+                    'username' => Usernames::uniqueFromEmail($email, $existingUserId),
                     'password' => Hash::make($password),
                     'role' => 'dean',
                     'academic_department_id' => $department->id,

@@ -23,6 +23,7 @@ class DemoDataSeeder extends Seeder
             ['email' => 'admin@example.com'],
             User::factory()->admin()->make([
                 'fullname' => 'SVCI Admin',
+                'username' => 'demo_admin',
                 'password' => Hash::make('password'),
                 'status' => 'active',
                 'email_verified_at' => now(),
@@ -33,6 +34,7 @@ class DemoDataSeeder extends Seeder
             ['email' => 'student@example.com'],
             User::factory()->student()->make([
                 'fullname' => 'SVCI Student',
+                'username' => 'demo_student',
                 'password' => Hash::make('password'),
                 'status' => 'active',
                 'email_verified_at' => now(),

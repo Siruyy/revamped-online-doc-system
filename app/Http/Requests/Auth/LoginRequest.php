@@ -4,6 +4,7 @@ namespace App\Http\Requests\Auth;
 
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Support\Usernames;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,9 +31,16 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'login' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'login' => Str::lower(trim((string) ($this->input('login') ?? $this->input('email')))),
+        ]);
     }
 
     /**
@@ -45,21 +53,26 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotLockedOut();
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        [$column, $identifier] = $this->loginIdentifier();
+
+        if (! Auth::attempt([
+            $column => $identifier,
+            'password' => $this->string('password')->toString(),
+        ], $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
             RateLimiter::hit($this->lockoutKey(), 60 * 60 * 24);
 
-            $attemptedUser = User::query()->where('email', $this->string('email')->toString())->first();
+            $attemptedUser = User::query()->where($column, $identifier)->first();
             ActivityLogger::log(
                 'login_failed',
-                "Failed login attempt for {$this->string('email')->toString()}.",
+                "Failed login attempt for {$identifier}.",
                 null,
                 $attemptedUser,
                 ['ip' => $this->ip()]
             );
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'login' => trans('auth.failed'),
             ]);
         }
 
@@ -71,7 +84,7 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->lockoutKey(), 60 * 60 * 24);
 
             throw ValidationException::withMessages([
-                'email' => $this->statusMessage($user->status),
+                'login' => $this->statusMessage($user->status),
             ]);
         }
 
@@ -100,7 +113,7 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
+            'login' => trans('auth.throttle', [
                 'seconds' => $seconds,
                 'minutes' => ceil($seconds / 60),
             ]),
@@ -119,7 +132,7 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->lockoutKey());
 
         throw ValidationException::withMessages([
-            'email' => "Account locked due to repeated failed logins. Try again in {$seconds} seconds.",
+            'login' => "Account locked due to repeated failed logins. Try again in {$seconds} seconds.",
         ]);
     }
 
@@ -128,12 +141,26 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate($this->string('login')->toString().'|'.$this->ip());
     }
 
     public function lockoutKey(): string
     {
         return 'lockout:'.$this->throttleKey();
+    }
+
+    /**
+     * @return array{0: 'email'|'username', 1: string}
+     */
+    private function loginIdentifier(): array
+    {
+        $login = $this->string('login')->toString();
+
+        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            return ['email', $login];
+        }
+
+        return ['username', Usernames::normalize($login)];
     }
 
     private function statusMessage(string $status): string

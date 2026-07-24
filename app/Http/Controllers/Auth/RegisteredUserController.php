@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\RegistrationSubmittedNotification;
 use App\Services\ActivityLogger;
+use App\Support\Usernames;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,18 +35,25 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $request->merge([
+            'username' => Usernames::normalize($request->input('username')),
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
+
         $request->validate([
             'name' => 'required|string|max:255',
+            'username' => Usernames::rules(),
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'course' => 'required|string|max:150',
             'year_level' => 'required|integer|min:1|max:8',
             'student_id' => 'required|string|max:100|unique:'.User::class.',student_id',
             'contact_number' => 'required|string|max:30',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+        ], Usernames::messages());
 
         $user = User::create([
             'fullname' => $request->string('name')->toString(),
+            'username' => $request->string('username')->toString(),
             'email' => $request->email,
             'course' => $request->course,
             'year_level' => $request->year_level,
