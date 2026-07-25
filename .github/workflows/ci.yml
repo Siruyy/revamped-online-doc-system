@@ -85,6 +85,7 @@ jobs:
           DB_DATABASE: svci_test
           DB_USERNAME: svci_dev
           DB_PASSWORD: secret
+          SIGNATORY_DEFAULT_PASSWORD: CiSignatoryPassword123!
 
   lint:
     name: Frontend Lint
