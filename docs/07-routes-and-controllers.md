@@ -105,7 +105,7 @@ These routes remain in code for now but are legacy for requestors after Phase 15
 | GET | `/admin/reports` | `Admin\ReportController@index` | `Admin/Reports.vue` |
 | GET | `/admin/reports/export` | `Admin\ReportController@export` | (download) |
 
-## Department Routes (`prefix=department`, middleware=`['auth', 'role:teacher,dean,accounting,sao']`)
+## Department Routes (`prefix=department`, role middleware includes `dean`, `principal`, `accounting`, and the other clearance offices)
 
 | Method | URL | Controller @ Action | Page |
 |--------|-----|--------------------|------|

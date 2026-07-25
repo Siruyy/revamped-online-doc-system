@@ -237,16 +237,28 @@ function timelineTone(state) {
                                 class="mt-1 min-h-11 w-full rounded-lg border-brand-300 font-mono uppercase"
                         /></label>
                         <label class="block text-sm font-semibold"
-                            >Payment method<input
+                            >Payment method<select
                                 v-model="paymentForm.payment_method"
                                 class="mt-1 min-h-11 w-full rounded-lg border-brand-300"
-                                placeholder="e.g. GCash or bank deposit"
-                        /></label>
+                            >
+                                <option value="" disabled>Select payment method</option>
+                                <option v-for="(label, value) in result.payment_methods" :key="value" :value="value">
+                                    {{ label }}
+                                </option>
+                            </select></label
+                        >
                         <label class="block text-sm font-semibold"
-                            >Payment reference (optional)<input
+                            >Payment reference<input
                                 v-model="paymentForm.reference_number"
                                 class="mt-1 min-h-11 w-full rounded-lg border-brand-300"
+                                required
                         /></label>
+                        <p v-if="paymentForm.errors.payment_method" class="text-sm text-rose-700">
+                            {{ paymentForm.errors.payment_method }}
+                        </p>
+                        <p v-if="paymentForm.errors.reference_number" class="text-sm text-rose-700">
+                            {{ paymentForm.errors.reference_number }}
+                        </p>
                         <FileUploadField
                             id="payment-receipt"
                             label="Payment receipt"
@@ -260,6 +272,7 @@ function timelineTone(state) {
                                 paymentForm.processing ||
                                 !accessCode ||
                                 !paymentForm.payment_method ||
+                                !paymentForm.reference_number ||
                                 !paymentForm.receipt
                             "
                             class="min-h-11 rounded-lg bg-brand-700 px-5 font-semibold text-white disabled:opacity-40"
@@ -338,6 +351,25 @@ function timelineTone(state) {
                                 <span class="font-semibold">PHP {{ document.line_total }}</span>
                             </li>
                         </ul>
+                        <dl
+                            v-if="result.quote?.is_locked"
+                            class="mt-4 ml-auto max-w-sm space-y-2 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700 ring-1 ring-slate-200"
+                        >
+                            <div class="flex items-center justify-between gap-4">
+                                <dt>Document subtotal</dt>
+                                <dd class="font-mono font-semibold">PHP {{ result.quote.document_subtotal }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between gap-4">
+                                <dt>Shipping fee</dt>
+                                <dd class="font-mono font-semibold">PHP {{ result.quote.shipping_fee }}</dd>
+                            </div>
+                            <div
+                                class="flex items-center justify-between gap-4 border-t border-slate-200 pt-2 text-base text-slate-950"
+                            >
+                                <dt class="font-semibold">Grand total</dt>
+                                <dd class="font-mono font-bold">PHP {{ result.quote.grand_total }}</dd>
+                            </div>
+                        </dl>
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-3">

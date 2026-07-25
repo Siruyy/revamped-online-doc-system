@@ -34,7 +34,7 @@ Public document requests may have `document_requests.user_id = NULL` and store r
 | email | VARCHAR(150) UNIQUE | |
 | email_verified_at | TIMESTAMP NULL | |
 | password | VARCHAR(255) | bcrypt |
-| role | ENUM('student','admin','teacher','dean','accounting','sao','superadmin') | |
+| role | ENUM including `student`, registrar/admin roles, `dean`, `principal`, `accounting`, and `superadmin` | |
 | status | ENUM('pending','active','suspended','rejected') | default `pending` |
 | course | VARCHAR(100) NULL | for students |
 | year_level | TINYINT UNSIGNED NULL | for students (1–4) |
@@ -73,8 +73,12 @@ Public document requests may have `document_requests.user_id = NULL` and store r
 | requester_email | VARCHAR(150) NULL | used for email notifications when provided |
 | requester_contact_number | VARCHAR(30) | |
 | requester_student_id | VARCHAR(50) | school-issued ID entered on request |
-| requester_course | VARCHAR(100) | |
-| requester_year_level | TINYINT UNSIGNED | expected 1-8 by validation |
+| requester_division | VARCHAR(32) | `college` or `basic_education` |
+| basic_education_level | VARCHAR(32) NULL | `elementary`, `junior_high`, or `senior_high` |
+| requester_course | VARCHAR(100) | college program code or Elementary/JHS/SHS snapshot |
+| requester_year_level | TINYINT UNSIGNED NULL | expected 1-8 for College/Graduate requests |
+| requester_last_term_attended | VARCHAR(32) NULL | structured term key |
+| requester_last_year_attended | VARCHAR(9) NULL | academic year such as `2025-2026` |
 | document_type_id | BIGINT UNSIGNED FK→document_types.id | |
 | status | ENUM('pending','approved','denied','cancelled','completed') | default `pending` |
 | processing_stage | ENUM('not_started','processing','ready_for_pickup','released') | default `not_started` |
@@ -85,7 +89,7 @@ Public document requests may have `document_requests.user_id = NULL` and store r
 | purpose | TEXT NULL | student's reason for request |
 | timestamps | | |
 
-**Indexes:** `user_id`, `reference_no`, `requester_student_id`, `requester_email`, `status`, `processing_stage`, `(user_id, status)`, `(status, created_at)`.
+**Indexes:** `user_id`, `reference_no`, `requester_student_id`, `requester_email`, `status`, `processing_stage`, `(user_id, status)`, `(status, created_at)`, `(requester_division, status)`.
 
 ### `payments`
 
@@ -96,8 +100,8 @@ Public document requests may have `document_requests.user_id = NULL` and store r
 | document_request_id | BIGINT UNSIGNED FK→document_requests.id | required for public request intake |
 | total_amount | DECIMAL(10,2) | |
 | receipt_path | VARCHAR(255) NULL | |
-| payment_method | VARCHAR(50) NULL | e.g., "Cash", "GCash", "Bank Transfer" |
-| reference_number | VARCHAR(100) NULL | external reference (GCash ref, etc.) |
+| payment_method | VARCHAR(50) NULL | public flow accepts configured electronic/deposit methods |
+| reference_number | VARCHAR(100) NULL | required when a public receipt is submitted |
 | status | ENUM('pending','pending_approval','approved','denied') | |
 | denial_reason | TEXT NULL | |
 | approved_by | BIGINT UNSIGNED NULL FK→users.id | |

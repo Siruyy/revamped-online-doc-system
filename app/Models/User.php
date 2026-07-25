@@ -121,7 +121,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function scopeStaff(Builder $query): Builder
     {
-        return $query->whereIn('role', ['admin', 'accounting', ...ClearanceSignatories::roles(), 'superadmin']);
+        return $query->whereIn('role', ['admin', 'accounting', 'principal', ...ClearanceSignatories::roles(), 'superadmin']);
     }
 
     public function scopePending(Builder $query): Builder
@@ -146,7 +146,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isDepartment(): bool
     {
-        return ClearanceSignatories::isSignatoryRole($this->role) || $this->role === 'accounting';
+        return ClearanceSignatories::isSignatoryRole($this->role) || in_array($this->role, ['accounting', 'principal'], true);
     }
 
     public function isSuperAdmin(): bool
@@ -164,7 +164,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return match ($this->role) {
             'student' => 'student.dashboard',
             'admin' => 'admin.dashboard',
-            'dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance', 'accounting' => 'department.dashboard',
+            'dean', 'principal', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance', 'accounting' => 'department.dashboard',
             'superadmin' => 'superadmin.dashboard',
             default => 'login',
         };

@@ -15,9 +15,13 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $role = $user->role;
-        $isDynamicOnly = $role === 'accounting';
+        $isDynamicOnly = in_array($role, ['accounting', 'principal'], true);
         $columns = $isDynamicOnly
-            ? ['label' => 'Accounting Office', 'status' => 'status', 'signed_at' => 'signed_at']
+            ? [
+                'label' => $role === 'principal' ? 'BEC Principal' : 'Accounting Office',
+                'status' => 'status',
+                'signed_at' => 'signed_at',
+            ]
             : ClearanceSignatories::columns($role);
         $statusColumn = $columns['status'];
         $signedAtColumn = $columns['signed_at'];

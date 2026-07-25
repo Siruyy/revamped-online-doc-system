@@ -31,7 +31,7 @@ npm run dev
 - [ ] Visit `/track-document`, enter the reference number, and confirm the result shows public-safe status and next-step copy only.
 - [ ] As Admin or SuperAdmin, open the request detail, preview the receipt and requirement files, and confirm the inline help explains that no student account is needed.
 - [ ] Validate all submitted requirements, approve request + payment, and confirm a clearance is created only when the requested document type requires department clearance.
-- [ ] As teacher, dean, accounting, and SAO, open the department clearance detail and confirm the original request attachments are visible for review.
+- [ ] As each applicable signatory (including the BEC Principal for a Basic Education request), open the department clearance detail and confirm the original request attachments are visible for review.
 - [ ] Sign or deny a public clearance without uploading a separate clearance supporting file.
 - [ ] If denied, confirm public tracking shows the denial reason without exposing private file paths, staff-only links, or clearance PDFs.
 - [ ] Complete all department signatures, confirm the private clearance PDF is generated, and confirm Admin/SuperAdmin can download it.

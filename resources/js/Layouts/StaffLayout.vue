@@ -59,6 +59,7 @@ const departmentTitle = computed(
     () =>
         ({
             dean: 'Dean',
+            principal: 'BEC Principal',
             president: 'Office of the President',
             librarian: 'Librarian',
             student_affairs: 'Dean of Student Affairs',
@@ -80,6 +81,7 @@ const roleBadgeClass = computed(
             superadmin: 'bg-violet-100 text-violet-700',
             admin: 'bg-emerald-100 text-emerald-700',
             dean: 'bg-indigo-100 text-indigo-700',
+            principal: 'bg-cyan-100 text-cyan-800',
             president: 'bg-sky-100 text-sky-700',
             librarian: 'bg-amber-100 text-amber-700',
             student_affairs: 'bg-rose-100 text-rose-700',
@@ -126,7 +128,9 @@ const links = computed(() => {
     }
 
     if (
-        ['dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance', 'accounting'].includes(role.value)
+        ['dean', 'principal', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance', 'accounting'].includes(
+            role.value,
+        )
     ) {
         return [
             { route: 'department.dashboard', label: 'Dashboard' },

@@ -179,7 +179,9 @@ class PublicRequestWorkflowService
         $codes = $request->items->pluck('documentType.code')->filter();
         $categories = $request->items->pluck('documentType.category')->filter();
 
-        if ($codes->every(fn (string $code): bool => str_starts_with($code, 'form_137'))) {
+        if ($request->requester_division === 'basic_education') {
+            $offices = ['principal', 'accounting'];
+        } elseif ($codes->every(fn (string $code): bool => str_starts_with($code, 'form_137'))) {
             $offices = ['registrar', 'accounting'];
         } elseif ($categories->every(fn (string $category): bool => $category === 'Certification')) {
             $offices = ['dean', 'accounting'];
@@ -195,6 +197,7 @@ class PublicRequestWorkflowService
             'librarian' => 'Librarian',
             'alumni' => 'SVC Alumni Officer',
             'registrar' => 'Office of the Registrar',
+            'principal' => 'BEC Principal',
             'accounting' => 'Accounting Office',
         ];
 

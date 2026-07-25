@@ -14,6 +14,7 @@ const roleOptions = [
     { value: 'student', label: 'Student' },
     { value: 'admin', label: 'Admin' },
     { value: 'accounting', label: 'Accounting Office' },
+    { value: 'principal', label: 'BEC Principal' },
     { value: 'dean', label: 'Dean' },
     { value: 'president', label: 'Office of the President' },
     { value: 'librarian', label: 'Librarian' },

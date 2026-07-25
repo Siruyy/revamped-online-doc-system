@@ -22,6 +22,7 @@ return new class extends Migration
                 'admin',
                 'teacher',
                 'dean',
+                'principal',
                 'accounting',
                 'sao',
                 'president',

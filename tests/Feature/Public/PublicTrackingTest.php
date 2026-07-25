@@ -202,6 +202,35 @@ class PublicTrackingTest extends TestCase
             );
     }
 
+    public function test_tracking_exposes_document_subtotal_shipping_and_grand_total_breakdown(): void
+    {
+        $documentType = DocumentType::factory()->create(['name' => 'Transcript of Records']);
+        $request = DocumentRequest::factory()->create([
+            'reference_no' => 'REQ-2026-654321',
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'workflow_stage' => 'awaiting_payment',
+            'shipping_fee' => 85,
+            'quote_total' => 415,
+        ]);
+        $request->items()->create([
+            'document_type_id' => $documentType->id,
+            'copies' => 1,
+            'page_count_snapshot' => 2,
+            'fee_per_page_snapshot' => 165,
+            'line_total' => 330,
+        ]);
+
+        $this->post('/track-document', [
+            'reference_no' => 'REQ-2026-654321',
+        ])->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('result.quote.is_locked', true)
+                ->where('result.quote.document_subtotal', '330.00')
+                ->where('result.quote.shipping_fee', '85.00')
+                ->where('result.quote.grand_total', '415.00'));
+    }
+
     public function test_claim_slip_is_only_exposed_when_ready_or_released(): void
     {
         $student = User::factory()->student()->create();

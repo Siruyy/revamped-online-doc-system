@@ -10,6 +10,7 @@ use App\Models\PaymentProfile;
 use App\Services\Policy\RequestRulesEngine;
 use App\Services\PublicDocumentRequestService;
 use App\Support\FileUploadLimits;
+use App\Support\PublicRequestOptions;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,7 +21,6 @@ class DocumentRequestController extends Controller
     {
         $documentTypes = DocumentType::query()
             ->where('is_active', true)
-            ->where('category', '!=', 'BasicEd')
             ->orderBy('category')
             ->orderBy('name')
             ->get([
@@ -91,6 +91,13 @@ class DocumentRequestController extends Controller
             'releaseChannels' => config('policy.release_channels'),
             'uploadLimits' => FileUploadLimits::publicIntakePayload(),
             'programs' => $programs,
+            'requestOptions' => [
+                'divisions' => PublicRequestOptions::DIVISIONS,
+                'basic_education_levels' => PublicRequestOptions::BASIC_EDUCATION_LEVELS,
+                'terms' => PublicRequestOptions::TERMS,
+                'academic_years' => PublicRequestOptions::academicYears(),
+                'purposes' => PublicRequestOptions::PURPOSES,
+            ],
         ]);
     }
 

@@ -4,7 +4,9 @@ namespace App\Http\Requests\Public;
 
 use App\Models\DocumentType;
 use App\Support\FileUploadLimits;
+use App\Support\PublicRequestOptions;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class StorePublicDocumentRequest extends FormRequest
@@ -26,9 +28,17 @@ class StorePublicDocumentRequest extends FormRequest
             'requester_email' => ['required', 'email', 'max:150'],
             'requester_contact_number' => ['required', 'string', 'max:30'],
             'requester_student_id' => ['nullable', 'string', 'max:50'],
-            'academic_program_id' => ['required', 'integer', 'exists:academic_programs,id'],
-            'requester_year_level' => ['required', 'integer', 'min:1', 'max:8'],
-            'requester_graduation_or_last_sem' => ['required', 'string', 'max:100'],
+            'requester_division' => ['required', Rule::in(array_keys(PublicRequestOptions::DIVISIONS))],
+            'basic_education_level' => ['nullable', 'required_if:requester_division,basic_education', Rule::in(array_keys(PublicRequestOptions::BASIC_EDUCATION_LEVELS))],
+            'academic_program_id' => [
+                'nullable',
+                'required_if:requester_division,college',
+                'integer',
+                Rule::exists('academic_programs', 'id')->where('is_active', true),
+            ],
+            'requester_year_level' => ['nullable', 'required_if:requester_division,college', 'integer', 'min:1', 'max:8'],
+            'requester_last_term_attended' => ['required', Rule::in(array_keys(PublicRequestOptions::TERMS))],
+            'requester_last_year_attended' => ['required', Rule::in(PublicRequestOptions::academicYears())],
             'birth_date' => ['required', 'date', 'before:today'],
             'birth_place' => ['required', 'string', 'max:150'],
             'sex' => ['required', 'in:Female,Male,Prefer not to say'],
@@ -41,15 +51,15 @@ class StorePublicDocumentRequest extends FormRequest
             'guardian_name' => ['nullable', 'string', 'max:150'],
             'guardian_address' => ['nullable', 'string', 'max:500'],
             'education' => ['required', 'array'],
-            'education.elementary.school' => ['required', 'string', 'max:180'],
-            'education.elementary.address' => ['required', 'string', 'max:250'],
-            'education.elementary.year' => ['required', 'string', 'max:20'],
-            'education.junior_high.school' => ['required', 'string', 'max:180'],
-            'education.junior_high.address' => ['required', 'string', 'max:250'],
-            'education.junior_high.year' => ['required', 'string', 'max:20'],
-            'education.senior_high.school' => ['required', 'string', 'max:180'],
-            'education.senior_high.address' => ['required', 'string', 'max:250'],
-            'education.senior_high.year' => ['required', 'string', 'max:20'],
+            'education.elementary.school' => ['nullable', 'string', 'max:180'],
+            'education.elementary.address' => ['nullable', 'string', 'max:250'],
+            'education.elementary.year' => ['nullable', 'string', 'max:20'],
+            'education.junior_high.school' => ['nullable', 'string', 'max:180'],
+            'education.junior_high.address' => ['nullable', 'string', 'max:250'],
+            'education.junior_high.year' => ['nullable', 'string', 'max:20'],
+            'education.senior_high.school' => ['nullable', 'string', 'max:180'],
+            'education.senior_high.address' => ['nullable', 'string', 'max:250'],
+            'education.senior_high.year' => ['nullable', 'string', 'max:20'],
             'employment_status' => ['required', 'in:employed,not_employed,self_employed'],
             'company_name' => ['nullable', 'required_if:employment_status,employed,self_employed', 'string', 'max:180'],
             'company_address' => ['nullable', 'required_if:employment_status,employed,self_employed', 'string', 'max:250'],
@@ -59,7 +69,8 @@ class StorePublicDocumentRequest extends FormRequest
             'items.*.authentication_requested' => ['sometimes', 'boolean'],
             'items.*.documentary_stamp_requested' => ['sometimes', 'boolean'],
             'items.*.semester_requested' => ['nullable', 'string', 'max:100'],
-            'purpose' => ['required', 'string', 'min:5', 'max:500'],
+            'purpose' => ['required', Rule::in(PublicRequestOptions::PURPOSES)],
+            'purpose_other' => ['nullable', 'required_if:purpose,Other official purpose', 'string', 'min:3', 'max:300'],
             'fulfillment_method' => ['required', 'in:pickup,delivery'],
             'delivery_address' => ['nullable', 'required_if:fulfillment_method,delivery', 'string', 'max:500'],
             'is_proxy_request' => ['sometimes', 'boolean'],
@@ -86,13 +97,40 @@ class StorePublicDocumentRequest extends FormRequest
             $documentTypes = DocumentType::query()
                 ->whereIn('id', $documentTypeIds)
                 ->where('is_active', true)
-                ->where('category', '!=', 'BasicEd')
-                ->get(['id', 'requirements']);
+                ->get(['id', 'category', 'requirements']);
 
             if ($documentTypes->count() !== $documentTypeIds->count()) {
                 $validator->errors()->add('items', 'One or more selected document types are inactive or unavailable.');
 
                 return;
+            }
+
+            $expectsBasicEducation = $this->input('requester_division') === 'basic_education';
+            $hasWrongDivision = $documentTypes->contains(
+                fn (DocumentType $type): bool => ($type->category === 'BasicEd') !== $expectsBasicEducation,
+            );
+
+            if ($hasWrongDivision) {
+                $validator->errors()->add('items', 'Select documents that match the chosen school division.');
+
+                return;
+            }
+
+            $requiredEducation = match ($this->input('basic_education_level')) {
+                'elementary' => ['elementary'],
+                'junior_high' => ['elementary', 'junior_high'],
+                default => ['elementary', 'junior_high', 'senior_high'],
+            };
+
+            foreach ($requiredEducation as $level) {
+                foreach (['school', 'address', 'year'] as $field) {
+                    if (blank(data_get($this->input('education', []), "{$level}.{$field}"))) {
+                        $validator->errors()->add(
+                            "education.{$level}.{$field}",
+                            'This education detail is required.',
+                        );
+                    }
+                }
             }
 
             $requiredKeys = $documentTypes

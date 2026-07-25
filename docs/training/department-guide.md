@@ -6,6 +6,8 @@
 2. Review items assigned to your department role only.
 3. Open a clearance record before signing or denying.
 
+The BEC Principal account receives only Basic Education Campus requests. Those requests proceed to Accounting after the Principal clears them.
+
 ## Signing
 
 1. Confirm the student uploaded the required supporting file.
@@ -28,4 +30,5 @@
 ## Access Rules
 
 - Department users can only act on their own department status column.
+- Accounting reviews public payment receipts after all required clearance steps are complete.
 - Do not download or share private student files outside approved workflows.

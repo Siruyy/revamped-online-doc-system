@@ -187,6 +187,8 @@ class RequestManagementTest extends TestCase
             'requester_student_id' => 'PUBLIC-DETAIL-001',
             'requester_course' => 'BSIT',
             'requester_year_level' => 2,
+            'fulfillment_method' => 'delivery',
+            'delivery_address' => 'Estaka, Dipolog City',
         ]);
         $clearance = Clearance::factory()->for($publicRequest, 'documentRequest')->create([
             'user_id' => null,
@@ -228,6 +230,8 @@ class RequestManagementTest extends TestCase
                 ->where('request.requester_student_id', 'PUBLIC-DETAIL-001')
                 ->where('request.requester_course', 'BSIT')
                 ->where('request.requester_year_level', 2)
+                ->where('request.fulfillment_method', 'delivery')
+                ->where('request.delivery_address', 'Estaka, Dipolog City')
                 ->where('request.clearances.0.user_id', null)
                 ->where('request.clearances.0.overall_status', 'in_progress')
                 ->where('request.clearances.0.steps.0.label', 'CSD Dean')

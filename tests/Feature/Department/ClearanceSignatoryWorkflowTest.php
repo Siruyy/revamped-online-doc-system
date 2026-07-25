@@ -115,5 +115,46 @@ class ClearanceSignatoryWorkflowTest extends TestCase
                 'status' => 'active',
             ]);
         }
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'principal@svci.test',
+            'role' => 'principal',
+            'fullname' => 'BEC Principal',
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_principal_can_access_and_sign_principal_clearance_steps(): void
+    {
+        $request = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'requester_division' => 'basic_education',
+        ]);
+        $clearance = Clearance::factory()->for($request)->create(['user_id' => null]);
+        $principalStep = $clearance->steps()->create([
+            'office_code' => 'principal',
+            'label' => 'BEC Principal',
+            'sequence' => 1,
+        ]);
+        $principal = User::factory()->create([
+            'role' => 'principal',
+            'status' => 'active',
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($principal)
+            ->get(route('department.clearances.show', $clearance))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('department', 'principal')
+                ->where('currentSignatory.label', 'BEC Principal'));
+
+        $this->actingAs($principal)
+            ->post(route('department.clearances.sign', $clearance), ['remarks' => 'BEC records verified.'])
+            ->assertRedirect();
+
+        $this->assertSame('cleared', $principalStep->refresh()->status);
+        $this->assertSame($principal->id, $principalStep->signed_by);
     }
 }

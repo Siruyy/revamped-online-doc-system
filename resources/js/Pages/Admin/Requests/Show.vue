@@ -94,6 +94,7 @@ const requestItemsTotal = computed(() =>
     requestItems.value.reduce((sum, item) => sum + Number(item.line_total || 0), 0),
 );
 const isPublicRequest = computed(() => props.request.intake_mode === 'public');
+const hasLockedQuote = computed(() => props.request.quote_total !== null && props.request.quote_total !== undefined);
 const allReqsValidated = computed(
     () => requirements.value.length === 0 || requirements.value.every((r) => r.status === 'validated'),
 );
@@ -443,6 +444,24 @@ function fmtPeso(value) {
                                             {{ request.requester_graduation_or_last_sem || '—' }}
                                         </dd>
                                     </div>
+                                    <div>
+                                        <dt class="text-slate-500">School division</dt>
+                                        <dd class="capitalize text-slate-900">
+                                            {{ request.requester_division?.replaceAll('_', ' ') || 'College' }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-slate-500">Release method</dt>
+                                        <dd class="capitalize text-slate-900">
+                                            {{ request.fulfillment_method || 'Pickup' }}
+                                        </dd>
+                                    </div>
+                                    <div v-if="request.fulfillment_method === 'delivery'" class="sm:col-span-3">
+                                        <dt class="text-slate-500">Shipping address</dt>
+                                        <dd class="font-medium leading-5 text-slate-900">
+                                            {{ request.delivery_address || 'Address not provided' }}
+                                        </dd>
+                                    </div>
                                 </template>
                             </dl>
                             <div
@@ -612,12 +631,36 @@ function fmtPeso(value) {
                                             colspan="4"
                                             class="px-4 py-3 text-right text-xs font-semibold uppercase text-slate-500"
                                         >
-                                            Total
+                                            Document subtotal
                                         </td>
                                         <td
                                             class="px-4 py-3 text-right font-display text-base font-bold text-slate-950"
                                         >
                                             {{ fmtPeso(requestItemsTotal || request.fee_snapshot) }}
+                                        </td>
+                                    </tr>
+                                    <tr v-if="hasLockedQuote">
+                                        <td
+                                            colspan="4"
+                                            class="px-4 py-2 text-right text-xs font-semibold uppercase text-slate-500"
+                                        >
+                                            Shipping fee
+                                        </td>
+                                        <td class="px-4 py-2 text-right font-semibold text-slate-900">
+                                            {{ fmtPeso(request.shipping_fee) }}
+                                        </td>
+                                    </tr>
+                                    <tr v-if="hasLockedQuote" class="border-t border-slate-200">
+                                        <td
+                                            colspan="4"
+                                            class="px-4 py-3 text-right text-xs font-bold uppercase text-slate-700"
+                                        >
+                                            Grand total
+                                        </td>
+                                        <td
+                                            class="px-4 py-3 text-right font-display text-base font-bold text-slate-950"
+                                        >
+                                            {{ fmtPeso(request.quote_total) }}
                                         </td>
                                     </tr>
                                 </tfoot>

@@ -1,7 +1,7 @@
 <script setup>
 import FileUploadField from '@/Components/Public/FileUploadField.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import {
     ArrowLeftIcon,
     ArrowRightIcon,
@@ -15,6 +15,7 @@ const props = defineProps({
     documentTypeGroups: { type: Object, required: true },
     programs: { type: Array, required: true },
     uploadLimits: { type: Object, default: () => ({}) },
+    requestOptions: { type: Object, required: true },
 });
 
 const steps = ['Documents', 'Personal data', 'Education & release', 'Requirements', 'Review'];
@@ -26,9 +27,12 @@ const form = useForm({
     requester_email: '',
     requester_contact_number: '',
     requester_student_id: '',
+    requester_division: '',
+    basic_education_level: '',
     academic_program_id: '',
     requester_year_level: '',
-    requester_graduation_or_last_sem: '',
+    requester_last_term_attended: '',
+    requester_last_year_attended: '',
     birth_date: '',
     birth_place: '',
     sex: '',
@@ -49,6 +53,7 @@ const form = useForm({
     company_name: '',
     company_address: '',
     purpose: '',
+    purpose_other: '',
     fulfillment_method: 'pickup',
     delivery_address: '',
     is_proxy_request: false,
@@ -56,7 +61,15 @@ const form = useForm({
     requirements: {},
 });
 
-const allTypes = computed(() => Object.values(props.documentTypeGroups).flat());
+const isBasicEducation = computed(() => form.requester_division === 'basic_education');
+const visibleDocumentTypeGroups = computed(() =>
+    Object.fromEntries(
+        Object.entries(props.documentTypeGroups).filter(([category]) =>
+            isBasicEducation.value ? category === 'BasicEd' : category !== 'BasicEd',
+        ),
+    ),
+);
+const allTypes = computed(() => Object.values(visibleDocumentTypeGroups.value).flat());
 const cart = computed(() =>
     Object.entries(selected.value)
         .map(([id, values]) => {
@@ -99,7 +112,41 @@ const requirementList = computed(() => {
 const selectedProgram = computed(() =>
     props.programs.find((program) => program.id === Number(form.academic_program_id)),
 );
+const selectedBasicEducationLevel = computed(
+    () => props.requestOptions.basic_education_levels[form.basic_education_level],
+);
+const preliminaryEducationSections = computed(() => {
+    const sections = {
+        elementary: 'Elementary',
+        junior_high: 'Junior high school',
+        senior_high: 'Senior high school',
+    };
+
+    if (!isBasicEducation.value || form.basic_education_level === 'senior_high') return sections;
+    if (form.basic_education_level === 'junior_high') {
+        return Object.fromEntries(Object.entries(sections).filter(([key]) => key !== 'senior_high'));
+    }
+    if (form.basic_education_level === 'elementary') return { elementary: sections.elementary };
+
+    return sections;
+});
 const errorSummary = computed(() => Object.values(form.errors)[0]);
+
+watch(
+    () => form.requester_division,
+    (division, previousDivision) => {
+        if (previousDivision && division !== previousDivision) selected.value = {};
+
+        if (division === 'basic_education') {
+            form.academic_program_id = '';
+            form.requester_year_level = '';
+            openCategories.value = new Set(['BasicEd']);
+        } else if (division === 'college') {
+            form.basic_education_level = '';
+            openCategories.value = new Set(['Academic']);
+        }
+    },
+);
 
 function toggleCategory(category) {
     const next = new Set(openCategories.value);
@@ -125,15 +172,17 @@ function changeCopies(id, amount) {
 }
 
 function canContinue() {
-    if (step.value === 1) return cart.value.length > 0;
+    if (step.value === 1) return Boolean(form.requester_division) && cart.value.length > 0;
     if (step.value === 2) {
         return (
             form.requester_name &&
             form.requester_email &&
             form.requester_contact_number &&
-            form.academic_program_id &&
-            form.requester_year_level &&
-            form.requester_graduation_or_last_sem &&
+            (isBasicEducation.value
+                ? form.basic_education_level
+                : form.academic_program_id && form.requester_year_level) &&
+            form.requester_last_term_attended &&
+            form.requester_last_year_attended &&
             form.birth_date &&
             form.birth_place &&
             form.sex &&
@@ -143,13 +192,16 @@ function canContinue() {
         );
     }
     if (step.value === 3) {
-        const educationComplete = Object.values(form.education).every(
-            (entry) => entry.school && entry.address && entry.year,
-        );
+        const educationComplete = Object.keys(preliminaryEducationSections.value).every((key) => {
+            const entry = form.education[key];
+            return entry.school && entry.address && entry.year;
+        });
         const employmentComplete =
             form.employment_status === 'not_employed' || (form.company_name && form.company_address);
         const deliveryComplete = form.fulfillment_method === 'pickup' || form.delivery_address;
-        return educationComplete && employmentComplete && deliveryComplete && form.purpose.length >= 5;
+        const purposeComplete =
+            form.purpose && (form.purpose !== 'Other official purpose' || form.purpose_other.length >= 3);
+        return educationComplete && employmentComplete && deliveryComplete && purposeComplete;
     }
     if (step.value === 4) return requirementList.value.every((requirement) => form.requirements[requirement.key]);
     return true;
@@ -175,7 +227,7 @@ function submit() {
             if (field.startsWith('items')) step.value = 1;
             else if (
                 field.startsWith('education') ||
-                ['purpose', 'fulfillment_method', 'delivery_address'].includes(field)
+                ['purpose', 'purpose_other', 'fulfillment_method', 'delivery_address'].includes(field)
             )
                 step.value = 3;
             else if (field.startsWith('requirements')) step.value = 4;
@@ -242,11 +294,53 @@ function feeNote(type) {
                 <div>
                     <h2 class="font-display text-2xl font-bold">Choose documents</h2>
                     <p class="mt-1 text-sm text-slate-600">
-                        Certification options are grouped so the list stays easy to scan.
+                        Start with the school division that holds your records. The available documents will update
+                        automatically.
                     </p>
                 </div>
+                <fieldset class="rounded-2xl border border-slate-200 bg-white p-5">
+                    <legend class="px-1 font-semibold text-slate-950">Where are your records from?</legend>
+                    <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                        <label
+                            v-for="(label, value) in requestOptions.divisions"
+                            :key="value"
+                            :class="[
+                                'flex min-h-20 cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors',
+                                form.requester_division === value
+                                    ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-100'
+                                    : 'border-slate-200 bg-white hover:border-brand-300',
+                            ]"
+                        >
+                            <input
+                                v-model="form.requester_division"
+                                type="radio"
+                                :value="value"
+                                class="mt-1 border-slate-300 text-brand-700 focus:ring-brand-600"
+                            />
+                            <span>
+                                <span class="block font-semibold text-slate-950">{{ label }}</span>
+                                <span class="mt-1 block text-xs leading-5 text-slate-600">
+                                    {{
+                                        value === 'basic_education'
+                                            ? 'Elementary, Junior High School, or Senior High School records.'
+                                            : 'College, masteral, doctoral, and graduate school records.'
+                                    }}
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+                    <p v-if="form.errors.requester_division" class="mt-2 text-sm text-rose-700">
+                        {{ form.errors.requester_division }}
+                    </p>
+                </fieldset>
                 <div
-                    v-for="(types, category) in documentTypeGroups"
+                    v-if="!form.requester_division"
+                    class="rounded-2xl border border-dashed border-slate-300 bg-slate-100 p-6 text-center text-sm text-slate-600"
+                >
+                    Select a school division to see the documents you can request.
+                </div>
+                <div
+                    v-for="(types, category) in visibleDocumentTypeGroups"
                     :key="category"
                     class="overflow-hidden rounded-2xl border border-slate-200 bg-white"
                 >
@@ -371,7 +465,7 @@ function feeNote(type) {
                             class="field"
                     /></label>
                     <label>Student ID (if available)<input v-model="form.requester_student_id" class="field" /></label>
-                    <label
+                    <label v-if="!isBasicEducation"
                         >Program / course<select v-model="form.academic_program_id" class="field">
                             <option value="" disabled>Select program</option>
                             <option v-for="program in programs" :key="program.id" :value="program.id">
@@ -379,17 +473,40 @@ function feeNote(type) {
                             </option>
                         </select></label
                     >
-                    <label
+                    <label v-if="!isBasicEducation"
                         >Year level<select v-model="form.requester_year_level" class="field">
                             <option value="" disabled>Select year</option>
                             <option v-for="year in 8" :key="year" :value="year">{{ year }}</option>
                         </select></label
                     >
+                    <label v-else class="sm:col-span-2"
+                        >Basic education level<select v-model="form.basic_education_level" class="field">
+                            <option value="" disabled>Select level</option>
+                            <option
+                                v-for="(level, value) in requestOptions.basic_education_levels"
+                                :key="value"
+                                :value="value"
+                            >
+                                {{ level.label }}
+                            </option>
+                        </select></label
+                    >
                     <label
-                        >Graduation year / last term attended<input
-                            v-model="form.requester_graduation_or_last_sem"
-                            class="field"
-                    /></label>
+                        >Last term attended<select v-model="form.requester_last_term_attended" class="field">
+                            <option value="" disabled>Select term</option>
+                            <option v-for="(label, value) in requestOptions.terms" :key="value" :value="value">
+                                {{ label }}
+                            </option>
+                        </select></label
+                    >
+                    <label
+                        >Last school year attended<select v-model="form.requester_last_year_attended" class="field">
+                            <option value="" disabled>Select school year</option>
+                            <option v-for="year in requestOptions.academic_years" :key="year" :value="year">
+                                {{ year }}
+                            </option>
+                        </select></label
+                    >
                     <label>Birth date<input v-model="form.birth_date" type="date" class="field" /></label>
                     <label>Birth place<input v-model="form.birth_place" class="field" /></label>
                     <label
@@ -430,11 +547,7 @@ function feeNote(type) {
                 </div>
                 <div class="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
                     <fieldset
-                        v-for="(label, key) in {
-                            elementary: 'Elementary',
-                            junior_high: 'Junior high school',
-                            senior_high: 'Senior high school',
-                        }"
+                        v-for="(label, key) in preliminaryEducationSections"
                         :key="key"
                         class="grid gap-3 border-b border-slate-100 pb-4 sm:grid-cols-[1fr_1fr_8rem]"
                     >
@@ -459,16 +572,16 @@ function feeNote(type) {
                     <label
                         >Purpose<select v-model="form.purpose" class="field">
                             <option value="" disabled>Select purpose</option>
-                            <option>Employment</option>
-                            <option>Board examination</option>
-                            <option>Further studies</option>
-                            <option>Transfer</option>
-                            <option>Passport or visa application</option>
-                            <option>Record evaluation</option>
-                            <option>Personal copy</option>
-                            <option>Other official purpose</option>
+                            <option v-for="purpose in requestOptions.purposes" :key="purpose">{{ purpose }}</option>
                         </select></label
                     >
+                    <label v-if="form.purpose === 'Other official purpose'"
+                        >Specify the official purpose<input
+                            v-model="form.purpose_other"
+                            class="field"
+                            maxlength="300"
+                            placeholder="e.g. Professional license application"
+                    /></label>
                     <fieldset>
                         <legend class="font-semibold">How should the documents be released?</legend>
                         <div class="mt-2 flex flex-wrap gap-4">
@@ -522,8 +635,11 @@ function feeNote(type) {
                     <article class="rounded-2xl border border-slate-200 bg-white p-5">
                         <h3 class="font-semibold">Requestor</h3>
                         <p class="mt-2 text-sm leading-6 text-slate-600">
-                            {{ form.requester_name }}<br />{{ form.requester_email }}<br />{{ selectedProgram?.code }} —
-                            {{ selectedProgram?.name }}
+                            {{ form.requester_name }}<br />{{ form.requester_email }}<br />
+                            <template v-if="isBasicEducation">
+                                Basic Education Campus — {{ selectedBasicEducationLevel?.label }}
+                            </template>
+                            <template v-else> {{ selectedProgram?.code }} — {{ selectedProgram?.name }} </template>
                         </p>
                     </article>
                     <article class="rounded-2xl border border-slate-200 bg-white p-5">

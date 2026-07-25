@@ -140,6 +140,16 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function principal(): static
+    {
+        return $this->state(fn () => [
+            'role' => 'principal',
+            'course' => null,
+            'year_level' => null,
+            'student_id' => null,
+        ]);
+    }
+
     public function sao(): static
     {
         return $this->state(fn () => [

@@ -99,6 +99,52 @@ class RevisedPublicWorkflowTest extends TestCase
         $this->assertSame('CSD', ClearanceStep::query()->where('office_code', 'dean')->value('department_code'));
     }
 
+    public function test_basic_education_evaluation_routes_to_principal_then_accounting(): void
+    {
+        $type = DocumentType::factory()->create([
+            'code' => 'form_138',
+            'category' => 'BasicEd',
+            'requirements' => [],
+        ]);
+        $request = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'workflow_stage' => 'registrar_review',
+            'requester_division' => 'basic_education',
+            'basic_education_level' => 'senior_high',
+            'academic_department_code_snapshot' => 'BEC',
+            'requester_email' => 'requestor@example.test',
+        ]);
+        $item = $request->items()->create([
+            'document_type_id' => $type->id,
+            'copies' => 1,
+            'page_count_snapshot' => 1,
+            'fee_per_page_snapshot' => 0,
+            'line_total' => 0,
+        ]);
+        $admin = User::factory()->admin()->create();
+
+        app(PublicRequestWorkflowService::class)->evaluate($request, $admin, [
+            'shipping_fee' => 0,
+            'items' => [[
+                'id' => $item->id,
+                'page_count' => 1,
+                'base_amount' => 240,
+                'authentication_amount' => 0,
+                'documentary_stamp_amount' => 0,
+            ]],
+        ]);
+
+        $this->assertSame(
+            ['principal', 'accounting'],
+            $request->clearances()->firstOrFail()->steps()->orderBy('sequence')->pluck('office_code')->all(),
+        );
+        $this->assertSame(
+            'BEC Principal',
+            $request->clearances()->firstOrFail()->steps()->where('office_code', 'principal')->value('label'),
+        );
+    }
+
     public function test_clearance_is_sequential_and_payment_opens_only_after_accounting_clears(): void
     {
         $request = DocumentRequest::factory()->create([
@@ -233,7 +279,7 @@ class RevisedPublicWorkflowTest extends TestCase
 
         $this->post(route('public.requests.payment.upload', $request), [
             'access_code' => $accessCode,
-            'payment_method' => 'GCash',
+            'payment_method' => 'gcash',
             'reference_number' => 'GCASH-123',
             'receipt' => UploadedFile::fake()->image('receipt.jpg'),
         ])->assertRedirect();
@@ -246,6 +292,31 @@ class RevisedPublicWorkflowTest extends TestCase
         Notification::assertNotSentTo($admin, WorkflowStatusNotification::class);
     }
 
+    public function test_public_receipt_requires_supported_method_and_reference_number(): void
+    {
+        Storage::fake('local');
+        $accessCode = 'PAYMENT1234';
+        $request = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'workflow_stage' => 'awaiting_payment',
+            'tracking_access_hash' => hash('sha256', $accessCode),
+        ]);
+        Payment::factory()->for($request)->create([
+            'user_id' => null,
+            'status' => 'pending',
+        ]);
+
+        $this->from(route('track-document', ['reference_no' => $request->reference_no]))
+            ->post(route('public.requests.payment.upload', $request), [
+                'access_code' => $accessCode,
+                'payment_method' => 'Cash',
+                'reference_number' => '',
+                'receipt' => UploadedFile::fake()->image('receipt.jpg'),
+            ])
+            ->assertSessionHasErrors(['payment_method', 'reference_number']);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -256,9 +327,11 @@ class RevisedPublicWorkflowTest extends TestCase
             'requester_email' => 'requestor@example.test',
             'requester_contact_number' => '09171234567',
             'requester_student_id' => '2020-0001',
+            'requester_division' => 'college',
             'academic_program_id' => $program->id,
             'requester_year_level' => 4,
-            'requester_graduation_or_last_sem' => 'Second Semester 2025-2026',
+            'requester_last_term_attended' => 'second_semester',
+            'requester_last_year_attended' => '2025-2026',
             'birth_date' => '2000-01-01',
             'birth_place' => 'Dipolog City',
             'sex' => 'Female',
@@ -276,7 +349,7 @@ class RevisedPublicWorkflowTest extends TestCase
                 'senior_high' => ['school' => 'Senior High School', 'address' => 'Dipolog', 'year' => '2018'],
             ],
             'employment_status' => 'not_employed',
-            'purpose' => 'For employment',
+            'purpose' => 'Employment',
             'fulfillment_method' => 'pickup',
             'items' => [[
                 'document_type_id' => $type->id,

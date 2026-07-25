@@ -300,7 +300,7 @@ npm run build
 - [x] Route certifications to dean + accounting, Form 137 to registrar + accounting, and other records to all offices with accounting last.
 - [x] Add recoverable `needs_action` clearance states and access-code-protected requirement/payment uploads.
 - [x] Add accounting payment validation, seven-stage tracking, claim-slip PDF download, progress email, and report document-type filters.
-- [x] Defer BEC document types from public intake.
+- [x] Initially defer BEC document types from public intake.
 
 **Acceptance:**
 - [x] New public submissions contain no payment row until clearance completes.
@@ -308,3 +308,35 @@ npm run build
 - [x] Public mutation and claim-slip endpoints require the request's private access code.
 - [x] `php artisan test` passes.
 - [x] Pint, PHPStan, ESLint, and Vite build pass.
+
+## Agent Task 15.11 — Client Revision 2 Intake and BEC Activation (2026-07-25)
+
+**Delegate to:** backend-patterns + frontend-patterns + database-migrations + security-review
+
+**Read first:**
+- `docs/16-policy-matrix.md`
+- `app/Services/PublicDocumentRequestService.php`
+- `app/Services/PublicRequestWorkflowService.php`
+- `resources/js/Pages/Public/RequestDocument.vue`
+
+**Files likely touched:**
+- `database/migrations/2026_07_25_000001_add_rev2_request_fields_and_principal_role.php`
+- `app/Http/Requests/Public/StorePublicDocumentRequest.php`
+- `resources/js/Pages/Public/TrackResult.vue`
+- `resources/js/Pages/Admin/Requests/Show.vue`
+- `tests/Feature/Public/RevisedPublicWorkflowTest.php`
+
+**Steps:**
+- [x] Add College/Graduate versus BEC selection and show division-specific programs, levels, records, and preliminary-education fields.
+- [x] Replace the free-text last-attended field with term and academic-year dropdowns.
+- [x] Require details for “Other official purpose,” a supported payment method, and a payment reference.
+- [x] Show delivery address to the registrar and item subtotal, shipping fee, and grand total in tracking.
+- [x] Add the BEC Principal role/account and route BEC clearances to Principal then Accounting.
+- [x] Add focused feature coverage and update handoff documentation.
+
+**Acceptance:**
+- [x] College requests cannot select BEC records, and BEC requests cannot select College/Graduate records.
+- [x] BEC requests persist without an academic program and produce Principal → Accounting clearance steps.
+- [x] Public payment submission rejects unsupported methods or a missing reference number.
+- [x] Admin and tracking payloads expose the required delivery and quote information without exposing private file paths.
+- [x] Full tests, Pint, PHPStan, ESLint, and Vite build pass.

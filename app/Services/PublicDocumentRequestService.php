@@ -9,6 +9,7 @@ use App\Models\DocumentType;
 use App\Models\RequestRequirement;
 use App\Models\User;
 use App\Notifications\WorkflowStatusNotification;
+use App\Support\PublicRequestOptions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -34,7 +35,6 @@ class PublicDocumentRequestService
             $documentTypes = DocumentType::query()
                 ->whereIn('id', $documentTypeIds)
                 ->where('is_active', true)
-                ->where('category', '!=', 'BasicEd')
                 ->get()
                 ->keyBy('id');
 
@@ -42,10 +42,27 @@ class PublicDocumentRequestService
                 throw new \RuntimeException('One or more selected document types are inactive or unavailable.');
             }
 
-            $program = AcademicProgram::query()->with('department')
-                ->whereKey($data['academic_program_id'])
-                ->where('is_active', true)
-                ->firstOrFail();
+            $isBasicEducation = $data['requester_division'] === 'basic_education';
+            $hasWrongDivision = $documentTypes->contains(
+                fn (DocumentType $type): bool => ($type->category === 'BasicEd') !== $isBasicEducation,
+            );
+
+            if ($hasWrongDivision) {
+                throw new \RuntimeException('Selected documents do not match the school division.');
+            }
+
+            $program = $isBasicEducation
+                ? null
+                : AcademicProgram::query()->with('department')
+                    ->whereKey($data['academic_program_id'])
+                    ->where('is_active', true)
+                    ->firstOrFail();
+            $basicEducation = $isBasicEducation
+                ? PublicRequestOptions::BASIC_EDUCATION_LEVELS[$data['basic_education_level']]
+                : null;
+            $requesterCourse = $isBasicEducation ? $basicEducation['code'] : $program->code;
+            $programSnapshot = $isBasicEducation ? $basicEducation['label'] : $program->displayName();
+            $departmentCode = $isBasicEducation ? 'BEC' : $program->department->code;
             $resolvedItems = [];
 
             foreach ($items as $item) {
@@ -72,12 +89,19 @@ class PublicDocumentRequestService
                 'requester_email' => $data['requester_email'] ?? null,
                 'requester_contact_number' => $data['requester_contact_number'],
                 'requester_student_id' => $data['requester_student_id'] ?? null,
-                'requester_course' => $program->code,
-                'academic_program_id' => $program->id,
-                'academic_program_snapshot' => $program->displayName(),
-                'academic_department_code_snapshot' => $program->department->code,
-                'requester_year_level' => $data['requester_year_level'],
-                'requester_graduation_or_last_sem' => $data['requester_graduation_or_last_sem'],
+                'requester_division' => $data['requester_division'],
+                'basic_education_level' => $data['basic_education_level'] ?? null,
+                'requester_course' => $requesterCourse,
+                'academic_program_id' => $program?->id,
+                'academic_program_snapshot' => $programSnapshot,
+                'academic_department_code_snapshot' => $departmentCode,
+                'requester_year_level' => $data['requester_year_level'] ?? null,
+                'requester_graduation_or_last_sem' => PublicRequestOptions::attendanceLabel(
+                    $data['requester_last_term_attended'],
+                    $data['requester_last_year_attended'],
+                ),
+                'requester_last_term_attended' => $data['requester_last_term_attended'],
+                'requester_last_year_attended' => $data['requester_last_year_attended'],
                 'document_type_id' => $primaryType->id,
                 'quantity' => array_sum(array_column($resolvedItems, 'copies')),
                 'page_count' => null,
@@ -86,7 +110,9 @@ class PublicDocumentRequestService
                 'processing_stage' => 'not_started',
                 'workflow_stage' => 'registrar_review',
                 'intake_mode' => 'public',
-                'purpose' => $data['purpose'],
+                'purpose' => $data['purpose'] === 'Other official purpose'
+                    ? 'Other official purpose: '.trim($data['purpose_other'])
+                    : $data['purpose'],
                 'requester_profile' => [
                     'birth_date' => $data['birth_date'],
                     'birth_place' => $data['birth_place'],

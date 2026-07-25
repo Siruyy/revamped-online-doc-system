@@ -16,6 +16,7 @@ const banner = computed(() => page.props.flash?.banner ?? null);
 const roleOptions = [
     { value: 'admin', label: 'Admin' },
     { value: 'accounting', label: 'Accounting Office' },
+    { value: 'principal', label: 'BEC Principal' },
     { value: 'dean', label: 'Dean' },
     { value: 'president', label: 'Office of the President' },
     { value: 'librarian', label: 'Librarian' },

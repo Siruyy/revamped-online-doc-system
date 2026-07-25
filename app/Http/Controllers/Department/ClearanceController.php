@@ -21,9 +21,13 @@ class ClearanceController extends Controller
         $this->authorize('viewAny', Clearance::class);
 
         $user = $request->user();
-        $isDynamicOnly = $user->role === 'accounting';
+        $isDynamicOnly = in_array($user->role, ['accounting', 'principal'], true);
         $currentSignatory = $isDynamicOnly
-            ? ['label' => 'Accounting Office', 'status' => 'status', 'signed_at' => 'signed_at']
+            ? [
+                'label' => $user->role === 'principal' ? 'BEC Principal' : 'Accounting Office',
+                'status' => 'status',
+                'signed_at' => 'signed_at',
+            ]
             : ClearanceSignatories::columns($user->role);
         $statusColumn = $currentSignatory['status'];
 
@@ -120,7 +124,15 @@ class ClearanceController extends Controller
         });
         $currentSignatory = $currentStep
             ? ['label' => $currentStep->label, 'status' => 'status', 'signed_at' => 'signed_at']
-            : ClearanceSignatories::columns($request->user()->role);
+            : (
+                in_array($request->user()->role, ['accounting', 'principal'], true)
+                    ? [
+                        'label' => $request->user()->role === 'principal' ? 'BEC Principal' : 'Accounting Office',
+                        'status' => 'status',
+                        'signed_at' => 'signed_at',
+                    ]
+                    : ClearanceSignatories::columns($request->user()->role)
+            );
 
         return Inertia::render('Department/Clearances/Show', [
             'clearance' => $clearance,

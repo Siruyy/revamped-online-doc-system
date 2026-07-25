@@ -52,6 +52,22 @@ class ClearanceSignatorySeeder extends Seeder
             ],
         );
 
+        $principalEmail = 'principal@svci.test';
+        $principalUserId = User::withTrashed()->where('email', $principalEmail)->value('id');
+
+        User::query()->updateOrCreate(
+            ['email' => $principalEmail],
+            [
+                'fullname' => 'BEC Principal',
+                'username' => Usernames::uniqueFromEmail($principalEmail, $principalUserId),
+                'password' => Hash::make($password),
+                'role' => 'principal',
+                'status' => 'active',
+                'email_verified_at' => now(),
+                'approved_at' => now(),
+            ],
+        );
+
         foreach (AcademicDepartment::query()->where('is_active', true)->get() as $department) {
             $email = 'dean.'.strtolower($department->code).'@svci.test';
             $existingUserId = User::withTrashed()->where('email', $email)->value('id');

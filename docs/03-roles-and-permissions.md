@@ -9,11 +9,12 @@
 | `admin` | School registrar admin — approves requests, manages records |
 | `teacher` | Teacher department — signs off on student clearance |
 | `dean` | Dean department — signs off on student clearance |
+| `principal` | BEC Principal — reviews Basic Education Campus clearances |
 | `accounting` | Accounting Office — signs financial clearance and reviews payment receipts |
 | `sao` | Student Affairs Office — signs off on conduct clearance |
 | `superadmin` | Full system control |
 
-> Department roles (`teacher`, `dean`, `accounting`, `sao`) share the same dashboard but see role-scoped data. They are collectively referred to as **department roles**.
+> Department roles, including `dean`, `principal`, and `accounting`, share the same dashboard but see only their role-scoped workflow steps. They are collectively referred to as **department roles**.
 
 ## Account Status
 

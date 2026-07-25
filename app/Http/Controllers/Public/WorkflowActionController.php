@@ -8,11 +8,13 @@ use App\Models\RequestRequirement;
 use App\Services\ActivityLogger;
 use App\Services\PaymentService;
 use App\Support\FileUploadLimits;
+use App\Support\PublicRequestOptions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class WorkflowActionController extends Controller
@@ -73,8 +75,8 @@ class WorkflowActionController extends Controller
         $this->verifyAccess($request, $documentRequest);
         $validated = $request->validate([
             'access_code' => ['required', 'string', 'max:32'],
-            'payment_method' => ['required', 'string', 'max:50'],
-            'reference_number' => ['nullable', 'string', 'max:100'],
+            'payment_method' => ['required', 'string', Rule::in(array_keys(PublicRequestOptions::PAYMENT_METHODS))],
+            'reference_number' => ['required', 'string', 'max:100'],
             'receipt' => [
                 'required',
                 'file',
@@ -97,8 +99,8 @@ class WorkflowActionController extends Controller
 
         $payment->update([
             'receipt_path' => $path,
-            'payment_method' => $validated['payment_method'],
-            'reference_number' => $validated['reference_number'] ?? null,
+            'payment_method' => PublicRequestOptions::PAYMENT_METHODS[$validated['payment_method']],
+            'reference_number' => $validated['reference_number'],
             'status' => 'pending_approval',
             'denial_reason' => null,
             'submitted_at' => now(),

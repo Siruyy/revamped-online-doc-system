@@ -11,6 +11,7 @@ use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\RequestRequirement;
+use App\Support\PublicRequestOptions;
 use DateTimeInterface;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -78,6 +79,16 @@ class TrackDocumentController extends Controller
                 'status' => $payment->status,
                 'total_amount' => $this->formatCurrency($payment->total_amount),
             ] : null,
+            'quote' => [
+                'is_locked' => $documentRequest->quote_total !== null,
+                'document_subtotal' => $this->formatCurrency($documentRequest->items->sum('line_total')),
+                'shipping_fee' => $this->formatCurrency($documentRequest->shipping_fee),
+                'grand_total' => $this->formatCurrency(
+                    $documentRequest->quote_total
+                        ?? ((float) $documentRequest->items->sum('line_total') + (float) $documentRequest->shipping_fee),
+                ),
+            ],
+            'payment_methods' => PublicRequestOptions::PAYMENT_METHODS,
             'clearance' => $clearance ? [
                 'overall_status' => $clearance->overall_status,
                 'steps' => $clearance->steps->map(fn (ClearanceStep $step): array => [

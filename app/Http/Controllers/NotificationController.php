@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\ClearanceSignatories;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -36,7 +35,7 @@ class NotificationController extends Controller
             'routePrefix' => match ($request->user()->role) {
                 'admin' => 'admin',
                 'superadmin' => 'superadmin',
-                default => ClearanceSignatories::isSignatoryRole($request->user()->role) ? 'department' : 'student',
+                default => $request->user()->isDepartment() ? 'department' : 'student',
             },
         ]);
     }

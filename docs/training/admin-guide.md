@@ -4,16 +4,16 @@
 
 1. Open **Requests**.
 2. Filter or search by reference number, student, or document.
-3. Open a request and review requestor details, selected documents, required attachments, payment method, payment reference, and receipt.
+3. Open a request and review requestor details, school division, selected documents, required attachments, release method, and delivery address when shipping is requested.
 4. Validate or reject requirement files.
-5. Approve the request only after request details, attachments, and payment receipt are valid.
-6. Deny the whole request when details, attachments, or payment are invalid; enter a clear reason the requestor can act on.
+5. Set the document subtotal and shipping fee, then lock the quote and start the required clearance route.
+6. Deny the whole request when intake details or attachments are invalid; enter a clear reason the requestor can act on.
 
 ## Payment Review
 
-1. Prefer validating public request receipts from the request detail page.
-2. Use **Payments** for legacy payment records, reporting, and queue review.
-3. For clearance-required documents, payment approval starts the clearance workflow.
+1. Public receipt review and approval belong to the Accounting Office.
+2. Admin can monitor payment and office statuses from the request detail page but does not approve receipts.
+3. Payment opens after the request completes its required clearance route.
 
 ## Release Flow
 

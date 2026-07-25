@@ -60,6 +60,7 @@ a new `offices` reference table:
 
 - `president` — Office of the School President
 - `dean` — Office of the College Dean
+- `principal` — Basic Education Campus Principal
 - `alumni` — Alumni Office
 - `guidance` — Guidance Office
 - `sao` — Student Affairs Office
@@ -73,7 +74,7 @@ a new `offices` reference table:
 | `form_137a_personal`, `form_137a_transfer` | `registrar`, then `accounting` |
 | Other College / Graduate records | `president`, program `dean`, `sao`, `guidance`, `library`, `alumni`, `accounting` (strict sequence) |
 | `form_137a_personal`, `form_137a_transfer` | `registrar`, `accounting` |
-| `cert_basic_ed`, `form_138`, `form_138_reissue`, `diploma_reissue_basic` | `registrar`, `accounting` (Principal/BasicEd releases) |
+| `cert_basic_ed`, `form_138`, `form_138_reissue`, `diploma_reissue_basic` | BEC `principal`, then `accounting` |
 | `cav` | `registrar`, `accounting` |
 | `authentication`, `statement_of_account`, `grades_printout` | `registrar`, `accounting` |
 | `enrollment_survey`, `records_verification` | Manual registrar handling (no student clearance) |
