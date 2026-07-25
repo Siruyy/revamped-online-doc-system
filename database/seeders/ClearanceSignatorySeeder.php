@@ -13,7 +13,11 @@ class ClearanceSignatorySeeder extends Seeder
 {
     public function run(): void
     {
-        $password = (string) env('SIGNATORY_DEFAULT_PASSWORD', 'password');
+        $password = (string) env('SIGNATORY_DEFAULT_PASSWORD');
+
+        if (strlen($password) < 16) {
+            throw new \RuntimeException('SIGNATORY_DEFAULT_PASSWORD must be configured with at least 16 characters.');
+        }
 
         foreach (ClearanceSignatories::SIGNATORIES as $role => $signatory) {
             $existingUserId = User::withTrashed()->where('email', $signatory['seeded_email'])->value('id');

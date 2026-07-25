@@ -52,6 +52,7 @@ services:
       MAIL_ENCRYPTION: ${MAIL_ENCRYPTION:-tls}
       MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-noreply@siruyy.cloud}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-SVCI Document System}
+      SIGNATORY_DEFAULT_PASSWORD: ${SIGNATORY_DEFAULT_PASSWORD:?SIGNATORY_DEFAULT_PASSWORD is required}
       RUN_MIGRATIONS: "true"
     volumes:
       - app_storage:/var/www/html/storage/app
