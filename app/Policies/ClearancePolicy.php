@@ -10,7 +10,7 @@ class ClearancePolicy
 {
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'superadmin', ...ClearanceSignatories::roles()], true);
+        return in_array($user->role, ['admin', 'accounting', 'superadmin', ...ClearanceSignatories::roles()], true);
     }
 
     public function view(User $user, Clearance $clearance): bool

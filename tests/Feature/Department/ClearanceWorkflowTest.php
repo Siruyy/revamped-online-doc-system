@@ -30,6 +30,76 @@ class ClearanceWorkflowTest extends TestCase
         $this->actingAs($officer)->get(route('department.clearances.show', $clearance))->assertOk();
     }
 
+    public function test_accounting_can_list_clearances_assigned_to_its_dynamic_step(): void
+    {
+        $accounting = $this->makeOfficer('accounting');
+        $clearance = $this->makeDynamicAccountingClearance();
+
+        $this->actingAs($accounting)
+            ->get(route('department.clearances.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Department/Clearances/Index')
+                ->has('clearances.data', 1)
+                ->where('clearances.data.0.id', $clearance->id));
+    }
+
+    public function test_accounting_can_clear_its_pending_dynamic_step_through_http(): void
+    {
+        Notification::fake();
+        $accounting = $this->makeOfficer('accounting');
+        $clearance = $this->makeDynamicAccountingClearance();
+        $step = $clearance->steps()->firstOrFail();
+
+        $this->actingAs($accounting)
+            ->post(route('department.clearances.sign', $clearance), [
+                'remarks' => 'Accounting verified.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('cleared', $step->refresh()->status);
+        $this->assertSame($accounting->id, $step->signed_by);
+    }
+
+    public function test_accounting_can_request_correction_for_its_pending_dynamic_step_through_http(): void
+    {
+        Notification::fake();
+        $accounting = $this->makeOfficer('accounting');
+        $clearance = $this->makeDynamicAccountingClearance();
+        $step = $clearance->steps()->firstOrFail();
+
+        $this->actingAs($accounting)
+            ->post(route('department.clearances.deny', $clearance), [
+                'remarks' => 'Please provide corrected accounting details.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('needs_action', $step->refresh()->status);
+        $this->assertDatabaseHas('request_requirements', [
+            'document_request_id' => $clearance->document_request_id,
+            'requirement_key' => "clearance_follow_up_{$step->id}",
+            'status' => 'rejected',
+        ]);
+    }
+
+    public function test_accounting_cannot_clear_a_legacy_clearance_without_an_assigned_dynamic_step(): void
+    {
+        $accounting = $this->makeOfficer('accounting');
+        $student = $this->makeStudent();
+        $request = DocumentRequest::factory()->for($student)->approved()->create();
+        $clearance = Clearance::factory()->for($student)->for($request)->create();
+
+        $this->actingAs($accounting)
+            ->post(route('department.clearances.sign', $clearance), [
+                'remarks' => 'Accounting verified.',
+            ])
+            ->assertForbidden();
+
+        $this->assertSame('pending', $clearance->refresh()->accounting_status);
+    }
+
     public function test_student_cannot_access_department_clearance_routes(): void
     {
         $student = $this->makeStudent();
@@ -268,5 +338,27 @@ class ClearanceWorkflowTest extends TestCase
             'user_id' => null,
             'uploaded_file_path' => null,
         ]);
+    }
+
+    private function makeDynamicAccountingClearance(): Clearance
+    {
+        $request = DocumentRequest::factory()->approved()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'workflow_stage' => 'clearance',
+            'requester_name' => 'Accounting Requestor',
+            'requester_email' => 'accounting-requestor@example.test',
+        ]);
+        $clearance = Clearance::factory()->for($request, 'documentRequest')->create([
+            'user_id' => null,
+            'overall_status' => 'in_progress',
+        ]);
+        $clearance->steps()->create([
+            'office_code' => 'accounting',
+            'label' => 'Accounting Office',
+            'sequence' => 1,
+        ]);
+
+        return $clearance;
     }
 }
