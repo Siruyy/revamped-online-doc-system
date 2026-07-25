@@ -15,7 +15,7 @@ class PaymentSubmitted implements ShouldBroadcast
 
     public function __construct(
         public int $paymentId,
-        public int $studentId,
+        public ?int $studentId,
     ) {}
 
     /**
@@ -23,7 +23,10 @@ class PaymentSubmitted implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('role.admin')];
+        return [
+            new PrivateChannel('role.admin'),
+            new PrivateChannel('role.department.accounting'),
+        ];
     }
 
     /**

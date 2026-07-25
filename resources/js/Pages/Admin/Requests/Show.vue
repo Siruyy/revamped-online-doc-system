@@ -1,6 +1,7 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import Modal from '@/Components/Modal.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import {
@@ -25,6 +26,7 @@ import {
 const props = defineProps({
     request: { type: Object, required: true },
     batchRequests: { type: Array, required: true },
+    clearanceSignatories: { type: Array, required: true },
     policy: { type: Object, required: true },
 });
 
@@ -35,6 +37,7 @@ const pauseForm = useForm({ reason: '' });
 const rejectForm = useForm({ notes: '' });
 const page = usePage();
 const routeBase = computed(() => (page.props.auth?.user?.role === 'superadmin' ? 'superadmin' : 'admin'));
+const isSuperAdmin = computed(() => page.props.auth?.user?.role === 'superadmin');
 
 const docType = computed(() => props.request.document_type);
 const payment = computed(() => props.request.payments?.[0]);
@@ -101,6 +104,7 @@ const canApprove = computed(() => !isPublicRequest.value && props.request.status
 const canApprovePackage = computed(
     () =>
         isPublicRequest.value &&
+        isSuperAdmin.value &&
         props.request.status === 'pending' &&
         allReqsValidated.value &&
         paymentPendingApproval.value,
@@ -124,6 +128,29 @@ const canRelease = computed(
     () => props.request.status === 'approved' && props.request.processing_stage === 'ready_for_pickup',
 );
 const clearanceReady = computed(() => !clearance.value || clearance.value.overall_status === 'completed');
+const officeReviews = computed(() => {
+    if (!clearance.value) return [];
+
+    if (clearance.value.steps?.length) {
+        return clearance.value.steps.map((step) => ({
+            key: step.id,
+            label: step.label,
+            status: step.status,
+            remarks: step.remarks,
+            reviewer: step.signer?.fullname,
+            reviewedAt: step.signed_at,
+        }));
+    }
+
+    return props.clearanceSignatories.map((signatory) => ({
+        key: signatory.role,
+        label: signatory.label,
+        status: clearance.value[signatory.status],
+        remarks: clearance.value[signatory.remarks],
+        reviewer: clearance.value[signatory.signer_payload]?.fullname,
+        reviewedAt: clearance.value[signatory.signed_at],
+    }));
+});
 const readinessItems = computed(() => [
     {
         label: 'Requirements',
@@ -291,6 +318,18 @@ function reqTone(status) {
             rejected: 'bg-rose-100 text-rose-800',
         }[status] ?? 'bg-slate-100 text-slate-600'
     );
+}
+
+function officeTone(status) {
+    if (['cleared', 'approved', 'completed'].includes(status)) return 'success';
+    if (['needs_action', 'denied', 'rejected'].includes(status)) return 'danger';
+    if (['pending', 'in_progress'].includes(status)) return 'warning';
+    return 'neutral';
+}
+
+function officeStatusLabel(status) {
+    if (status === 'needs_action') return 'Needs correction';
+    return status?.replaceAll('_', ' ') || 'Not started';
 }
 
 function fmtDate(value) {
@@ -463,6 +502,70 @@ function fmtPeso(value) {
                             <li v-for="blocker in readinessBlockers" :key="blocker">{{ blocker }}</li>
                         </ul>
                     </div>
+                </section>
+
+                <!-- Office review progress -->
+                <section v-if="clearance" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <h3 class="font-display text-lg font-semibold text-slate-900">Office review progress</h3>
+                            <p class="mt-1 text-sm text-slate-600">
+                                See what each office has approved, what is pending, and why a correction was requested.
+                            </p>
+                        </div>
+                        <StatusBadge
+                            :label="clearance.overall_status?.replaceAll('_', ' ')"
+                            :tone="officeTone(clearance.overall_status)"
+                        />
+                    </div>
+
+                    <ol class="mt-5 grid gap-3 sm:grid-cols-2">
+                        <li
+                            v-for="(office, index) in officeReviews"
+                            :key="office.key"
+                            class="rounded-xl border border-slate-200 p-4"
+                        >
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                        Step {{ index + 1 }}
+                                    </p>
+                                    <h4 class="mt-1 font-semibold text-slate-950">{{ office.label }}</h4>
+                                </div>
+                                <StatusBadge
+                                    :label="officeStatusLabel(office.status)"
+                                    :tone="officeTone(office.status)"
+                                    class="shrink-0"
+                                />
+                            </div>
+                            <dl class="mt-3 space-y-1 text-xs text-slate-600">
+                                <div v-if="office.reviewer" class="flex justify-between gap-3">
+                                    <dt>Reviewed by</dt>
+                                    <dd class="text-right font-medium text-slate-800">{{ office.reviewer }}</dd>
+                                </div>
+                                <div v-if="office.reviewedAt" class="flex justify-between gap-3">
+                                    <dt>Reviewed</dt>
+                                    <dd class="text-right text-slate-800">{{ fmtDate(office.reviewedAt) }}</dd>
+                                </div>
+                            </dl>
+                            <div
+                                v-if="office.remarks"
+                                class="mt-3 rounded-lg px-3 py-2 text-xs leading-5"
+                                :class="
+                                    ['needs_action', 'denied', 'rejected'].includes(office.status)
+                                        ? 'bg-rose-50 text-rose-800 ring-1 ring-rose-100'
+                                        : 'bg-slate-50 text-slate-700 ring-1 ring-slate-100'
+                                "
+                            >
+                                <strong>{{
+                                    ['needs_action', 'denied', 'rejected'].includes(office.status)
+                                        ? 'Reason:'
+                                        : 'Remarks:'
+                                }}</strong>
+                                {{ office.remarks }}
+                            </div>
+                        </li>
+                    </ol>
                 </section>
 
                 <!-- Request details -->
@@ -1049,6 +1152,12 @@ function fmtPeso(value) {
                             <dd class="font-mono">{{ payment.reference_number }}</dd>
                         </div>
                     </dl>
+                    <div
+                        v-if="payment.status === 'denied' && payment.denial_reason"
+                        class="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm leading-6 text-rose-800 ring-1 ring-rose-100"
+                    >
+                        <strong>Accounting reason:</strong> {{ payment.denial_reason }}
+                    </div>
                     <button
                         v-if="payment.receipt_path"
                         type="button"

@@ -2,16 +2,20 @@
 
 namespace Tests\Feature\Public;
 
+use App\Events\PaymentSubmitted;
 use App\Models\AcademicProgram;
 use App\Models\ClearanceStep;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\User;
+use App\Notifications\WorkflowStatusNotification;
 use App\Services\PublicRequestWorkflowService;
 use Database\Seeders\AcademicProgramSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -204,6 +208,42 @@ class RevisedPublicWorkflowTest extends TestCase
         $this->assertSame('submitted', $requirement->refresh()->status);
         $this->assertSame('pending', $step->refresh()->status);
         Storage::disk('local')->assertExists($requirement->file_path);
+    }
+
+    public function test_public_receipt_submission_notifies_accounting_instead_of_admin(): void
+    {
+        Storage::fake('local');
+        Notification::fake();
+        Event::fake([PaymentSubmitted::class]);
+        $accessCode = 'PAYMENT1234';
+        $request = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'workflow_stage' => 'awaiting_payment',
+            'tracking_access_hash' => hash('sha256', $accessCode),
+            'requester_name' => 'Public Payment Requestor',
+        ]);
+        $payment = Payment::factory()->for($request)->create([
+            'user_id' => null,
+            'status' => 'pending',
+        ]);
+        $admin = User::factory()->admin()->create(['status' => 'active']);
+        $accounting = User::factory()->accounting()->create(['status' => 'active']);
+        $superadmin = User::factory()->superadmin()->create(['status' => 'active']);
+
+        $this->post(route('public.requests.payment.upload', $request), [
+            'access_code' => $accessCode,
+            'payment_method' => 'GCash',
+            'reference_number' => 'GCASH-123',
+            'receipt' => UploadedFile::fake()->image('receipt.jpg'),
+        ])->assertRedirect();
+
+        $this->assertSame('pending_approval', $payment->refresh()->status);
+        $this->assertSame('payment_review', $request->refresh()->workflow_stage);
+        Event::assertDispatched(PaymentSubmitted::class, fn (PaymentSubmitted $event): bool => $event->paymentId === $payment->id);
+        Notification::assertSentTo($accounting, WorkflowStatusNotification::class);
+        Notification::assertSentTo($superadmin, WorkflowStatusNotification::class);
+        Notification::assertNotSentTo($admin, WorkflowStatusNotification::class);
     }
 
     /**

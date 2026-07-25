@@ -7,14 +7,22 @@ import { useRealtimeOrPoll } from '@/Composables/useRealtimeOrPoll';
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { BanknotesIcon } from '@heroicons/vue/24/outline';
-import { reactive, watch } from 'vue';
+import { computed, reactive, watch } from 'vue';
 
 const props = defineProps({
     payments: { type: Object, required: true },
     filters: { type: Object, required: true },
+    canReviewPayments: { type: Boolean, required: true },
 });
 const page = usePage();
 const routeBase = page.props.auth?.user?.role === 'accounting' ? 'department' : 'admin';
+const isAccounting = computed(() => page.props.auth?.user?.role === 'accounting');
+const pageTitle = computed(() => (isAccounting.value ? 'Receipt Review' : 'Payment Status'));
+const pageSubtitle = computed(() =>
+    isAccounting.value
+        ? 'Review submitted receipts, approve valid payments, and record clear reasons when a receipt is denied.'
+        : 'Monitor submitted receipts and Accounting Office decisions for every request.',
+);
 
 const filterForm = reactive({ status: props.filters.status || '' });
 const denyReasons = reactive({});
@@ -112,7 +120,7 @@ const reloadPayments = () => {
     router.reload({ only: ['payments', 'filters'], preserveScroll: true });
 };
 
-useEchoPrivateChannel(() => 'role.admin', {
+useEchoPrivateChannel(() => (isAccounting.value ? 'role.department.accounting' : 'role.admin'), {
     PaymentSubmitted: reloadPayments,
 });
 
@@ -131,17 +139,21 @@ function paymentStatusTone(status) {
 </script>
 
 <template>
-    <Head title="Manage Payments" />
+    <Head :title="pageTitle" />
 
     <StaffLayout>
         <template #header>
-            <PageHeader
-                title="Payments Management"
-                subtitle="Review receipt submissions, approve valid payments, and record denial reasons."
-            />
+            <PageHeader :title="pageTitle" :subtitle="pageSubtitle" />
         </template>
 
         <div class="space-y-6">
+            <div
+                v-if="!canReviewPayments"
+                class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-900"
+            >
+                Receipt decisions are handled by the Accounting Office. This page is read-only so Registrar staff can
+                monitor payment progress.
+            </div>
             <div
                 class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
             >
@@ -196,10 +208,13 @@ function paymentStatusTone(status) {
                                     >Preview Receipt</a
                                 >
                             </p>
+                            <p v-if="item.status === 'denied' && item.denial_reason" class="mt-2 text-sm text-rose-700">
+                                <strong>Reason:</strong> {{ item.denial_reason }}
+                            </p>
                         </div>
 
                         <div
-                            v-if="item.status === 'pending_approval'"
+                            v-if="canReviewPayments && item.status === 'pending_approval'"
                             class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center"
                         >
                             <button

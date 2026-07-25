@@ -8,6 +8,7 @@ use App\Models\RequestRequirement;
 use App\Services\PaymentService;
 use App\Services\PublicRequestWorkflowService;
 use App\Services\RequestService;
+use App\Support\ClearanceSignatories;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -25,6 +26,8 @@ class RequestController extends Controller
                 'documentType:id,name,category,processing_days',
                 'payments:id,document_request_id,status,total_amount',
                 'requirements:id,document_request_id,status',
+                'clearances:id,document_request_id,overall_status',
+                'clearances.steps:id,clearance_id,office_code,label,sequence,status,remarks',
             ])
             ->when($request->string('status')->toString(), fn ($query, $status) => $query->where('status', $status))
             ->when($request->string('course')->toString(), function ($query, $course) {
@@ -80,6 +83,9 @@ class RequestController extends Controller
             'items.documentType:id,code,name,category,fee,fee_formula,default_page_count',
             'payments',
             'clearances.steps.signer:id,fullname',
+            ...collect(ClearanceSignatories::signerRelations())
+                ->map(fn (string $relation): string => "clearances.{$relation}:id,fullname")
+                ->all(),
             'requirements',
             'claimSlip',
         ]);
@@ -97,6 +103,7 @@ class RequestController extends Controller
         return Inertia::render('Admin/Requests/Show', [
             'request' => $documentRequest,
             'batchRequests' => $batchRequests,
+            'clearanceSignatories' => ClearanceSignatories::definitions(),
             'policy' => [
                 'sla_pause_reasons' => config('policy.sla.pause_reasons', []),
                 'release_channels' => config('policy.release_channels', []),
@@ -146,7 +153,7 @@ class RequestController extends Controller
 
     public function approveWithPayment(DocumentRequest $documentRequest, RequestService $requestService, PaymentService $paymentService): RedirectResponse
     {
-        $this->authorize('approve', $documentRequest);
+        $this->authorize('approveWithPayment', $documentRequest);
 
         try {
             $requestService->approvePublicRequestPackage($documentRequest, request()->user(), $paymentService);
@@ -205,7 +212,7 @@ class RequestController extends Controller
         return back()->with('status', 'Registrar clearance signed.');
     }
 
-    public function denyWithPayment(Request $request, DocumentRequest $documentRequest, RequestService $requestService, PaymentService $paymentService): RedirectResponse
+    public function denyWithPayment(Request $request, DocumentRequest $documentRequest, RequestService $requestService): RedirectResponse
     {
         $this->authorize('deny', $documentRequest);
 
@@ -219,7 +226,7 @@ class RequestController extends Controller
         }
 
         try {
-            $requestService->denyPublicRequestPackage($documentRequest, $request->user(), $reason, $paymentService);
+            $requestService->denyPublicRequestPackage($documentRequest, $request->user(), $reason);
         } catch (\RuntimeException $exception) {
             return back()->withErrors(['request' => $exception->getMessage()]);
         }

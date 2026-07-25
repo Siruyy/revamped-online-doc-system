@@ -81,7 +81,7 @@
    b. Inserts document_request with requestor snapshot fields and no hidden student user
    c. Inserts request item rows and required attachment rows
    d. Stores receipt and requirement files on the private local disk
-   e. Inserts payment row (status: pending_approval)
+   e. Inserts payment row (status: pending_approval) and notifies Accounting for receipt review
    f. Dispatches RequestSubmitted event
    g. Commits transaction
 7. Listeners react:

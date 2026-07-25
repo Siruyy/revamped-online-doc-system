@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DocumentRequest;
 use App\Models\RequestRequirement;
 use App\Services\ActivityLogger;
+use App\Services\PaymentService;
 use App\Support\FileUploadLimits;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -64,8 +65,11 @@ class WorkflowActionController extends Controller
         return back()->with('status', 'The document was uploaded and returned to the reviewing office.');
     }
 
-    public function uploadPayment(Request $request, DocumentRequest $documentRequest): RedirectResponse
-    {
+    public function uploadPayment(
+        Request $request,
+        DocumentRequest $documentRequest,
+        PaymentService $paymentService,
+    ): RedirectResponse {
         $this->verifyAccess($request, $documentRequest);
         $validated = $request->validate([
             'access_code' => ['required', 'string', 'max:32'],
@@ -100,6 +104,7 @@ class WorkflowActionController extends Controller
             'submitted_at' => now(),
         ]);
         $documentRequest->update(['workflow_stage' => 'payment_review']);
+        $paymentService->notifyReviewers($payment);
 
         return back()->with('status', 'Payment receipt submitted for accounting validation.');
     }

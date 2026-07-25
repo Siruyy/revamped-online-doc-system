@@ -77,16 +77,16 @@ class PaymentServiceTest extends TestCase
         Event::fake([PaymentApproved::class, ClearanceCreated::class]);
         Notification::fake();
 
-        $admin = User::factory()->admin()->create();
+        $accounting = User::factory()->accounting()->create();
         $student = User::factory()->student()->create();
         $documentType = DocumentType::factory()->create(['flags' => []]);
         $request = DocumentRequest::factory()->for($student)->for($documentType)->approved()->create();
         $payment = Payment::factory()->for($student)->for($request)->pendingApproval()->create();
 
-        $approved = $this->service()->approve($payment, $admin);
+        $approved = $this->service()->approve($payment, $accounting);
 
         $this->assertSame('approved', $approved->status);
-        $this->assertSame($admin->id, $approved->approved_by);
+        $this->assertSame($accounting->id, $approved->approved_by);
         $this->assertNotNull($approved->approved_at);
         $this->assertDatabaseHas('clearances', [
             'user_id' => $student->id,
@@ -102,28 +102,28 @@ class PaymentServiceTest extends TestCase
         Event::fake([PaymentDenied::class]);
         Notification::fake();
 
-        $admin = User::factory()->admin()->create();
+        $accounting = User::factory()->accounting()->create();
         $student = User::factory()->student()->create();
         $payment = Payment::factory()->for($student)->pendingApproval()->create();
 
-        $denied = $this->service()->deny($payment, $admin, 'Receipt details mismatch');
+        $denied = $this->service()->deny($payment, $accounting, 'Receipt details mismatch');
 
         $this->assertSame('denied', $denied->status);
         $this->assertSame('Receipt details mismatch', $denied->denial_reason);
-        $this->assertSame($admin->id, $denied->approved_by);
+        $this->assertSame($accounting->id, $denied->approved_by);
         Event::assertDispatched(PaymentDenied::class);
     }
 
     public function test_it_prevents_duplicate_payment_approval(): void
     {
-        $admin = User::factory()->admin()->create();
+        $accounting = User::factory()->accounting()->create();
         $student = User::factory()->student()->create();
         $payment = Payment::factory()->for($student)->approved()->create();
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Only submitted payments can be approved.');
 
-        $this->service()->approve($payment, $admin);
+        $this->service()->approve($payment, $accounting);
     }
 
     private function service(): PaymentService

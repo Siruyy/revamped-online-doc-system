@@ -188,9 +188,34 @@ class RequestManagementTest extends TestCase
             'requester_course' => 'BSIT',
             'requester_year_level' => 2,
         ]);
-        Clearance::factory()->for($publicRequest, 'documentRequest')->create([
+        $clearance = Clearance::factory()->for($publicRequest, 'documentRequest')->create([
             'user_id' => null,
             'overall_status' => 'in_progress',
+        ]);
+        $reviewer = User::factory()->dean()->create();
+        $clearance->steps()->createMany([
+            [
+                'office_code' => 'dean',
+                'label' => 'CSD Dean',
+                'sequence' => 1,
+                'status' => 'cleared',
+                'remarks' => 'Academic records verified.',
+                'signed_by' => $reviewer->id,
+                'signed_at' => now(),
+            ],
+            [
+                'office_code' => 'library',
+                'label' => 'Librarian',
+                'sequence' => 2,
+                'status' => 'needs_action',
+                'remarks' => 'Return the outstanding library book.',
+            ],
+            [
+                'office_code' => 'accounting',
+                'label' => 'Accounting Office',
+                'sequence' => 3,
+                'status' => 'pending',
+            ],
         ]);
 
         $this->actingAs($admin)
@@ -204,7 +229,51 @@ class RequestManagementTest extends TestCase
                 ->where('request.requester_course', 'BSIT')
                 ->where('request.requester_year_level', 2)
                 ->where('request.clearances.0.user_id', null)
-                ->where('request.clearances.0.overall_status', 'in_progress'));
+                ->where('request.clearances.0.overall_status', 'in_progress')
+                ->where('request.clearances.0.steps.0.label', 'CSD Dean')
+                ->where('request.clearances.0.steps.0.status', 'cleared')
+                ->where('request.clearances.0.steps.0.remarks', 'Academic records verified.')
+                ->where('request.clearances.0.steps.0.signer.fullname', $reviewer->fullname)
+                ->where('request.clearances.0.steps.1.status', 'needs_action')
+                ->where('request.clearances.0.steps.1.remarks', 'Return the outstanding library book.')
+                ->where('request.clearances.0.steps.2.status', 'pending'));
+    }
+
+    public function test_admin_request_index_includes_current_office_progress(): void
+    {
+        $admin = $this->createAdmin();
+        $request = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'requester_name' => 'Progress Requestor',
+        ]);
+        $clearance = Clearance::factory()->for($request, 'documentRequest')->create([
+            'user_id' => null,
+            'overall_status' => 'in_progress',
+        ]);
+        $clearance->steps()->createMany([
+            [
+                'office_code' => 'dean',
+                'label' => 'CSD Dean',
+                'sequence' => 1,
+                'status' => 'cleared',
+            ],
+            [
+                'office_code' => 'accounting',
+                'label' => 'Accounting Office',
+                'sequence' => 2,
+                'status' => 'pending',
+            ],
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.requests.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('requests.data.0.clearances.0.overall_status', 'in_progress')
+                ->where('requests.data.0.clearances.0.steps.0.status', 'cleared')
+                ->where('requests.data.0.clearances.0.steps.1.label', 'Accounting Office')
+                ->where('requests.data.0.clearances.0.steps.1.status', 'pending'));
     }
 
     private function createAdmin(): User

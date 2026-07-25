@@ -38,6 +38,7 @@ class PolicyTest extends TestCase
     {
         $student = User::factory()->student()->create();
         $admin = User::factory()->admin()->create();
+        $accounting = User::factory()->accounting()->create();
         // Policy-initial: upload is only allowed once the document request is approved.
         $approvedRequest = DocumentRequest::factory()->for($student)->approved()->create();
         $payment = Payment::factory()->for($student)->for($approvedRequest)->pending()->create();
@@ -45,7 +46,8 @@ class PolicyTest extends TestCase
 
         $this->assertTrue($policy->view($student, $payment));
         $this->assertTrue($policy->upload($student, $payment));
-        $this->assertTrue($policy->approve($admin, $payment));
+        $this->assertFalse($policy->approve($admin, $payment));
+        $this->assertTrue($policy->approve($accounting, $payment));
         $this->assertFalse($policy->deny($student, $payment));
 
         // Upload is blocked when the linked request is still pending.

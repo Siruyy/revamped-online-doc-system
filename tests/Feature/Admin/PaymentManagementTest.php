@@ -25,23 +25,23 @@ class PaymentManagementTest extends TestCase
         $this->actingAs($admin)->get(route('admin.payments.index'))->assertOk();
     }
 
-    public function test_admin_can_approve_payment_and_initialize_clearance(): void
+    public function test_accounting_can_approve_payment_and_initialize_clearance(): void
     {
         Event::fake([ClearanceCreated::class]);
 
-        $admin = $this->createAdmin();
+        $accounting = $this->createAccounting();
         $student = $this->createStudent();
         $request = DocumentRequest::factory()->for($student)->pending()->create();
         $payment = Payment::factory()->for($student)->for($request)->pendingApproval()->create();
 
-        $this->actingAs($admin)->post(route('admin.payments.approve', $payment))->assertRedirect();
+        $this->actingAs($accounting)->post(route('department.payments.approve', $payment))->assertRedirect();
 
         Event::assertDispatched(ClearanceCreated::class);
 
         $this->assertDatabaseHas('payments', [
             'id' => $payment->id,
             'status' => 'approved',
-            'approved_by' => $admin->id,
+            'approved_by' => $accounting->id,
         ]);
         $this->assertDatabaseHas('clearances', [
             'user_id' => $student->id,
@@ -49,15 +49,15 @@ class PaymentManagementTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_deny_payment_with_reason(): void
+    public function test_accounting_can_deny_payment_with_reason(): void
     {
         Event::fake([PaymentDenied::class]);
 
-        $admin = $this->createAdmin();
+        $accounting = $this->createAccounting();
         $student = $this->createStudent();
         $payment = Payment::factory()->for($student)->pendingApproval()->create();
 
-        $this->actingAs($admin)->post(route('admin.payments.deny', $payment), [
+        $this->actingAs($accounting)->post(route('department.payments.deny', $payment), [
             'denial_reason' => 'Receipt details mismatch',
         ])->assertRedirect();
 
@@ -70,26 +70,64 @@ class PaymentManagementTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_preview_payment_receipt_file_inline(): void
+    public function test_admin_cannot_approve_or_deny_payment_receipts(): void
+    {
+        $admin = $this->createAdmin();
+        $student = $this->createStudent();
+        $payment = Payment::factory()->for($student)->pendingApproval()->create();
+
+        $this->actingAs($admin)
+            ->post(route('admin.payments.approve', $payment))
+            ->assertForbidden();
+        $this->actingAs($admin)
+            ->post(route('admin.payments.deny', $payment), [
+                'denial_reason' => 'Receipt details mismatch',
+            ])
+            ->assertForbidden();
+
+        $this->assertSame('pending_approval', $payment->refresh()->status);
+    }
+
+    public function test_accounting_can_preview_payment_receipt_file_inline(): void
     {
         Storage::fake('local');
 
-        $admin = $this->createAdmin();
+        $accounting = $this->createAccounting();
         $student = $this->createStudent();
         $payment = Payment::factory()->for($student)->pendingApproval()->create([
             'receipt_path' => "payment-receipts/{$student->id}/receipt.pdf",
         ]);
         Storage::disk('local')->put($payment->receipt_path, 'pdf-content');
 
-        $this->actingAs($admin)
+        $this->actingAs($accounting)
             ->get(route('files.payment-receipt', $payment))
             ->assertOk()
             ->assertHeader('content-disposition', 'inline; filename=receipt.pdf');
     }
 
+    public function test_non_accounting_department_cannot_view_payment_queue(): void
+    {
+        $dean = User::factory()->dean()->create([
+            'status' => 'active',
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($dean)
+            ->get(route('department.payments.index'))
+            ->assertForbidden();
+    }
+
     private function createAdmin(): User
     {
         return User::factory()->admin()->create([
+            'status' => 'active',
+            'email_verified_at' => now(),
+        ]);
+    }
+
+    private function createAccounting(): User
+    {
+        return User::factory()->accounting()->create([
             'status' => 'active',
             'email_verified_at' => now(),
         ]);

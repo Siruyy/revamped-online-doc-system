@@ -30,6 +30,7 @@ class PaymentController extends Controller
 
         return Inertia::render('Admin/Payments/Index', [
             'payments' => $payments,
+            'canReviewPayments' => $request->user()->can('approve', new Payment),
             'filters' => [
                 'status' => $request->string('status')->toString(),
             ],

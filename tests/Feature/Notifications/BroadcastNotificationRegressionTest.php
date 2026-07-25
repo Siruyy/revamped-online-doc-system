@@ -129,11 +129,12 @@ class BroadcastNotificationRegressionTest extends TestCase
         $this->assertNotificationSentWithType($student, 'request_stage_updated');
     }
 
-    public function test_payment_submission_dispatches_event_and_notifies_admins(): void
+    public function test_payment_submission_dispatches_event_and_notifies_accounting(): void
     {
         Storage::fake('local');
         $student = $this->activeUser('student');
         $admin = $this->activeUser('admin');
+        $accounting = $this->activeUser('accounting');
         $superadmin = $this->activeUser('superadmin');
         $request = DocumentRequest::factory()->for($student)->approved()->create();
         $payment = Payment::factory()->for($student)->for($request)->pending()->create();
@@ -144,13 +145,14 @@ class BroadcastNotificationRegressionTest extends TestCase
         app(PaymentService::class)->uploadReceipt($payment, UploadedFile::fake()->image('receipt.jpg'), 'GCash', 'GCASH-123');
 
         Event::assertDispatched(PaymentSubmitted::class, fn (PaymentSubmitted $event) => $event->paymentId === $payment->id && $event->studentId === $student->id);
-        $this->assertNotificationSentWithType($admin, 'payment_submitted');
+        NotificationFake::assertNotSentTo($admin, WorkflowStatusNotification::class);
+        $this->assertNotificationSentWithType($accounting, 'payment_submitted');
         $this->assertNotificationSentWithType($superadmin, 'payment_submitted');
     }
 
     public function test_payment_approval_dispatches_events_and_notifies_student_and_department_roles(): void
     {
-        $admin = $this->activeUser('admin');
+        $accounting = $this->activeUser('accounting');
         $student = $this->activeUser('student');
         $officers = collect(ClearanceSignatories::roles())
             ->map(fn (string $role): User => $this->activeUser($role))
@@ -161,7 +163,7 @@ class BroadcastNotificationRegressionTest extends TestCase
         Event::fake([PaymentApproved::class, ClearanceCreated::class]);
         NotificationFake::fake();
 
-        app(PaymentService::class)->approve($payment, $admin);
+        app(PaymentService::class)->approve($payment, $accounting);
 
         Event::assertDispatched(PaymentApproved::class, fn (PaymentApproved $event) => $event->paymentId === $payment->id && $event->studentId === $student->id);
         Event::assertDispatched(ClearanceCreated::class, fn (ClearanceCreated $event) => $event->studentId === $student->id && $event->documentRequestId === $request->id);
@@ -174,14 +176,14 @@ class BroadcastNotificationRegressionTest extends TestCase
 
     public function test_payment_denial_dispatches_event_and_notifies_student(): void
     {
-        $admin = $this->activeUser('admin');
+        $accounting = $this->activeUser('accounting');
         $student = $this->activeUser('student');
         $payment = Payment::factory()->for($student)->pendingApproval()->create();
 
         Event::fake([PaymentDenied::class]);
         NotificationFake::fake();
 
-        app(PaymentService::class)->deny($payment, $admin, 'Unreadable receipt');
+        app(PaymentService::class)->deny($payment, $accounting, 'Unreadable receipt');
 
         Event::assertDispatched(PaymentDenied::class, fn (PaymentDenied $event) => $event->paymentId === $payment->id && $event->reason === 'Unreadable receipt');
         $this->assertNotificationSentWithType($student, 'payment_denied');

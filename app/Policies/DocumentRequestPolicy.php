@@ -48,6 +48,11 @@ class DocumentRequestPolicy
         return in_array($user->role, ['admin', 'superadmin'], true);
     }
 
+    public function approveWithPayment(User $user, DocumentRequest $documentRequest): bool
+    {
+        return $user->role === 'superadmin';
+    }
+
     public function deny(User $user, DocumentRequest $documentRequest): bool
     {
         return in_array($user->role, ['admin', 'superadmin'], true);

@@ -33,11 +33,11 @@ class PublicRequestValidationTest extends TestCase
 
     public function test_approve_with_payment_requires_pending_request(): void
     {
-        $admin = User::factory()->admin()->create(['status' => 'active']);
+        $superadmin = User::factory()->superadmin()->create(['status' => 'active']);
         $request = $this->createPublicRequestPackage(requestStatus: 'approved');
 
-        $this->actingAs($admin)
-            ->post(route('admin.requests.approve-with-payment', $request))
+        $this->actingAs($superadmin)
+            ->post(route('superadmin.requests.approve-with-payment', $request))
             ->assertSessionHasErrors('request');
 
         $this->assertDatabaseHas('payments', [
@@ -48,11 +48,11 @@ class PublicRequestValidationTest extends TestCase
 
     public function test_approve_with_payment_requires_pending_approval_payment(): void
     {
-        $admin = User::factory()->admin()->create(['status' => 'active']);
+        $superadmin = User::factory()->superadmin()->create(['status' => 'active']);
         $request = $this->createPublicRequestPackage(paymentStatus: 'pending');
 
-        $this->actingAs($admin)
-            ->post(route('admin.requests.approve-with-payment', $request))
+        $this->actingAs($superadmin)
+            ->post(route('superadmin.requests.approve-with-payment', $request))
             ->assertSessionHasErrors('payment');
 
         $this->assertDatabaseHas('document_requests', [
@@ -63,11 +63,11 @@ class PublicRequestValidationTest extends TestCase
 
     public function test_approve_with_payment_requires_all_requirements_validated(): void
     {
-        $admin = User::factory()->admin()->create(['status' => 'active']);
+        $superadmin = User::factory()->superadmin()->create(['status' => 'active']);
         $request = $this->createPublicRequestPackage(requirementStatus: 'submitted');
 
-        $this->actingAs($admin)
-            ->post(route('admin.requests.approve-with-payment', $request))
+        $this->actingAs($superadmin)
+            ->post(route('superadmin.requests.approve-with-payment', $request))
             ->assertSessionHasErrors('requirement');
 
         $this->assertDatabaseHas('payments', [
@@ -76,7 +76,7 @@ class PublicRequestValidationTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_approve_public_request_package_and_create_clearance(): void
+    public function test_admin_cannot_approve_a_public_request_payment_package(): void
     {
         Notification::fake();
 
@@ -85,34 +85,17 @@ class PublicRequestValidationTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('admin.requests.approve-with-payment', $request))
-            ->assertRedirect()
-            ->assertSessionHas('status');
+            ->assertForbidden();
 
         $this->assertDatabaseHas('document_requests', [
             'id' => $request->id,
-            'status' => 'approved',
-            'processing_stage' => 'processing',
-            'approved_by' => $admin->id,
+            'status' => 'pending',
         ]);
         $this->assertDatabaseHas('payments', [
             'document_request_id' => $request->id,
-            'status' => 'approved',
-            'approved_by' => $admin->id,
+            'status' => 'pending_approval',
         ]);
-        $this->assertDatabaseHas('clearances', [
-            'user_id' => null,
-            'document_request_id' => $request->id,
-            'overall_status' => 'in_progress',
-        ]);
-
-        Notification::assertSentOnDemand(
-            WorkflowStatusNotification::class,
-            fn (WorkflowStatusNotification $notification, array $channels, object $notifiable): bool => $channels === ['mail']
-                && ($notifiable->routes['mail'] ?? null) === 'public@example.test'
-                && ($notification->toArray($notifiable)['type'] ?? null) === 'request_approved'
-                && ! array_key_exists('receipt_path', $notification->toArray($notifiable))
-                && ! array_key_exists('file_path', $notification->toArray($notifiable)),
-        );
+        $this->assertDatabaseMissing('clearances', ['document_request_id' => $request->id]);
     }
 
     public function test_superadmin_can_approve_public_request_package(): void
@@ -136,9 +119,10 @@ class PublicRequestValidationTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_validate_requirement_then_approve_public_request_package(): void
+    public function test_admin_can_validate_requirement_before_superadmin_approves_legacy_package(): void
     {
         $admin = User::factory()->admin()->create(['status' => 'active']);
+        $superadmin = User::factory()->superadmin()->create(['status' => 'active']);
         $request = $this->createPublicRequestPackage(requirementStatus: 'submitted');
         $requirement = $request->requirements()->firstOrFail();
 
@@ -147,8 +131,8 @@ class PublicRequestValidationTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('status');
 
-        $this->actingAs($admin)
-            ->post(route('admin.requests.approve-with-payment', $request))
+        $this->actingAs($superadmin)
+            ->post(route('superadmin.requests.approve-with-payment', $request))
             ->assertRedirect()
             ->assertSessionHas('status');
 
@@ -175,7 +159,7 @@ class PublicRequestValidationTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('admin.requests.approve-with-payment', $request))
-            ->assertSessionHasErrors('request');
+            ->assertForbidden();
 
         $this->actingAs($admin)
             ->post(route('admin.requests.deny-with-payment', $request), [
@@ -225,7 +209,7 @@ class PublicRequestValidationTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_deny_public_request_package_and_tracking_shows_reason(): void
+    public function test_admin_can_deny_public_request_without_deciding_the_receipt(): void
     {
         Notification::fake();
 
@@ -234,7 +218,7 @@ class PublicRequestValidationTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('admin.requests.deny-with-payment', $request), [
-                'denial_reason' => 'Receipt image is unreadable.',
+                'denial_reason' => 'Registrar requirements were not satisfied.',
             ])
             ->assertRedirect()
             ->assertSessionHas('status');
@@ -242,14 +226,14 @@ class PublicRequestValidationTest extends TestCase
         $this->assertDatabaseHas('document_requests', [
             'id' => $request->id,
             'status' => 'denied',
-            'denial_reason' => 'Receipt image is unreadable.',
+            'denial_reason' => 'Registrar requirements were not satisfied.',
             'approved_by' => $admin->id,
         ]);
         $this->assertDatabaseHas('payments', [
             'document_request_id' => $request->id,
-            'status' => 'denied',
-            'denial_reason' => 'Receipt image is unreadable.',
-            'approved_by' => $admin->id,
+            'status' => 'pending_approval',
+            'denial_reason' => null,
+            'approved_by' => null,
         ]);
 
         $this->post(route('track-document.show'), [
@@ -258,14 +242,14 @@ class PublicRequestValidationTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Public/TrackResult')
                 ->where('result.status', 'denied')
-                ->where('result.denial_reason', 'Receipt image is unreadable.'));
+                ->where('result.denial_reason', 'Registrar requirements were not satisfied.'));
 
         Notification::assertSentOnDemand(
             WorkflowStatusNotification::class,
             fn (WorkflowStatusNotification $notification, array $channels, object $notifiable): bool => $channels === ['mail']
                 && ($notifiable->routes['mail'] ?? null) === 'public@example.test'
                 && ($notification->toArray($notifiable)['type'] ?? null) === 'request_denied'
-                && ($notification->toArray($notifiable)['reason'] ?? null) === 'Receipt image is unreadable.',
+                && ($notification->toArray($notifiable)['reason'] ?? null) === 'Registrar requirements were not satisfied.',
         );
     }
 
@@ -273,11 +257,11 @@ class PublicRequestValidationTest extends TestCase
     {
         Notification::fake();
 
-        $admin = User::factory()->admin()->create(['status' => 'active']);
+        $superadmin = User::factory()->superadmin()->create(['status' => 'active']);
         $request = $this->createPublicRequestPackage(requesterEmail: null);
 
-        $this->actingAs($admin)
-            ->post(route('admin.requests.approve-with-payment', $request))
+        $this->actingAs($superadmin)
+            ->post(route('superadmin.requests.approve-with-payment', $request))
             ->assertRedirect()
             ->assertSessionHas('status');
 

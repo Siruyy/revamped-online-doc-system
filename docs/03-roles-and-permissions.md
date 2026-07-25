@@ -9,7 +9,7 @@
 | `admin` | School registrar admin — approves requests, manages records |
 | `teacher` | Teacher department — signs off on student clearance |
 | `dean` | Dean department — signs off on student clearance |
-| `accounting` | Accounting department — signs off on financial clearance |
+| `accounting` | Accounting Office — signs financial clearance and reviews payment receipts |
 | `sao` | Student Affairs Office — signs off on conduct clearance |
 | `superadmin` | Full system control |
 
@@ -50,8 +50,8 @@ Independent of role, every account has a `status`:
 | View payment status by reference tracking | Public | — | — | — |
 | Upload own authenticated receipt | Legacy | — | — | — |
 | View own authenticated payment | Legacy | — | — | — |
-| View all payments | — | ✅ | — | ✅ |
-| Approve / Deny payment | — | ✅ | — | ✅ |
+| View all payments | — | ✅ (read-only) | ✅ (Accounting only) | ✅ |
+| Approve / Deny payment | — | — | ✅ (Accounting only) | ✅ |
 
 ### Clearance
 

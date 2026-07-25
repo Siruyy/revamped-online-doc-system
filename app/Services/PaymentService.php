@@ -57,35 +57,28 @@ class PaymentService
             ['payment_id' => $payment->id]
         );
 
-        PaymentSubmitted::dispatch($payment->id, $payment->user_id);
-
-        Notification::send(
-            User::query()->whereIn('role', ['admin', 'superadmin'])->where('status', 'active')->get(),
-            new WorkflowStatusNotification([
-                'type' => 'payment_submitted',
-                'title' => 'Payment submitted',
-                'message' => "{$payment->user->fullname} uploaded a payment receipt.",
-                'payment_id' => $payment->id,
-                'student_id' => $payment->user_id,
-            ]),
-        );
+        $this->notifyReviewers($payment);
 
         return $payment->refresh();
     }
 
     /**
-     * Admin approves a payment receipt. After approval, clearance routing begins
+     * Accounting approves a payment receipt. After approval, clearance routing begins
      * for any item types that require departmental clearance.
      */
-    public function approve(Payment $payment, User $admin): Payment
+    public function approve(Payment $payment, User $reviewer): Payment
     {
+        if (! in_array($reviewer->role, ['accounting', 'superadmin'], true)) {
+            throw new \RuntimeException('Only Accounting may approve payment receipts.');
+        }
+
         if ($payment->status !== 'pending_approval') {
             throw new \RuntimeException('Only submitted payments can be approved.');
         }
 
         $payment->update([
             'status' => 'approved',
-            'approved_by' => $admin->id,
+            'approved_by' => $reviewer->id,
             'approved_at' => now(),
             'denial_reason' => null,
         ]);
@@ -110,14 +103,14 @@ class PaymentService
 
         ActivityLogger::log(
             'payment_approved',
-            "Admin {$admin->email} approved payment #{$payment->id}.",
-            $admin,
+            "Accounting reviewer {$reviewer->email} approved payment #{$payment->id}.",
+            $reviewer,
             $payment->user,
             ['payment_id' => $payment->id]
         );
 
         if ($payment->user_id !== null) {
-            PaymentApproved::dispatch($payment->id, $payment->user_id, $admin->id);
+            PaymentApproved::dispatch($payment->id, $payment->user_id, $reviewer->id);
 
             $payment->user->notify(new WorkflowStatusNotification([
                 'type' => 'payment_approved',
@@ -138,15 +131,19 @@ class PaymentService
         return $payment->refresh();
     }
 
-    public function deny(Payment $payment, User $admin, string $reason): Payment
+    public function deny(Payment $payment, User $reviewer, string $reason): Payment
     {
+        if (! in_array($reviewer->role, ['accounting', 'superadmin'], true)) {
+            throw new \RuntimeException('Only Accounting may deny payment receipts.');
+        }
+
         if ($payment->status !== 'pending_approval') {
             throw new \RuntimeException('Only submitted payments can be denied.');
         }
 
         $payment->update([
             'status' => 'denied',
-            'approved_by' => $admin->id,
+            'approved_by' => $reviewer->id,
             'approved_at' => now(),
             'denial_reason' => $reason,
         ]);
@@ -157,14 +154,14 @@ class PaymentService
 
         ActivityLogger::log(
             'payment_denied',
-            "Admin {$admin->email} denied payment #{$payment->id}.",
-            $admin,
+            "Accounting reviewer {$reviewer->email} denied payment #{$payment->id}.",
+            $reviewer,
             $payment->user,
             ['payment_id' => $payment->id, 'reason' => $reason]
         );
 
         if ($payment->user_id !== null) {
-            PaymentDenied::dispatch($payment->id, $payment->user_id, $admin->id, $reason);
+            PaymentDenied::dispatch($payment->id, $payment->user_id, $reviewer->id, $reason);
 
             $payment->user->notify(new WorkflowStatusNotification([
                 'type' => 'payment_denied',
@@ -184,6 +181,27 @@ class PaymentService
         }
 
         return $payment->refresh();
+    }
+
+    public function notifyReviewers(Payment $payment): void
+    {
+        $payment->loadMissing(['user:id,fullname', 'documentRequest:id,requester_name']);
+        $requestorName = $payment->user_id !== null
+            ? $payment->user->fullname
+            : ($payment->documentRequest->requester_name ?? 'A requestor');
+
+        PaymentSubmitted::dispatch($payment->id, $payment->user_id);
+
+        Notification::send(
+            User::query()->whereIn('role', ['accounting', 'superadmin'])->where('status', 'active')->get(),
+            new WorkflowStatusNotification([
+                'type' => 'payment_submitted',
+                'title' => 'Payment submitted',
+                'message' => "{$requestorName} uploaded a payment receipt for review.",
+                'payment_id' => $payment->id,
+                'student_id' => $payment->user_id,
+            ]),
+        );
     }
 
     /**

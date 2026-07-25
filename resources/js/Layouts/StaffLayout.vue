@@ -64,11 +64,12 @@ const departmentTitle = computed(
             student_affairs: 'Dean of Student Affairs',
             alumni: 'SVC Alumni Officer',
             guidance: 'Guidance Counselor',
+            accounting: 'Accounting Office',
         })[role.value] ?? '',
 );
 
 const roleLabel = computed(() => {
-    if (departmentTitle.value) return `${departmentTitle.value} Dept`;
+    if (departmentTitle.value) return departmentTitle.value;
     if (role.value === 'superadmin') return 'SuperAdmin';
     return 'Admin';
 });
@@ -84,6 +85,7 @@ const roleBadgeClass = computed(
             student_affairs: 'bg-rose-100 text-rose-700',
             alumni: 'bg-teal-100 text-teal-700',
             guidance: 'bg-fuchsia-100 text-fuchsia-700',
+            accounting: 'bg-emerald-100 text-emerald-700',
         })[role.value] ?? 'bg-slate-100 text-slate-600',
 );
 
@@ -123,10 +125,13 @@ const links = computed(() => {
         ].map((link) => ({ ...link, icon: getIconForRoute(link.route) }));
     }
 
-    if (['dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance'].includes(role.value)) {
+    if (
+        ['dean', 'president', 'librarian', 'student_affairs', 'alumni', 'guidance', 'accounting'].includes(role.value)
+    ) {
         return [
             { route: 'department.dashboard', label: 'Dashboard' },
             { route: 'department.clearances.index', label: 'Clearances' },
+            ...(role.value === 'accounting' ? [{ route: 'department.payments.index', label: 'Receipt Review' }] : []),
             { route: 'department.notifications.index', label: 'Notifications' },
             { route: 'department.faq.index', label: 'FAQ' },
             { route: 'department.profile.edit', label: 'Profile' },
@@ -136,7 +141,7 @@ const links = computed(() => {
     return [
         { route: 'admin.dashboard', label: 'Dashboard' },
         { route: 'admin.requests.index', label: 'Requests' },
-        { route: 'admin.payments.index', label: 'Payments' },
+        { route: 'admin.payments.index', label: 'Payment Status' },
         { route: 'admin.releases.index', label: 'Releases' },
         { route: 'admin.clearances.index', label: 'Clearance Monitor' },
         { route: 'admin.document-types.index', label: 'Document Types' },

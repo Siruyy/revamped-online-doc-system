@@ -53,13 +53,11 @@ class PaymentPolicy
 
     public function approve(User $user, Payment $payment): bool
     {
-        return in_array($user->role, ['accounting', 'superadmin'], true)
-            || ($user->role === 'admin' && $payment->documentRequest?->intake_mode !== 'public');
+        return in_array($user->role, ['accounting', 'superadmin'], true);
     }
 
     public function deny(User $user, Payment $payment): bool
     {
-        return in_array($user->role, ['accounting', 'superadmin'], true)
-            || ($user->role === 'admin' && $payment->documentRequest?->intake_mode !== 'public');
+        return in_array($user->role, ['accounting', 'superadmin'], true);
     }
 }

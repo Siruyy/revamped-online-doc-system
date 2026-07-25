@@ -107,6 +107,33 @@ function courseYear(item) {
 
     return year ? `${course} Y${year}` : course;
 }
+
+function clearanceProgress(item) {
+    const clearance = item.clearances?.[0];
+
+    if (!clearance) {
+        return { label: 'Not started', tone: 'neutral' };
+    }
+
+    if (clearance.overall_status === 'completed') {
+        return { label: 'All offices cleared', tone: 'success' };
+    }
+
+    const actionNeeded = clearance.steps?.find((step) => ['needs_action', 'denied'].includes(step.status));
+    if (actionNeeded) {
+        return { label: `${actionNeeded.label}: needs action`, tone: 'danger' };
+    }
+
+    const currentOffice = clearance.steps?.find((step) => step.status === 'pending');
+    if (currentOffice) {
+        return { label: `Waiting for ${currentOffice.label}`, tone: 'warning' };
+    }
+
+    return {
+        label: clearance.overall_status?.replaceAll('_', ' ') || 'In progress',
+        tone: clearance.overall_status === 'denied' ? 'danger' : 'warning',
+    };
+}
 </script>
 
 <template>
@@ -252,6 +279,15 @@ function courseYear(item) {
                                     {{ item.payments?.[0]?.status?.replaceAll('_', ' ') || 'n/a' }}
                                 </dd>
                             </div>
+                            <div class="col-span-2">
+                                <dt class="font-medium text-slate-500">Office progress</dt>
+                                <dd class="mt-1">
+                                    <StatusBadge
+                                        :label="clearanceProgress(item).label"
+                                        :tone="clearanceProgress(item).tone"
+                                    />
+                                </dd>
+                            </div>
                             <div>
                                 <dt class="font-medium text-slate-500">Student</dt>
                                 <dd class="mt-0.5 text-slate-800">{{ courseYear(item) }}</dd>
@@ -287,7 +323,7 @@ function courseYear(item) {
                 </template>
 
                 <template #table>
-                    <DataTableShell label="Admin requests table" min-width="min-w-[64rem]">
+                    <DataTableShell label="Admin requests table" min-width="min-w-[72rem]">
                         <table class="min-w-full divide-y divide-slate-100 text-sm">
                             <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
                                 <tr>
@@ -296,6 +332,7 @@ function courseYear(item) {
                                     <th class="px-5 py-3 text-left">Document</th>
                                     <th class="px-5 py-3 text-left">Status</th>
                                     <th class="px-5 py-3 text-left">Payment</th>
+                                    <th class="px-5 py-3 text-left">Office progress</th>
                                     <th class="px-5 py-3 text-left">Submitted</th>
                                     <th class="px-5 py-3 text-left">SLA</th>
                                     <th class="px-5 py-3"></th>
@@ -326,6 +363,12 @@ function courseYear(item) {
                                             :tone="paymentTone(item.payments[0].status)"
                                         />
                                         <span v-else class="text-xs text-slate-400">n/a</span>
+                                    </td>
+                                    <td class="px-5 py-3">
+                                        <StatusBadge
+                                            :label="clearanceProgress(item).label"
+                                            :tone="clearanceProgress(item).tone"
+                                        />
                                     </td>
                                     <td class="px-5 py-3 text-xs text-slate-600">{{ relativeAge(item.created_at) }}</td>
                                     <td class="px-5 py-3">

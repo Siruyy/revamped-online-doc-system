@@ -34,9 +34,10 @@ class AdminPerformanceTest extends TestCase
                 ->component('Admin/Requests/Index')
                 ->has('requests.data', 15)));
 
-        // Keep this close to the measured value so dashboard N+1 regressions fail fast.
+        // Keep these close to the measured values so N+1 regressions fail fast.
+        // The request list includes two bounded eager-load queries for clearances and steps.
         $this->assertLessThanOrEqual(20, $dashboardQueries, "Admin dashboard used {$dashboardQueries} queries.");
-        $this->assertLessThanOrEqual(8, $requestListQueries, "Admin request list used {$requestListQueries} queries.");
+        $this->assertLessThanOrEqual(10, $requestListQueries, "Admin request list used {$requestListQueries} queries.");
     }
 
     public function test_performance_check_command_seeds_volume_and_reports_query_counts(): void

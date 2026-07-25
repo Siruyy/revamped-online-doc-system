@@ -468,9 +468,9 @@ class RequestService
         });
     }
 
-    public function denyPublicRequestPackage(DocumentRequest $documentRequest, User $admin, string $reason, PaymentService $payments): DocumentRequest
+    public function denyPublicRequestPackage(DocumentRequest $documentRequest, User $admin, string $reason): DocumentRequest
     {
-        return DB::transaction(function () use ($documentRequest, $admin, $reason, $payments): DocumentRequest {
+        return DB::transaction(function () use ($documentRequest, $admin, $reason): DocumentRequest {
             /** @var DocumentRequest $locked */
             $locked = DocumentRequest::query()
                 ->with('payments')
@@ -493,12 +493,6 @@ class RequestService
                 'approved_at' => now(),
                 'denial_reason' => $reason,
             ]);
-
-            $locked->payments
-                ->where('status', 'pending_approval')
-                ->each(function (Payment $payment) use ($admin, $reason, $payments): void {
-                    $payments->deny($payment, $admin, $reason);
-                });
 
             RequestDenied::dispatch($locked->id, $locked->user_id, $admin->id, $reason);
 

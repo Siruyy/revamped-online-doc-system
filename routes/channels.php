@@ -18,7 +18,7 @@ Broadcast::channel('role.superadmin', function (User $user) {
 });
 
 Broadcast::channel('role.department.{role}', function (User $user, string $role) {
-    $departmentRoles = ClearanceSignatories::roles();
+    $departmentRoles = [...ClearanceSignatories::roles(), 'accounting'];
 
     return in_array($user->role, $departmentRoles, true) && $user->role === $role;
 });

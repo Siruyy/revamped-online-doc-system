@@ -87,9 +87,7 @@ These routes remain in code for now but are legacy for requestors after Phase 15
 | POST | `/admin/requests/{request}/approve-with-payment` | `Admin\RequestController@approveWithPayment` | — |
 | POST | `/admin/requests/{request}/deny-with-payment` | `Admin\RequestController@denyWithPayment` | — |
 | POST | `/admin/requests/{request}/stage` | `Admin\RequestController@updateStage` | — |
-| GET | `/admin/payments` | `Admin\PaymentController@index` | `Admin/Payments/Index.vue` |
-| POST | `/admin/payments/{payment}/approve` | `Admin\PaymentController@approve` | — |
-| POST | `/admin/payments/{payment}/deny` | `Admin\PaymentController@deny` | — |
+| GET | `/admin/payments` | `Admin\PaymentController@index` | `Admin/Payments/Index.vue` (read-only status monitor) |
 | GET | `/admin/clearances` | `Admin\ClearanceMonitorController@index` | `Admin/Clearances/Index.vue` |
 | GET | `/admin/clearances/{clearance}` | `Admin\ClearanceMonitorController@show` | `Admin/Clearances/Show.vue` |
 | GET | `/admin/document-types` | `Admin\DocumentTypeController@index` | `Admin/DocumentTypes/Index.vue` |
@@ -116,6 +114,9 @@ These routes remain in code for now but are legacy for requestors after Phase 15
 | GET | `/department/clearances/{clearance}` | `Department\ClearanceController@show` | `Department/Clearances/Show.vue` |
 | POST | `/department/clearances/{clearance}/sign` | `Department\ClearanceController@sign` | — |
 | POST | `/department/clearances/{clearance}/deny` | `Department\ClearanceController@deny` | — |
+| GET | `/department/payments` | `Admin\PaymentController@index` | `Admin/Payments/Index.vue` (Accounting only by policy) |
+| POST | `/department/payments/{payment}/approve` | `Admin\PaymentController@approve` | — |
+| POST | `/department/payments/{payment}/deny` | `Admin\PaymentController@deny` | — |
 | GET | `/department/profile` | `Department\ProfileController@edit` | `Department/Profile.vue` |
 | PATCH | `/department/profile` | `Department\ProfileController@update` | — |
 | GET | `/department/notifications` | shared | shared |
