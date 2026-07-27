@@ -98,14 +98,14 @@ class RequestServiceTest extends TestCase
         Event::assertDispatched(RequestApproved::class);
     }
 
-    public function test_it_denies_pending_or_approved_request_with_reason(): void
+    public function test_it_denies_pending_request_with_reason(): void
     {
         Event::fake([RequestDenied::class]);
         Notification::fake();
 
         $admin = User::factory()->admin()->create();
         $student = User::factory()->student()->create();
-        $request = DocumentRequest::factory()->for($student)->approved()->create();
+        $request = DocumentRequest::factory()->for($student)->pending()->create();
 
         $denied = $this->service()->denyRequest($request, $admin, 'Requirements mismatch');
 

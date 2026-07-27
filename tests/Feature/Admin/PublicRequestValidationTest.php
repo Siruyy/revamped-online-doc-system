@@ -253,6 +253,24 @@ class PublicRequestValidationTest extends TestCase
         );
     }
 
+    public function test_admin_cannot_deny_public_request_after_clearance_has_started(): void
+    {
+        $admin = User::factory()->admin()->create(['status' => 'active']);
+        $request = $this->createPublicRequestPackage(requirementStatus: 'validated');
+        $request->update([
+            'workflow_stage' => 'clearance',
+            'quote_total' => 150,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.requests.deny-with-payment', $request), [
+                'denial_reason' => 'This action is too late.',
+            ])
+            ->assertForbidden();
+
+        $this->assertSame('pending', $request->refresh()->status);
+    }
+
     public function test_public_requestor_email_is_not_attempted_when_email_is_absent(): void
     {
         Notification::fake();

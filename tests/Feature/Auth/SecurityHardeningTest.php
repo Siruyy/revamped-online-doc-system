@@ -315,6 +315,55 @@ class SecurityHardeningTest extends TestCase
             ->assertHeader('content-disposition', 'inline; filename=valid-id.pdf');
     }
 
+    public function test_dynamic_clearance_officers_can_preview_requirements_for_their_assigned_step(): void
+    {
+        Storage::fake('local');
+
+        foreach (['accounting', 'principal'] as $role) {
+            $officer = User::factory()->{$role}()->create();
+            $requirement = $this->createPublicRequirementFile("{$role}-follow-up.pdf");
+            $clearance = Clearance::factory()
+                ->for($requirement->documentRequest, 'documentRequest')
+                ->create([
+                    'user_id' => null,
+                    'overall_status' => 'in_progress',
+                ]);
+            $clearance->steps()->create([
+                'office_code' => $role,
+                'label' => $role === 'accounting' ? 'Accounting Office' : 'BEC Principal',
+                'sequence' => 1,
+            ]);
+
+            $this->actingAs($officer)
+                ->get(route('files.request-requirement', $requirement))
+                ->assertOk()
+                ->assertHeader('content-disposition', "inline; filename={$role}-follow-up.pdf");
+        }
+    }
+
+    public function test_dynamic_clearance_officer_cannot_preview_requirement_for_another_office(): void
+    {
+        Storage::fake('local');
+
+        $accounting = User::factory()->accounting()->create();
+        $requirement = $this->createPublicRequirementFile('principal-only.pdf');
+        $clearance = Clearance::factory()
+            ->for($requirement->documentRequest, 'documentRequest')
+            ->create([
+                'user_id' => null,
+                'overall_status' => 'in_progress',
+            ]);
+        $clearance->steps()->create([
+            'office_code' => 'principal',
+            'label' => 'BEC Principal',
+            'sequence' => 1,
+        ]);
+
+        $this->actingAs($accounting)
+            ->get(route('files.request-requirement', $requirement))
+            ->assertForbidden();
+    }
+
     public function test_request_requirement_file_route_returns_404_for_missing_or_traversal_path(): void
     {
         Storage::fake('local');

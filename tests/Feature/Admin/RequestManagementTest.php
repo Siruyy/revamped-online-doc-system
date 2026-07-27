@@ -86,6 +86,21 @@ class RequestManagementTest extends TestCase
         ]);
     }
 
+    public function test_admin_cannot_deny_request_after_it_is_approved(): void
+    {
+        $admin = $this->createAdmin();
+        $student = $this->createStudent();
+        $request = DocumentRequest::factory()->for($student)->approved()->create();
+
+        $this->actingAs($admin)
+            ->post(route('admin.requests.deny', $request), [
+                'denial_reason' => 'This action is too late.',
+            ])
+            ->assertForbidden();
+
+        $this->assertSame('approved', $request->refresh()->status);
+    }
+
     public function test_admin_can_update_request_stage(): void
     {
         Event::fake([RequestStageUpdated::class]);

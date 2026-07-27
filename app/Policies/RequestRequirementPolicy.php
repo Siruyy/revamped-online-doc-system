@@ -6,7 +6,6 @@ use App\Models\Clearance;
 use App\Models\DocumentRequest;
 use App\Models\RequestRequirement;
 use App\Models\User;
-use App\Support\ClearanceSignatories;
 
 class RequestRequirementPolicy
 {
@@ -29,12 +28,12 @@ class RequestRequirementPolicy
             return $documentRequest->user_id === $user->id;
         }
 
-        if (! ClearanceSignatories::isSignatoryRole($user->role) || $documentRequest->user_id !== null) {
+        if (! $user->isDepartment() || $documentRequest->user_id !== null) {
             return false;
         }
 
         return $documentRequest->clearances->contains(
-            fn (Clearance $clearance): bool => in_array($clearance->overall_status, ['in_progress', 'completed', 'denied'], true)
+            fn (Clearance $clearance): bool => $user->can('view', $clearance)
         );
     }
 }

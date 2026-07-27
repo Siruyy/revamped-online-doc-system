@@ -123,7 +123,12 @@ const canSignRegistrarClearance = computed(
         props.request.workflow_stage === 'clearance' &&
         registrarStep.value?.status === 'pending',
 );
-const canDeny = computed(() => ['pending', 'approved'].includes(props.request.status));
+const canDeny = computed(
+    () =>
+        props.request.status === 'pending' &&
+        (!isPublicRequest.value ||
+            (!hasLockedQuote.value && ['submitted', 'registrar_review'].includes(props.request.workflow_stage))),
+);
 const canUpdateStage = computed(() => props.request.status === 'approved');
 const canRelease = computed(
     () => props.request.status === 'approved' && props.request.processing_stage === 'ready_for_pickup',

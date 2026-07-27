@@ -215,6 +215,20 @@ class DocumentRequest extends Model
         );
     }
 
+    public function isOpenForRegistrarDenial(): bool
+    {
+        if ($this->status !== 'pending') {
+            return false;
+        }
+
+        if ($this->intake_mode !== 'public') {
+            return true;
+        }
+
+        return $this->quote_total === null
+            && in_array($this->workflow_stage, ['submitted', 'registrar_review'], true);
+    }
+
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', 'pending');

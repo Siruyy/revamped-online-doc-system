@@ -359,7 +359,7 @@ class RequestService
             throw new \RuntimeException('Use package denial for public requests.');
         }
 
-        if (! in_array($documentRequest->status, ['pending', 'approved'], true)) {
+        if (! $documentRequest->isOpenForRegistrarDenial()) {
             throw new \RuntimeException('This request can no longer be denied.');
         }
 
@@ -482,7 +482,7 @@ class RequestService
                 throw new \RuntimeException('Only public requests can use package denial.');
             }
 
-            if (! in_array($locked->status, ['pending', 'approved'], true)) {
+            if (! $locked->isOpenForRegistrarDenial()) {
                 throw new \RuntimeException('This request can no longer be denied.');
             }
 

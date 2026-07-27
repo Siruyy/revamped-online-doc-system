@@ -11,6 +11,7 @@ import {
     BuildingOffice2Icon,
     CheckCircleIcon,
     ClipboardDocumentCheckIcon,
+    CreditCardIcon,
     InboxStackIcon,
     XCircleIcon,
 } from '@heroicons/vue/24/outline';
@@ -19,15 +20,21 @@ const props = defineProps({
     stats: { type: Object, required: true },
     pendingLatest: { type: Array, required: true },
     department: { type: String, required: true },
+    currentSignatory: { type: Object, required: true },
+    receiptReview: { type: Object, required: true },
 });
 
 const reloadDashboard = () => {
-    router.reload({ only: ['stats', 'pendingLatest', 'department'], preserveScroll: true });
+    router.reload({
+        only: ['stats', 'pendingLatest', 'department', 'currentSignatory', 'receiptReview'],
+        preserveScroll: true,
+    });
 };
 
 useEchoPrivateChannel(() => `role.department.${props.department}`, {
     ClearanceCreated: reloadDashboard,
     ClearanceUpdated: reloadDashboard,
+    PaymentSubmitted: reloadDashboard,
 });
 
 useRealtimeOrPoll(reloadDashboard, { intervalMs: 90000 });
@@ -50,23 +57,37 @@ function courseYear(row) {
 
     return year ? `${course} Y${year}` : course;
 }
+
+function formatCurrency(value) {
+    return new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency: 'PHP',
+    }).format(Number(value || 0));
+}
 </script>
 
 <template>
-    <Head title="Department Dashboard" />
+    <Head :title="`${currentSignatory.label} Dashboard`" />
 
     <StaffLayout>
         <template #header>
             <PageHeader
-                :title="`${department} Office`"
-                subtitle="Sign or deny clearances assigned to your office."
+                :title="currentSignatory.label"
+                :subtitle="
+                    receiptReview.enabled
+                        ? 'Review submitted receipts and clear clearances assigned to your office.'
+                        : 'Sign or deny clearances assigned to your office.'
+                "
                 eyebrow="Department Workspace"
             />
         </template>
 
         <div class="space-y-8 pb-12">
             <!-- Stats -->
-            <section class="grid gap-4 sm:grid-cols-3">
+            <section
+                class="grid gap-4 sm:grid-cols-2"
+                :class="receiptReview.enabled ? 'lg:grid-cols-4' : 'lg:grid-cols-3'"
+            >
                 <Link
                     :href="route('department.clearances.index', { status: 'pending' })"
                     class="group rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 p-6 text-white shadow-md transition hover:-translate-y-0.5"
@@ -88,6 +109,77 @@ function courseYear(row) {
                 <StatCard label="Signed today" :value="stats.signed_today" :icon="CheckCircleIcon" tone="success" />
 
                 <StatCard label="Denied (total)" :value="stats.denied" :icon="XCircleIcon" tone="danger" />
+
+                <Link
+                    v-if="receiptReview.enabled"
+                    :href="route('department.payments.index', { status: 'pending_approval' })"
+                    class="group rounded-2xl bg-gradient-to-br from-sky-600 to-indigo-700 p-6 text-white shadow-md transition hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
+                >
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs uppercase tracking-widest opacity-90">Receipts to review</p>
+                            <p class="mt-2 text-4xl font-display font-bold">{{ receiptReview.pending_count }}</p>
+                        </div>
+                        <CreditCardIcon class="h-10 w-10 opacity-80" />
+                    </div>
+                    <p
+                        class="mt-3 inline-flex items-center gap-1 text-xs font-semibold opacity-90 group-hover:underline"
+                    >
+                        Open receipt queue <ArrowRightIcon class="h-3.5 w-3.5" />
+                    </p>
+                </Link>
+            </section>
+
+            <section
+                v-if="receiptReview.enabled"
+                class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200"
+                aria-labelledby="receipt-review-heading"
+            >
+                <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                    <div class="flex items-center gap-2">
+                        <CreditCardIcon class="h-5 w-5 text-sky-700" />
+                        <h3 id="receipt-review-heading" class="font-display text-lg font-semibold text-slate-900">
+                            Latest receipts awaiting review
+                        </h3>
+                    </div>
+                    <Link
+                        :href="route('department.payments.index', { status: 'pending_approval' })"
+                        class="rounded-md text-xs font-semibold text-brand-700 hover:underline focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+                    >
+                        View all →
+                    </Link>
+                </div>
+                <ul v-if="receiptReview.latest.length" class="divide-y divide-slate-100">
+                    <li
+                        v-for="payment in receiptReview.latest"
+                        :key="payment.id"
+                        class="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                        <div class="min-w-0">
+                            <p class="truncate font-semibold text-slate-900">
+                                {{ payment.document_request?.requester_name || 'Public requestor' }}
+                            </p>
+                            <p class="text-xs text-slate-500">
+                                <span class="font-mono">{{ payment.document_request?.reference_no }}</span>
+                                · {{ formatCurrency(payment.total_amount) }}
+                            </p>
+                        </div>
+                        <Link
+                            :href="route('department.payments.index', { status: 'pending_approval' })"
+                            class="inline-flex min-h-11 items-center justify-center gap-1 rounded-lg bg-sky-700 px-4 text-sm font-semibold text-white hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
+                        >
+                            Review receipt <ArrowRightIcon class="h-4 w-4" />
+                        </Link>
+                    </li>
+                </ul>
+                <EmptyState
+                    v-else
+                    title="No receipts waiting"
+                    description="New payment receipts will appear here when requestors submit them."
+                    :icon="CreditCardIcon"
+                    compact
+                    class="m-6"
+                />
             </section>
 
             <!-- Latest queue -->

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Department;
 
 use App\Http\Controllers\Controller;
 use App\Models\Clearance;
+use App\Models\Payment;
 use App\Support\ClearanceSignatories;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -100,6 +101,25 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
+        $receiptReview = [
+            'enabled' => $role === 'accounting',
+            'pending_count' => 0,
+            'latest' => [],
+        ];
+
+        if ($role === 'accounting') {
+            $pendingReceiptQuery = Payment::query()->pendingApproval();
+            $receiptReview = [
+                'enabled' => true,
+                'pending_count' => (clone $pendingReceiptQuery)->count(),
+                'latest' => $pendingReceiptQuery
+                    ->with('documentRequest:id,reference_no,requester_name')
+                    ->latest('submitted_at')
+                    ->limit(5)
+                    ->get(['id', 'document_request_id', 'total_amount', 'submitted_at']),
+            ];
+        }
+
         return Inertia::render('Department/Dashboard', [
             'stats' => [
                 'pending' => $pendingCount,
@@ -109,6 +129,7 @@ class DashboardController extends Controller
             'pendingLatest' => $pendingLatest,
             'department' => $role,
             'currentSignatory' => $columns,
+            'receiptReview' => $receiptReview,
         ]);
     }
 }

@@ -55,7 +55,8 @@ class DocumentRequestPolicy
 
     public function deny(User $user, DocumentRequest $documentRequest): bool
     {
-        return in_array($user->role, ['admin', 'superadmin'], true);
+        return in_array($user->role, ['admin', 'superadmin'], true)
+            && $documentRequest->isOpenForRegistrarDenial();
     }
 
     public function updateStage(User $user, DocumentRequest $documentRequest): bool

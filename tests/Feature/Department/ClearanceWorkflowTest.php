@@ -5,6 +5,7 @@ namespace Tests\Feature\Department;
 use App\Events\ClearanceUpdated;
 use App\Models\Clearance;
 use App\Models\DocumentRequest;
+use App\Models\Payment;
 use App\Models\RequestRequirement;
 use App\Models\User;
 use App\Notifications\WorkflowStatusNotification;
@@ -42,6 +43,51 @@ class ClearanceWorkflowTest extends TestCase
                 ->component('Department/Clearances/Index')
                 ->has('clearances.data', 1)
                 ->where('clearances.data.0.id', $clearance->id));
+    }
+
+    public function test_accounting_dashboard_includes_pending_receipt_review_summary(): void
+    {
+        $accounting = $this->makeOfficer('accounting');
+        $request = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'requester_name' => 'Receipt Review Requestor',
+        ]);
+        $pendingPayment = Payment::factory()->for($request)->create([
+            'user_id' => null,
+            'status' => 'pending_approval',
+            'submitted_at' => now(),
+        ]);
+        Payment::factory()->for($request)->approved()->create([
+            'user_id' => null,
+            'submitted_at' => now()->subMinute(),
+        ]);
+
+        $this->actingAs($accounting)
+            ->get(route('department.dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Department/Dashboard')
+                ->where('currentSignatory.label', 'Accounting Office')
+                ->where('receiptReview.enabled', true)
+                ->where('receiptReview.pending_count', 1)
+                ->has('receiptReview.latest', 1)
+                ->where('receiptReview.latest.0.id', $pendingPayment->id)
+                ->where('receiptReview.latest.0.document_request.reference_no', $request->reference_no));
+    }
+
+    public function test_non_accounting_dashboard_does_not_load_receipt_review_queue(): void
+    {
+        $dean = $this->makeOfficer('dean');
+        Payment::factory()->create(['status' => 'pending_approval']);
+
+        $this->actingAs($dean)
+            ->get(route('department.dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('receiptReview.enabled', false)
+                ->where('receiptReview.pending_count', 0)
+                ->has('receiptReview.latest', 0));
     }
 
     public function test_accounting_can_clear_its_pending_dynamic_step_through_http(): void
