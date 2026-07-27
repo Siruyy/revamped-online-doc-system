@@ -12,6 +12,7 @@ use App\Services\PdfService;
 use Database\Seeders\ClearanceSignatorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -114,6 +115,9 @@ class ClearanceSignatoryWorkflowTest extends TestCase
                 'fullname' => $label,
                 'status' => 'active',
             ]);
+
+            $user = User::query()->where('email', "{$role}@svci.test")->firstOrFail();
+            $this->assertTrue(Hash::check('password', $user->password));
         }
 
         $this->assertDatabaseHas('users', [
@@ -122,6 +126,11 @@ class ClearanceSignatoryWorkflowTest extends TestCase
             'fullname' => 'BEC Principal',
             'status' => 'active',
         ]);
+
+        foreach (['accounting@svci.test', 'principal@svci.test'] as $email) {
+            $user = User::query()->where('email', $email)->firstOrFail();
+            $this->assertTrue(Hash::check('password', $user->password));
+        }
     }
 
     public function test_principal_can_access_and_sign_principal_clearance_steps(): void

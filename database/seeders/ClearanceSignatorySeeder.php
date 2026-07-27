@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\Hash;
 
 class ClearanceSignatorySeeder extends Seeder
 {
+    private const DEMO_PASSWORD = 'password';
+
     public function run(): void
     {
-        $password = (string) env('SIGNATORY_DEFAULT_PASSWORD', 'password');
+        $password = self::DEMO_PASSWORD;
 
         foreach (ClearanceSignatories::SIGNATORIES as $role => $signatory) {
             $existingUserId = User::withTrashed()->where('email', $signatory['seeded_email'])->value('id');
