@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DocumentRequest;
 use App\Models\RequestRequirement;
 use App\Services\ActivityLogger;
+use App\Services\ClearanceStepNotificationService;
 use App\Services\PaymentService;
 use App\Support\FileUploadLimits;
 use App\Support\PublicRequestOptions;
@@ -23,6 +24,7 @@ class WorkflowActionController extends Controller
         Request $request,
         DocumentRequest $documentRequest,
         RequestRequirement $requirement,
+        ClearanceStepNotificationService $stepNotifications,
     ): RedirectResponse {
         $this->verifyAccess($request, $documentRequest);
         abort_unless($requirement->document_request_id === $documentRequest->id, 404);
@@ -49,12 +51,15 @@ class WorkflowActionController extends Controller
             'status' => 'submitted',
             'notes' => null,
         ]);
-        $requirement->documentRequest->clearances()
+        $resubmittedSteps = $requirement->documentRequest->clearances()
             ->with('steps')
             ->get()
             ->flatMap->steps
-            ->where('status', 'needs_action')
-            ->each->update(['status' => 'pending', 'signed_by' => null, 'signed_at' => null]);
+            ->where('status', 'needs_action');
+        $resubmittedSteps->each->update(['status' => 'pending', 'signed_by' => null, 'signed_at' => null]);
+        $resubmittedSteps->each(
+            fn ($step) => $stepNotifications->notifyActionable($step->refresh(), true),
+        );
 
         ActivityLogger::log(
             'public_requirement_resubmitted',

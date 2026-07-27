@@ -563,6 +563,15 @@ class RequestService
                 'status' => 'validated',
                 'url' => route('student.requests.show', $documentRequest),
             ]));
+        } elseif ($documentRequest->intake_mode === 'public') {
+            $this->notifyPublicRequestor($documentRequest, [
+                'type' => 'requirement_validated',
+                'title' => 'Requirement validated',
+                'message' => "Your {$requirement->label} requirement for {$documentRequest->reference_no} was validated.",
+                'document_request_id' => $documentRequest->id,
+                'status' => 'validated',
+                'url' => route('track-document', ['reference_no' => $documentRequest->reference_no]),
+            ]);
         }
 
         return $requirement->refresh();
@@ -601,6 +610,16 @@ class RequestService
                 'status' => 'rejected',
                 'url' => route('student.requests.show', $documentRequest),
             ]));
+        } elseif ($documentRequest->intake_mode === 'public') {
+            $this->notifyPublicRequestor($documentRequest, [
+                'type' => 'requirement_rejected',
+                'title' => 'Requirement needs revision',
+                'message' => "Your {$requirement->label} requirement for {$documentRequest->reference_no} needs revision: {$notes}",
+                'document_request_id' => $documentRequest->id,
+                'status' => 'rejected',
+                'reason' => $notes,
+                'url' => route('track-document', ['reference_no' => $documentRequest->reference_no]),
+            ]);
         }
 
         return $requirement->refresh();

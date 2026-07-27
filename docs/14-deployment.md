@@ -256,15 +256,13 @@ VITE_REVERB_HOST=docs-ws.siruyy.cloud
 VITE_REVERB_PORT=443
 VITE_REVERB_SCHEME=https
 
-MAIL_MAILER=smtp
-MAIL_HOST=
-MAIL_PORT=587
-MAIL_USERNAME=
-MAIL_PASSWORD=
-MAIL_ENCRYPTION=tls
+MAIL_MAILER=resend
+RESEND_KEY=<resend-api-key>
 MAIL_FROM_ADDRESS=noreply@svci.example
 MAIL_FROM_NAME="SVCI Document System"
 ```
+
+The `MAIL_FROM_ADDRESS` domain must be verified in Resend. Keep the queue worker running so queued workflow emails are delivered.
 
 ## SSL
 

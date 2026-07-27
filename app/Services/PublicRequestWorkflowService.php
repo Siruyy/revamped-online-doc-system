@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Notification;
 
 class PublicRequestWorkflowService
 {
+    public function __construct(private ClearanceStepNotificationService $stepNotifications) {}
+
     /**
      * Lock the registrar's item-by-item quote and open the correct clearance route.
      *
@@ -62,6 +64,11 @@ class PublicRequestWorkflowService
                 ['user_id' => $locked->user_id, 'overall_status' => 'in_progress'],
             );
             $this->seedSteps($clearance, $locked);
+            $firstStep = $clearance->steps()->orderBy('sequence')->first();
+
+            if ($firstStep instanceof ClearanceStep) {
+                $this->stepNotifications->notifyActionable($firstStep);
+            }
 
             $locked->update([
                 'fee_snapshot' => $total,
@@ -126,6 +133,15 @@ class PublicRequestWorkflowService
                 $this->notify($request, 'Clearance complete — payment is now open', "Clearance for {$request->reference_no} is complete. Upload your payment receipt on the tracking page.");
             } else {
                 $this->notify($clearance->documentRequest, 'Clearance progress updated', "{$locked->label} cleared request {$clearance->documentRequest->reference_no}.");
+                $nextStep = $clearance->steps()
+                    ->where('sequence', '>', $locked->sequence)
+                    ->where('status', 'pending')
+                    ->orderBy('sequence')
+                    ->first();
+
+                if ($nextStep instanceof ClearanceStep) {
+                    $this->stepNotifications->notifyActionable($nextStep);
+                }
             }
 
             return $locked->refresh();

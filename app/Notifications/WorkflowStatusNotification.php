@@ -16,7 +16,10 @@ class WorkflowStatusNotification extends Notification implements ShouldQueue
     /**
      * @param  array<string, mixed>  $data
      */
-    public function __construct(private readonly array $data) {}
+    public function __construct(private readonly array $data)
+    {
+        $this->afterCommit();
+    }
 
     /**
      * @return array<int, string>
@@ -27,7 +30,7 @@ class WorkflowStatusNotification extends Notification implements ShouldQueue
             return ['mail'];
         }
 
-        return ['database', 'broadcast'];
+        return ['mail', 'database', 'broadcast'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -38,7 +41,7 @@ class WorkflowStatusNotification extends Notification implements ShouldQueue
             ->line($this->stringOrDefault($this->data['message'] ?? null, 'Your workflow status was updated.'));
 
         if (is_string($this->data['url'] ?? null)) {
-            $message->action('Track document', $this->data['url']);
+            $message->action('Open workflow', $this->data['url']);
         }
 
         return $message;
@@ -57,8 +60,10 @@ class WorkflowStatusNotification extends Notification implements ShouldQueue
         $extra = array_intersect_key($this->data, array_flip([
             'action',
             'clearance_id',
+            'clearance_step_id',
             'department',
             'document_request_id',
+            'office_code',
             'overall_status',
             'payment_id',
             'processing_stage',

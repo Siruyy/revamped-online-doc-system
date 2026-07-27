@@ -51,7 +51,7 @@ class RequestApprovedNotification extends Notification implements ShouldQueue
 | `mail` | Email | SMTP via queue |
 | `broadcast` | Real-time push | Reverb WebSocket |
 
-Authenticated staff notifications use database and broadcast channels. Public requestors do not have an in-app notification inbox, so they receive email only when they provide an email address and otherwise rely on reference-number tracking.
+Authenticated staff notifications use mail, database, and broadcast channels. Public requestors do not have an in-app notification inbox, so they receive email only when they provide an email address and otherwise rely on reference-number tracking. Staff workflow emails are queued after the surrounding database transaction commits.
 
 ## Notification Catalog
 
@@ -66,10 +66,13 @@ Authenticated staff notifications use database and broadcast channels. Public re
 | `RequestStageUpdatedNotification` | Requestor email if present | mail | Admin updates stage |
 | `RequestReadyForPickupNotification` | Requestor email if present | mail | Stage = ready_for_pickup |
 | `RequestReleasedNotification` | Requestor email if present | mail | Stage = released |
-| `PaymentSubmittedNotification` | All Admins/SuperAdmins | db + broadcast | Receipt submitted with public request |
+| `PaymentSubmittedNotification` | Accounting + SuperAdmins | db + mail + broadcast | Requestor uploads a receipt |
 | `PaymentApprovedNotification` | Requestor email if present | mail | Admin approves public-request payment |
 | `PaymentDeniedNotification` | Requestor email if present | mail | Admin denies public-request payment |
-| `ClearanceCreatedNotification` | All Department officers | db + broadcast | Clearance row initialized |
+| `PaymentApprovedForProcessingNotification` | Admins/SuperAdmins | db + mail + broadcast | Accounting approves a public-request receipt |
+| `ClearanceStepActionableNotification` | Assigned office + SuperAdmins | db + mail + broadcast | First step opens or prior step clears |
+| `ClearanceStepResubmittedNotification` | Assigned office + SuperAdmins | db + mail + broadcast | Requestor uploads an office-requested correction |
+| `ClearanceCreatedNotification` | Department officers | db + mail + broadcast | Legacy clearance row initialized |
 | `ClearanceSignedNotification` | Student + Admins | db + broadcast | Officer signs |
 | `ClearanceDeniedNotification` | Student | db + mail + broadcast | Officer denies |
 | `ClearanceCompletedNotification` | Student + Admins | db + mail + broadcast | All 4 cleared |
@@ -79,19 +82,15 @@ Authenticated staff notifications use database and broadcast channels. Public re
 ## Email Configuration
 
 ```env
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.gmail.com         # or Brevo, Mailgun, Resend
-MAIL_PORT=587
-MAIL_USERNAME=...
-MAIL_PASSWORD=...
-MAIL_ENCRYPTION=tls
+MAIL_MAILER=resend
+RESEND_KEY=re_...
 MAIL_FROM_ADDRESS=noreply@svci.example
 MAIL_FROM_NAME="SVCI Document System"
 
 QUEUE_CONNECTION=database
 ```
 
-All notifications implement `ShouldQueue` so email sending is asynchronous and never blocks the HTTP request.
+The `MAIL_FROM_ADDRESS` domain must be verified in Resend. All notifications implement `ShouldQueue`, so email sending is asynchronous and never blocks the HTTP request. Production must run a persistent `php artisan queue:work` process.
 
 ## Mail Templates
 

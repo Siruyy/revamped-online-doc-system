@@ -100,6 +100,8 @@ class PublicRequestValidationTest extends TestCase
 
     public function test_superadmin_can_approve_public_request_package(): void
     {
+        Notification::fake();
+
         $superadmin = User::factory()->superadmin()->create(['status' => 'active']);
         $request = $this->createPublicRequestPackage();
 
@@ -121,6 +123,8 @@ class PublicRequestValidationTest extends TestCase
 
     public function test_admin_can_validate_requirement_before_superadmin_approves_legacy_package(): void
     {
+        Notification::fake();
+
         $admin = User::factory()->admin()->create(['status' => 'active']);
         $superadmin = User::factory()->superadmin()->create(['status' => 'active']);
         $request = $this->createPublicRequestPackage(requirementStatus: 'submitted');

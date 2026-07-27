@@ -263,7 +263,7 @@ class PublicRequestSubmissionTest extends TestCase
                 function (WorkflowStatusNotification $notification, array $channels) use ($staff): bool {
                     $payload = $notification->toArray($staff);
 
-                    return $channels === ['database', 'broadcast']
+                    return $channels === ['mail', 'database', 'broadcast']
                         && ($payload['type'] ?? null) === 'request_submitted'
                         && array_key_exists('document_request_id', $payload)
                         && ! array_key_exists('receipt_path', $payload)

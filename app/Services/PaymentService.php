@@ -126,6 +126,8 @@ class PaymentService
                     'message' => "Accounting approved payment for {$payment->documentRequest->reference_no}. The registrar is now processing the documents.",
                     'url' => route('track-document', ['reference_no' => $payment->documentRequest->reference_no]),
                 ]));
+
+            $this->notifyPublicRequestReadyForProcessing($payment->documentRequest);
         }
 
         return $payment->refresh();
@@ -202,6 +204,28 @@ class PaymentService
                 'student_id' => $payment->user_id,
             ]),
         );
+    }
+
+    private function notifyPublicRequestReadyForProcessing(DocumentRequest $documentRequest): void
+    {
+        User::query()
+            ->whereIn('role', ['admin', 'superadmin'])
+            ->where('status', 'active')
+            ->get()
+            ->each(function (User $recipient) use ($documentRequest): void {
+                $routeName = $recipient->role === 'superadmin'
+                    ? 'superadmin.requests.show'
+                    : 'admin.requests.show';
+
+                $recipient->notify(new WorkflowStatusNotification([
+                    'type' => 'payment_approved_for_processing',
+                    'title' => 'Payment approved — request ready for processing',
+                    'message' => "Payment for request {$documentRequest->reference_no} is approved and registrar processing can begin.",
+                    'url' => route($routeName, $documentRequest),
+                    'document_request_id' => $documentRequest->id,
+                    'processing_stage' => $documentRequest->processing_stage,
+                ]));
+            });
     }
 
     /**

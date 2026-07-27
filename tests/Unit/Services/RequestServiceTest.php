@@ -15,6 +15,7 @@ use App\Models\Payment;
 use App\Models\RequestRequirement;
 use App\Models\User;
 use App\Notifications\RequestCancelledNotification;
+use App\Notifications\WorkflowStatusNotification;
 use App\Services\RequestService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -417,6 +418,59 @@ class RequestServiceTest extends TestCase
         $this->expectExceptionMessage('Requirement does not belong to this document request.');
 
         $this->service()->rejectRequirement($request, $requirement, $admin, 'Wrong document.');
+    }
+
+    public function test_it_emails_public_requestor_when_requirement_is_validated(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->admin()->create();
+        $request = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'requester_email' => 'requestor@example.test',
+        ]);
+        $requirement = RequestRequirement::query()->create([
+            'document_request_id' => $request->id,
+            'requirement_key' => 'valid_id_photocopy_claimant',
+            'label' => 'Valid ID Photocopy',
+            'status' => 'submitted',
+        ]);
+
+        $this->service()->validateRequirement($request, $requirement, $admin);
+
+        Notification::assertSentOnDemand(
+            WorkflowStatusNotification::class,
+            fn (WorkflowStatusNotification $notification, array $channels, object $notifiable): bool => $channels === ['mail']
+                && ($notifiable->routes['mail'] ?? null) === 'requestor@example.test'
+                && ($notification->toArray($notifiable)['type'] ?? null) === 'requirement_validated',
+        );
+    }
+
+    public function test_it_emails_public_requestor_with_requirement_rejection_reason(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->admin()->create();
+        $request = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'requester_email' => 'requestor@example.test',
+        ]);
+        $requirement = RequestRequirement::query()->create([
+            'document_request_id' => $request->id,
+            'requirement_key' => 'valid_id_photocopy_claimant',
+            'label' => 'Valid ID Photocopy',
+            'status' => 'submitted',
+        ]);
+
+        $this->service()->rejectRequirement($request, $requirement, $admin, 'Upload a clearer copy.');
+
+        Notification::assertSentOnDemand(
+            WorkflowStatusNotification::class,
+            fn (WorkflowStatusNotification $notification, array $channels, object $notifiable): bool => $channels === ['mail']
+                && ($notifiable->routes['mail'] ?? null) === 'requestor@example.test'
+                && ($notification->toArray($notifiable)['type'] ?? null) === 'requirement_rejected'
+                && ($notification->toArray($notifiable)['reason'] ?? null) === 'Upload a clearer copy.',
+        );
     }
 
     private function service(): RequestService

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Public;
 
 use App\Events\PaymentSubmitted;
+use App\Models\AcademicDepartment;
 use App\Models\AcademicProgram;
 use App\Models\ClearanceStep;
 use App\Models\DocumentRequest;
@@ -10,6 +11,7 @@ use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\WorkflowStatusNotification;
+use App\Services\PaymentService;
 use App\Services\PublicRequestWorkflowService;
 use Database\Seeders\AcademicProgramSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -59,6 +61,8 @@ class RevisedPublicWorkflowTest extends TestCase
             'requirements' => [],
         ]);
         $program = AcademicProgram::query()->where('code', 'BSCS')->firstOrFail();
+        $csd = AcademicDepartment::query()->where('code', 'CSD')->firstOrFail();
+        $cesd = AcademicDepartment::query()->where('code', 'CESD')->firstOrFail();
         $request = DocumentRequest::factory()->create([
             'user_id' => null,
             'intake_mode' => 'public',
@@ -75,7 +79,18 @@ class RevisedPublicWorkflowTest extends TestCase
             'line_total' => 0,
             'semester_requested' => 'First Semester 2025-2026',
         ]);
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->admin()->create(['status' => 'active']);
+        $csdDean = User::factory()->dean()->create([
+            'academic_department_id' => $csd->id,
+            'status' => 'active',
+        ]);
+        $otherDean = User::factory()->dean()->create([
+            'academic_department_id' => $cesd->id,
+            'status' => 'active',
+        ]);
+        $accounting = User::factory()->accounting()->create(['status' => 'active']);
+        $superadmin = User::factory()->superadmin()->create(['status' => 'active']);
+        Notification::fake();
 
         app(PublicRequestWorkflowService::class)->evaluate($request, $admin, [
             'shipping_fee' => 50,
@@ -97,6 +112,18 @@ class RevisedPublicWorkflowTest extends TestCase
             $request->clearances()->firstOrFail()->steps()->orderBy('sequence')->pluck('office_code')->all()
         );
         $this->assertSame('CSD', ClearanceStep::query()->where('office_code', 'dean')->value('department_code'));
+        $firstStep = ClearanceStep::query()->where('office_code', 'dean')->firstOrFail();
+
+        foreach ([$csdDean, $superadmin] as $recipient) {
+            Notification::assertSentTo(
+                $recipient,
+                WorkflowStatusNotification::class,
+                fn (WorkflowStatusNotification $notification, array $channels): bool => $channels === ['mail', 'database', 'broadcast']
+                    && ($notification->toArray($recipient)['type'] ?? null) === 'clearance_step_actionable'
+                    && ($notification->toArray($recipient)['clearance_step_id'] ?? null) === $firstStep->id,
+            );
+        }
+        Notification::assertNotSentTo([$otherDean, $accounting], WorkflowStatusNotification::class);
     }
 
     public function test_basic_education_evaluation_routes_to_principal_then_accounting(): void
@@ -167,6 +194,9 @@ class RevisedPublicWorkflowTest extends TestCase
         ]);
         $dean = User::factory()->signatory('dean')->create();
         $accounting = User::factory()->create(['role' => 'accounting', 'status' => 'active']);
+        $superadmin = User::factory()->superadmin()->create(['status' => 'active']);
+        $guidance = User::factory()->guidance()->create(['status' => 'active']);
+        Notification::fake();
 
         try {
             app(PublicRequestWorkflowService::class)->signStep($accountingStep, $accounting);
@@ -176,6 +206,16 @@ class RevisedPublicWorkflowTest extends TestCase
         }
 
         app(PublicRequestWorkflowService::class)->signStep($deanStep, $dean);
+
+        foreach ([$accounting, $superadmin] as $recipient) {
+            Notification::assertSentTo(
+                $recipient,
+                WorkflowStatusNotification::class,
+                fn (WorkflowStatusNotification $notification): bool => ($notification->toArray($recipient)['type'] ?? null) === 'clearance_step_actionable'
+                    && ($notification->toArray($recipient)['clearance_step_id'] ?? null) === $accountingStep->id,
+            );
+        }
+        Notification::assertNotSentTo($guidance, WorkflowStatusNotification::class);
         app(PublicRequestWorkflowService::class)->signStep($accountingStep, $accounting);
 
         $request->refresh();
@@ -227,6 +267,9 @@ class RevisedPublicWorkflowTest extends TestCase
             'sequence' => 1,
         ]);
         $dean = User::factory()->signatory('dean')->create();
+        $superadmin = User::factory()->superadmin()->create(['status' => 'active']);
+        $accounting = User::factory()->accounting()->create(['status' => 'active']);
+        Notification::fake();
 
         app(PublicRequestWorkflowService::class)->requestAction($step, $dean, 'Upload a clearer supporting document.');
 
@@ -254,6 +297,43 @@ class RevisedPublicWorkflowTest extends TestCase
         $this->assertSame('submitted', $requirement->refresh()->status);
         $this->assertSame('pending', $step->refresh()->status);
         Storage::disk('local')->assertExists($requirement->file_path);
+
+        foreach ([$dean, $superadmin] as $recipient) {
+            Notification::assertSentTo(
+                $recipient,
+                WorkflowStatusNotification::class,
+                fn (WorkflowStatusNotification $notification): bool => ($notification->toArray($recipient)['type'] ?? null) === 'clearance_step_resubmitted'
+                    && ($notification->toArray($recipient)['clearance_step_id'] ?? null) === $step->id,
+            );
+        }
+        Notification::assertNotSentTo($accounting, WorkflowStatusNotification::class);
+    }
+
+    public function test_public_payment_approval_notifies_registrar_staff_for_processing(): void
+    {
+        Notification::fake();
+        $request = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'workflow_stage' => 'payment_review',
+            'requester_email' => 'requestor@example.test',
+        ]);
+        $payment = Payment::factory()->for($request)->pendingApproval()->create(['user_id' => null]);
+        $accounting = User::factory()->accounting()->create(['status' => 'active']);
+        $admin = User::factory()->admin()->create(['status' => 'active']);
+        $superadmin = User::factory()->superadmin()->create(['status' => 'active']);
+
+        app(PaymentService::class)->approve($payment, $accounting);
+
+        foreach ([$admin, $superadmin] as $recipient) {
+            Notification::assertSentTo(
+                $recipient,
+                WorkflowStatusNotification::class,
+                fn (WorkflowStatusNotification $notification, array $channels): bool => $channels === ['mail', 'database', 'broadcast']
+                    && ($notification->toArray($recipient)['type'] ?? null) === 'payment_approved_for_processing',
+            );
+        }
+        Notification::assertNotSentTo($accounting, WorkflowStatusNotification::class);
     }
 
     public function test_public_receipt_submission_notifies_accounting_instead_of_admin(): void

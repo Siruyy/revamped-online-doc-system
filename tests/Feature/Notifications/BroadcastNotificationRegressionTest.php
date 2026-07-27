@@ -317,7 +317,7 @@ class BroadcastNotificationRegressionTest extends TestCase
         $this->assertNotContains('secret-token', $notification->toArray($student));
     }
 
-    public function test_workflow_status_notification_broadcasts_database_payload(): void
+    public function test_workflow_status_notification_emails_and_broadcasts_database_payload(): void
     {
         $student = $this->activeUser('student');
         $notification = new WorkflowStatusNotification([
@@ -325,7 +325,7 @@ class BroadcastNotificationRegressionTest extends TestCase
             'message' => 'Your request was approved.',
         ]);
 
-        $this->assertSame(['database', 'broadcast'], $notification->via($student));
+        $this->assertSame(['mail', 'database', 'broadcast'], $notification->via($student));
         $this->assertSame($notification->toArray($student), $notification->toBroadcast($student)->data);
     }
 
