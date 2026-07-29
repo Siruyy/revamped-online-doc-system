@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_landing_page_renders_the_public_welcome_experience(): void
     {
         $this->get('/')
@@ -17,6 +19,12 @@ class ExampleTest extends TestCase
                 ->where('canRegister', true)
                 ->has('laravelVersion')
                 ->has('phpVersion'));
+
+        $this->get(route('public.requests.create'))->assertOk();
+        $this->get(route('track-document'))->assertOk();
+
+        $this->assertFileExists(public_path('images/landing/registrar-service.png'));
+        $this->assertFileExists(public_path('images/landing/study-materials.jpg'));
     }
 
     public function test_not_found_errors_use_the_branded_error_page(): void

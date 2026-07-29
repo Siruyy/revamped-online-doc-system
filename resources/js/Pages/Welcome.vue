@@ -1,13 +1,12 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import {
-    AcademicCapIcon,
     ArrowRightIcon,
-    BanknotesIcon,
-    BuildingOffice2Icon,
-    CheckBadgeIcon,
-    ClockIcon,
+    ArrowUpRightIcon,
+    BuildingLibraryIcon,
+    DocumentArrowUpIcon,
     DocumentCheckIcon,
+    DocumentMagnifyingGlassIcon,
     DocumentTextIcon,
     ShieldCheckIcon,
 } from '@heroicons/vue/24/outline';
@@ -29,246 +28,266 @@ defineProps({
     },
 });
 
-const pathways = [
+const processSteps = [
     {
-        title: 'Requestors and alumni',
-        description: 'Request documents without an account, then track progress with a reference number.',
-        icon: AcademicCapIcon,
+        title: 'Send your request',
+        description: 'Choose the documents you need, add your details, and select how you would like them released.',
+        icon: DocumentTextIcon,
     },
     {
-        title: 'Registrar and admin',
-        description: 'Review requests, verify payments, manage releases, and monitor service queues.',
+        title: 'Receive a Registrar review',
+        description: 'The Registrar confirms the request, fees, and any supporting requirements before payment.',
         icon: DocumentCheckIcon,
     },
     {
-        title: 'Department signatories',
-        description:
-            'Clear Dean, President, Librarian, Student Affairs, Alumni, and Guidance requirements from one queue.',
-        icon: BuildingOffice2Icon,
+        title: 'Complete clearance and payment',
+        description: 'When clearance is required, the right offices review it. Then you can upload your receipt.',
+        icon: DocumentArrowUpIcon,
     },
-];
-
-const processSteps = [
-    { label: 'Request', text: 'Choose the document type and submit purpose details.', icon: DocumentTextIcon },
-    { label: 'Pay', text: 'Upload an offline payment receipt for verification.', icon: BanknotesIcon },
-    { label: 'Clear', text: 'Departments sign required clearances digitally.', icon: CheckBadgeIcon },
-    { label: 'Release', text: 'Track pickup readiness and final release status.', icon: ShieldCheckIcon },
+    {
+        title: 'Track and claim',
+        description: 'Use your reference number to see each update and know when your documents are ready.',
+        icon: ShieldCheckIcon,
+    },
 ];
 </script>
 
 <template>
     <Head title="SVCI Online Document System" />
 
-    <div class="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-brand-600 selection:text-white">
-        <header class="sticky top-0 z-50 border-b border-white/70 bg-white/90 backdrop-blur">
-            <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <div
+        class="min-h-[100dvh] overflow-x-clip bg-slate-50 font-sans text-slate-900 selection:bg-brand-700 selection:text-white dark:bg-slate-950 dark:text-slate-100"
+    >
+        <a
+            href="#main-content"
+            class="sr-only left-4 top-4 z-50 rounded-lg bg-brand-700 px-4 py-3 text-sm font-bold text-white focus:not-sr-only focus:absolute focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+            Skip to main content
+        </a>
+
+        <header
+            class="border-b border-slate-200/90 bg-slate-50/90 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/90"
+        >
+            <div class="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                 <Link
                     href="/"
-                    class="group flex items-center gap-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+                    class="group flex items-center gap-3 rounded-lg active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
                 >
-                    <div
-                        class="rounded-2xl bg-brand-600 p-2.5 shadow-sm transition duration-200 group-hover:bg-brand-500"
+                    <span
+                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-700 text-white shadow-[0_8px_20px_rgba(30,58,95,0.18)] transition duration-200 group-hover:bg-brand-600"
                     >
-                        <DocumentTextIcon class="h-7 w-7 text-white" />
-                    </div>
-                    <div>
-                        <p class="font-display text-xl font-bold tracking-tight text-slate-950">SVCI Docs</p>
-                        <p class="hidden text-xs font-semibold uppercase tracking-[0.25em] text-slate-500 sm:block">
-                            Online Document System
-                        </p>
-                    </div>
+                        <BuildingLibraryIcon class="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <span>
+                        <span
+                            class="block font-display text-lg font-bold tracking-tight text-slate-950 dark:text-white"
+                        >
+                            SVCI Docs
+                        </span>
+                        <span
+                            class="hidden text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 sm:block"
+                        >
+                            Document services
+                        </span>
+                    </span>
                 </Link>
 
-                <nav v-if="canLogin" class="flex items-center gap-2 sm:gap-3" aria-label="Public navigation">
+                <nav v-if="canLogin" class="flex items-center gap-3" aria-label="Public navigation">
                     <Link
                         v-if="$page.props.auth.user"
                         :href="route('dashboard')"
-                        class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-brand-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 motion-reduce:hover:translate-y-0"
+                        class="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-700 px-4 py-2 text-sm font-bold text-white transition duration-200 hover:bg-brand-600 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
                     >
                         Dashboard
                     </Link>
-                    <template v-else>
-                        <Link
-                            :href="route('login')"
-                            class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition duration-200 hover:bg-slate-100 hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
-                        >
-                            Staff login
-                        </Link>
-                    </template>
+                    <Link
+                        v-else
+                        :href="route('login')"
+                        class="inline-flex min-h-11 items-center justify-center rounded-lg px-3 py-2 text-sm font-bold text-slate-700 transition duration-200 hover:bg-slate-200/70 hover:text-brand-800 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:ring-offset-slate-950"
+                    >
+                        Staff login
+                    </Link>
                 </nav>
             </div>
         </header>
 
-        <main>
-            <section class="relative isolate overflow-hidden bg-white">
+        <main id="main-content">
+            <section class="relative isolate overflow-hidden">
                 <div
-                    class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,#dbeafe,transparent_28rem),radial-gradient(circle_at_bottom_right,#fed7aa,transparent_24rem)]"
+                    class="absolute inset-x-0 top-0 -z-10 h-[30rem] bg-[radial-gradient(circle_at_88%_10%,rgba(219,234,254,0.9),transparent_35%),radial-gradient(circle_at_8%_0%,rgba(255,255,255,0.96),transparent_42%)] dark:bg-[radial-gradient(circle_at_88%_10%,rgba(30,64,175,0.18),transparent_35%),radial-gradient(circle_at_8%_0%,rgba(15,23,42,0.4),transparent_42%)]"
                 ></div>
                 <div
-                    class="absolute left-1/2 top-12 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-brand-200/40 blur-3xl motion-safe:animate-slow-float"
-                ></div>
-                <div
-                    class="mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 sm:py-28 lg:grid-cols-[1.05fr_0.95fr] lg:px-8"
+                    class="mx-auto grid max-w-7xl gap-10 px-4 pb-14 pt-12 sm:px-6 sm:pb-20 sm:pt-16 lg:grid-cols-12 lg:items-center lg:gap-8 lg:px-8 lg:pb-24 lg:pt-20"
                 >
-                    <div class="flex flex-col justify-center">
-                        <div
-                            class="inline-flex w-fit items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-800 ring-1 ring-brand-100"
-                        >
-                            <ClockIcon class="h-4 w-4" />
-                            Official SVCI document request portal
-                        </div>
+                    <div class="landing-hero-copy lg:col-span-6 lg:pr-12">
+                        <p class="text-sm font-bold text-brand-800 dark:text-brand-300">
+                            St. Vincent College Incorporated
+                        </p>
                         <h1
-                            class="mt-7 max-w-3xl font-display text-4xl font-bold tracking-tight text-slate-950 sm:text-6xl"
+                            class="mt-5 max-w-xl font-display text-4xl font-bold leading-[1.07] tracking-tight text-slate-950 dark:text-white sm:text-5xl lg:text-[3.5rem]"
                         >
-                            Academic documents without the office guesswork.
+                            Official records. Clear next steps.
                         </h1>
-                        <p class="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-                            Request records, upload payment receipts, and follow every release milestone from a secure
-                            public tracker. No account needed.
+                        <p class="mt-6 max-w-xl text-lg leading-8 text-slate-600 dark:text-slate-300">
+                            Request official school documents online, then follow every review step through payment and
+                            release.
                         </p>
 
-                        <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+                        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
                             <Link
                                 v-if="!$page.props.auth.user"
                                 :href="route('public.requests.create')"
-                                class="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent-500 px-6 py-3 text-base font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-accent-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 motion-reduce:hover:translate-y-0"
+                                class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand-700 px-5 py-3 text-base font-bold text-white shadow-[0_10px_24px_rgba(30,58,95,0.2)] transition duration-200 hover:-translate-y-0.5 hover:bg-brand-600 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 motion-reduce:hover:translate-y-0 dark:focus-visible:ring-offset-slate-950"
                             >
-                                Request Document
-                                <ArrowRightIcon class="h-5 w-5" />
+                                Request document
+                                <ArrowRightIcon class="h-5 w-5" aria-hidden="true" />
                             </Link>
                             <Link
-                                v-else-if="$page.props.auth.user"
+                                v-else
                                 :href="route('dashboard')"
-                                class="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-brand-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 motion-reduce:hover:translate-y-0"
+                                class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand-700 px-5 py-3 text-base font-bold text-white shadow-[0_10px_24px_rgba(30,58,95,0.2)] transition duration-200 hover:-translate-y-0.5 hover:bg-brand-600 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 motion-reduce:hover:translate-y-0 dark:focus-visible:ring-offset-slate-950"
                             >
-                                Go to dashboard
-                                <ArrowRightIcon class="h-5 w-5" />
+                                Open dashboard
+                                <ArrowRightIcon class="h-5 w-5" aria-hidden="true" />
                             </Link>
                             <Link
                                 :href="route('track-document')"
-                                class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-3 text-base font-semibold text-slate-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 motion-reduce:hover:translate-y-0"
+                                class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white/80 px-5 py-3 text-base font-bold text-slate-800 transition duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:bg-white active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 motion-reduce:hover:translate-y-0 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:border-brand-500 dark:hover:bg-slate-900 dark:focus-visible:ring-offset-slate-950"
                             >
-                                Track Document
+                                Track request
+                                <ArrowUpRightIcon class="h-4 w-4" aria-hidden="true" />
                             </Link>
                         </div>
-                        <p class="mt-3 text-sm font-semibold text-slate-600">
-                            No account needed. Save your reference number.
+                    </div>
+
+                    <div class="landing-hero-media relative lg:col-span-6">
+                        <div
+                            class="absolute -bottom-5 -left-4 hidden h-32 w-32 rounded-2xl border border-brand-200 bg-brand-100/70 lg:block dark:border-brand-800 dark:bg-brand-950/40"
+                        ></div>
+                        <div
+                            class="relative aspect-[4/3] overflow-hidden rounded-[20px] bg-slate-200 shadow-[0_24px_65px_rgba(15,23,42,0.18)] ring-1 ring-slate-900/10 dark:bg-slate-800 dark:shadow-black/30 dark:ring-white/10"
+                        >
+                            <img
+                                class="h-full w-full object-cover object-center"
+                                src="/images/landing/registrar-service.png"
+                                alt="A student submitting a document folder at a school registrar service counter"
+                                width="1448"
+                                height="1086"
+                                fetchpriority="high"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="border-y border-brand-900 bg-brand-900 text-white">
+                <div class="mx-auto flex max-w-7xl items-start gap-4 px-4 py-6 sm:items-center sm:px-6 lg:px-8">
+                    <span
+                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-brand-100"
+                    >
+                        <DocumentMagnifyingGlassIcon class="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <p class="max-w-3xl text-sm font-semibold leading-6 sm:text-base">
+                        No requestor account needed. Keep your reference number to follow the Registrar review,
+                        clearance, payment, and release stages.
+                    </p>
+                </div>
+            </section>
+
+            <section class="bg-white py-16 dark:bg-slate-900 sm:py-20 lg:py-24">
+                <div class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-12 lg:gap-16 lg:px-8">
+                    <div class="lg:col-span-4">
+                        <h2
+                            class="max-w-md font-display text-3xl font-bold leading-tight tracking-tight text-slate-950 dark:text-white sm:text-4xl"
+                        >
+                            A clear route to release.
+                        </h2>
+                        <p class="mt-5 max-w-md text-base leading-7 text-slate-600 dark:text-slate-300">
+                            Each stage has one job, so you always know what the Registrar or another office needs next.
                         </p>
                     </div>
 
-                    <div class="relative">
-                        <div
-                            class="absolute -inset-4 -z-10 rounded-[2rem] bg-gradient-to-br from-brand-100 via-white to-orange-100 blur-2xl"
-                        ></div>
-                        <div
-                            class="rounded-[2rem] bg-slate-950 p-4 shadow-2xl ring-1 ring-slate-900/10 motion-safe:animate-fade-in-up"
+                    <ol class="landing-journey relative space-y-2 lg:col-span-8">
+                        <li
+                            v-for="step in processSteps"
+                            :key="step.title"
+                            class="landing-journey-item relative grid gap-4 rounded-xl px-3 py-4 transition duration-200 hover:bg-brand-50/70 sm:grid-cols-[2.75rem_1fr] sm:items-start sm:px-5 dark:hover:bg-slate-800/80"
                         >
-                            <div class="rounded-[1.5rem] bg-white p-5 shadow-sm">
-                                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-                                    <div>
-                                        <p class="text-sm font-semibold text-slate-950">Request tracker</p>
-                                        <p class="text-xs text-slate-500">Transcript of Records</p>
-                                    </div>
-                                    <span
-                                        class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700"
-                                    >
-                                        In progress
-                                    </span>
-                                </div>
-
-                                <div class="mt-5 space-y-4">
-                                    <div v-for="(step, index) in processSteps" :key="step.label" class="flex gap-3">
-                                        <div class="flex flex-col items-center">
-                                            <div
-                                                class="flex h-10 w-10 items-center justify-center rounded-xl ring-1 transition duration-200"
-                                                :class="
-                                                    index < 2
-                                                        ? 'bg-brand-600 text-white ring-brand-600'
-                                                        : 'bg-slate-50 text-slate-500 ring-slate-200'
-                                                "
-                                            >
-                                                <component :is="step.icon" class="h-5 w-5" />
-                                            </div>
-                                            <div
-                                                v-if="index < processSteps.length - 1"
-                                                class="h-8 w-px bg-slate-200"
-                                            ></div>
-                                        </div>
-                                        <div class="pb-2">
-                                            <p class="text-sm font-semibold text-slate-900">{{ step.label }}</p>
-                                            <p class="text-sm leading-6 text-slate-500">{{ step.text }}</p>
-                                        </div>
-                                    </div>
-                                </div>
+                            <span
+                                class="relative z-10 flex h-11 w-11 items-center justify-center rounded-xl border border-brand-200 bg-white text-brand-800 shadow-sm transition duration-200 dark:border-brand-800 dark:bg-slate-900 dark:text-brand-300"
+                            >
+                                <component :is="step.icon" class="h-5 w-5" aria-hidden="true" />
+                            </span>
+                            <div class="min-w-0">
+                                <h3
+                                    class="font-display text-xl font-bold tracking-tight text-slate-950 dark:text-white"
+                                >
+                                    {{ step.title }}
+                                </h3>
+                                <p class="mt-1 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+                                    {{ step.description }}
+                                </p>
                             </div>
-                        </div>
-                    </div>
+                        </li>
+                    </ol>
                 </div>
             </section>
 
-            <section class="border-y border-slate-200 bg-slate-50 py-16 sm:py-20">
-                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div class="max-w-2xl">
-                        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-brand-700">Role paths</p>
-                        <h2 class="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-                            One portal, clear next steps for every role.
+            <section class="bg-slate-100 py-16 dark:bg-slate-950 sm:py-20 lg:py-24">
+                <div class="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-12 lg:items-stretch lg:px-8">
+                    <div class="overflow-hidden rounded-[20px] bg-slate-900 lg:col-span-5">
+                        <img
+                            class="h-full min-h-[19rem] w-full object-cover opacity-90 transition duration-500 hover:scale-[1.03] motion-reduce:hover:scale-100"
+                            src="/images/landing/study-materials.jpg"
+                            alt="Open books and study materials arranged on a table"
+                            width="1100"
+                            height="733"
+                            loading="lazy"
+                        />
+                    </div>
+                    <div
+                        class="flex flex-col justify-center rounded-[20px] border border-slate-200 bg-white p-7 shadow-[0_16px_40px_rgba(15,23,42,0.06)] dark:border-slate-800 dark:bg-slate-900 sm:p-10 lg:col-span-7"
+                    >
+                        <h2
+                            class="max-w-xl font-display text-3xl font-bold leading-tight tracking-tight text-slate-950 dark:text-white sm:text-4xl"
+                        >
+                            Bring the details that make review simple.
                         </h2>
-                    </div>
-                    <div class="mt-10 grid gap-5 md:grid-cols-3">
-                        <article
-                            v-for="pathway in pathways"
-                            :key="pathway.title"
-                            class="group rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition duration-200 hover:-translate-y-1 hover:shadow-md motion-reduce:hover:translate-y-0"
-                        >
-                            <div
-                                class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 ring-1 ring-brand-100 transition duration-200 group-hover:bg-brand-600 group-hover:text-white"
-                            >
-                                <component :is="pathway.icon" class="h-6 w-6" />
+                        <div class="mt-8 grid gap-4 sm:grid-cols-2">
+                            <div class="rounded-xl bg-slate-50 p-5 dark:bg-slate-800">
+                                <h3 class="font-display text-lg font-bold text-slate-950 dark:text-white">
+                                    Document details
+                                </h3>
+                                <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                                    Select the document, copies, purpose, and preferred release method.
+                                </p>
                             </div>
-                            <h3 class="mt-5 font-display text-lg font-semibold text-slate-950">{{ pathway.title }}</h3>
-                            <p class="mt-2 text-sm leading-6 text-slate-600">{{ pathway.description }}</p>
-                        </article>
-                    </div>
-                </div>
-            </section>
-
-            <section id="process" class="bg-white py-16 sm:py-20">
-                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div class="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
-                        <div>
-                            <p class="text-sm font-semibold uppercase tracking-[0.25em] text-accent-600">
-                                Service flow
-                            </p>
-                            <h2 class="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-                                Built for transparent document processing.
-                            </h2>
-                            <p class="mt-4 text-base leading-7 text-slate-600">
-                                Requestors see meaningful progress while offices work from focused queues. Each status
-                                update gives users feedback instead of a dead end.
-                            </p>
+                            <div class="rounded-xl bg-brand-50 p-5 dark:bg-brand-950/30">
+                                <h3 class="font-display text-lg font-bold text-slate-950 dark:text-white">
+                                    Supporting requirements
+                                </h3>
+                                <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                                    Have identification and any supporting files ready for upload when requested.
+                                </p>
+                            </div>
                         </div>
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <article
-                                v-for="step in processSteps"
-                                :key="step.label"
-                                class="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition duration-200 hover:border-brand-200 hover:bg-brand-50/40"
-                            >
-                                <component :is="step.icon" class="h-7 w-7 text-brand-700" />
-                                <h3 class="mt-4 font-display text-lg font-semibold text-slate-950">{{ step.label }}</h3>
-                                <p class="mt-2 text-sm leading-6 text-slate-600">{{ step.text }}</p>
-                            </article>
-                        </div>
+                        <p class="mt-7 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                            Payment is requested only after the Registrar has reviewed your request and clearance
+                            requirements are complete.
+                        </p>
                     </div>
                 </div>
             </section>
         </main>
 
-        <footer class="border-t border-slate-200 bg-white">
+        <footer class="border-t border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950">
             <div
-                class="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8"
+                class="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8"
             >
-                <p>&copy; {{ new Date().getFullYear() }} St. Vincent College Incorporated. All rights reserved.</p>
-                <p class="text-slate-400">Laravel v{{ laravelVersion }} / PHP v{{ phpVersion }}</p>
+                <p class="text-slate-600 dark:text-slate-300">
+                    &copy; {{ new Date().getFullYear() }} St. Vincent College Incorporated.
+                </p>
+                <p class="text-slate-500 dark:text-slate-400">Official online document request portal</p>
             </div>
         </footer>
     </div>
