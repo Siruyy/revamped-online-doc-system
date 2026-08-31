@@ -24,6 +24,10 @@ const selected = ref({});
 const openCategories = ref(new Set(['Academic']));
 const form = useForm({
     requester_name: '',
+    requester_last_name: '',
+    requester_first_name: '',
+    requester_middle_name: '',
+    requester_suffix: '',
     requester_email: '',
     requester_contact_number: '',
     requester_student_id: '',
@@ -31,6 +35,7 @@ const form = useForm({
     basic_education_level: '',
     academic_program_id: '',
     requester_year_level: '',
+    requester_year_level_status: '',
     requester_last_term_attended: '',
     requester_last_year_attended: '',
     birth_date: '',
@@ -56,7 +61,11 @@ const form = useForm({
     purpose_other: '',
     fulfillment_method: 'pickup',
     delivery_address: '',
+    delivery_provider: 'courier',
     is_proxy_request: false,
+    requester_claimant_name: '',
+    representative_relationship: '',
+    owner_residence: '',
     items: [],
     requirements: {},
 });
@@ -96,6 +105,16 @@ const requirementList = computed(() => {
             hint: 'Required for married requestors.',
         });
     if (form.is_proxy_request) {
+        map.set('valid_id_photocopy_owner', {
+            key: 'valid_id_photocopy_owner',
+            label: 'Valid ID photocopy of document owner',
+            hint: 'Clear copy of one valid government ID.',
+        });
+        map.set('valid_id_photocopy_claimant', {
+            key: 'valid_id_photocopy_claimant',
+            label: 'Valid ID photocopy of claimant / representative',
+            hint: 'Clear copy of one valid government ID.',
+        });
         map.set('authorization_letter', {
             key: 'authorization_letter',
             label: 'Authorization letter',
@@ -106,6 +125,8 @@ const requirementList = computed(() => {
             label: 'Special Power of Attorney',
             hint: 'Required for an authorized representative.',
         });
+        if (form.owner_residence === 'within_country') map.delete('authorization_letter');
+        if (form.owner_residence === 'outside_country') map.delete('spa');
     }
     return [...map.values()];
 });
@@ -175,12 +196,12 @@ function canContinue() {
     if (step.value === 1) return Boolean(form.requester_division) && cart.value.length > 0;
     if (step.value === 2) {
         return (
-            form.requester_name &&
+            (form.requester_name || (form.requester_last_name && form.requester_first_name)) &&
             form.requester_email &&
             form.requester_contact_number &&
             (isBasicEducation.value
                 ? form.basic_education_level
-                : form.academic_program_id && form.requester_year_level) &&
+                : form.academic_program_id && (form.requester_year_level || form.requester_year_level_status)) &&
             form.requester_last_term_attended &&
             form.requester_last_year_attended &&
             form.birth_date &&
@@ -198,10 +219,14 @@ function canContinue() {
         });
         const employmentComplete =
             form.employment_status === 'not_employed' || (form.company_name && form.company_address);
-        const deliveryComplete = form.fulfillment_method === 'pickup' || form.delivery_address;
+        const deliveryComplete =
+            form.fulfillment_method === 'pickup' || (form.delivery_address && form.delivery_provider);
+        const proxyComplete =
+            !form.is_proxy_request ||
+            (form.requester_claimant_name && form.representative_relationship && form.owner_residence);
         const purposeComplete =
             form.purpose && (form.purpose !== 'Other official purpose' || form.purpose_other.length >= 3);
-        return educationComplete && employmentComplete && deliveryComplete && purposeComplete;
+        return educationComplete && employmentComplete && deliveryComplete && proxyComplete && purposeComplete;
     }
     if (step.value === 4) return requirementList.value.every((requirement) => form.requirements[requirement.key]);
     return true;
@@ -216,7 +241,7 @@ function submit() {
         document_type_id: item.type.id,
         copies: item.copies,
         authentication_requested: item.authentication_requested,
-        documentary_stamp_requested: item.documentary_stamp_requested,
+        documentary_stamp_requested: item.type.flags?.includes('stamp_exempt') ? false : true,
         semester_requested: item.semester_requested || null,
     }));
     form.post(route('public.requests.store'), {
@@ -227,7 +252,17 @@ function submit() {
             if (field.startsWith('items')) step.value = 1;
             else if (
                 field.startsWith('education') ||
-                ['purpose', 'purpose_other', 'fulfillment_method', 'delivery_address'].includes(field)
+                [
+                    'purpose',
+                    'purpose_other',
+                    'fulfillment_method',
+                    'delivery_address',
+                    'delivery_provider',
+                    'is_proxy_request',
+                    'requester_claimant_name',
+                    'representative_relationship',
+                    'owner_residence',
+                ].includes(field)
             )
                 step.value = 3;
             else if (field.startsWith('requirements')) step.value = 4;
@@ -237,10 +272,20 @@ function submit() {
 }
 
 function feeNote(type) {
-    if (['diploma', 'special_order'].includes(type.code)) return 'Registrar will provide the official amount.';
+    if (['diploma', 'diploma_reissue_college', 'diploma_reissue_basic', 'special_order'].includes(type.code))
+        return 'No documentary stamp charge; registrar will provide the official amount.';
+    if (type.code === 'tor_transfer')
+        return 'Transfer Credentials are quoted per request; the bundle includes the required HD, Good Moral, and TOR records.';
     if (type.fee_formula === 'per_page')
         return `Starts at ₱${Number(type.fee).toFixed(2)} per page; final pages are evaluated by the registrar.`;
     return `Reference rate ₱${Number(type.fee).toFixed(2)}; final quote follows review.`;
+}
+
+function isStampExempt(type) {
+    return (
+        ['diploma', 'diploma_reissue_college', 'diploma_reissue_basic', 'special_order'].includes(type.code) ||
+        type.flags?.includes('stamp_exempt')
+    );
 }
 </script>
 
@@ -411,7 +456,9 @@ function feeNote(type) {
                                         </button>
                                     </div>
                                 </div>
-                                <label class="flex min-h-11 items-center gap-2 text-sm"
+                                <label
+                                    v-if="type.code !== 'tor_transfer'"
+                                    class="flex min-h-11 items-center gap-2 text-sm"
                                     ><input
                                         v-model="selected[type.id].authentication_requested"
                                         type="checkbox"
@@ -419,14 +466,21 @@ function feeNote(type) {
                                     />
                                     Request authentication</label
                                 >
-                                <label class="flex min-h-11 items-center gap-2 text-sm"
-                                    ><input
-                                        v-model="selected[type.id].documentary_stamp_requested"
-                                        type="checkbox"
-                                        class="rounded text-brand-700"
-                                    />
-                                    Include documentary stamp</label
+                                <p class="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">
+                                    <template v-if="isStampExempt(type)">Documentary stamp: exempt.</template>
+                                    <template v-else
+                                        >Documentary stamp: ₱40 per copy, added automatically to the final
+                                        quote.</template
+                                    >
+                                </p>
+                                <p
+                                    v-if="type.code === 'tor_transfer'"
+                                    class="rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-800"
                                 >
+                                    Bundle contents:
+                                    {{ type.bundle_documents?.join(', ') || 'HD, Good Moral, and TOR records' }}. Bundle
+                                    price is subject to registrar assessment.
+                                </p>
                                 <label v-if="type.code === 'cert_enrollment'" class="block text-sm font-medium">
                                     Semester requested
                                     <input
@@ -447,8 +501,16 @@ function feeNote(type) {
                     <p class="mt-1 text-sm text-slate-600">Use details that match your school records.</p>
                 </div>
                 <div class="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 sm:grid-cols-2">
-                    <label class="sm:col-span-2"
-                        >Full name<input v-model="form.requester_name" autocomplete="name" class="field"
+                    <label
+                        >Last name<input v-model="form.requester_last_name" autocomplete="family-name" class="field"
+                    /></label>
+                    <label
+                        >First name<input v-model="form.requester_first_name" autocomplete="given-name" class="field"
+                    /></label>
+                    <label>Middle name<input v-model="form.requester_middle_name" class="field" /></label>
+                    <label
+                        >Suffix <span class="font-normal text-slate-500">(optional)</span
+                        ><input v-model="form.requester_suffix" class="field"
                     /></label>
                     <label
                         >Email address<input
@@ -477,6 +539,19 @@ function feeNote(type) {
                         >Year level<select v-model="form.requester_year_level" class="field">
                             <option value="" disabled>Select year</option>
                             <option v-for="year in 8" :key="year" :value="year">{{ year }}</option>
+                        </select></label
+                    >
+                    <label v-if="!isBasicEducation"
+                        >Academic status <span class="font-normal text-slate-500">(if not currently enrolled)</span
+                        ><select v-model="form.requester_year_level_status" class="field">
+                            <option value="">Currently enrolled</option>
+                            <option
+                                v-for="(label, value) in requestOptions.year_level_statuses"
+                                :key="value"
+                                :value="value"
+                            >
+                                {{ label }}
+                            </option>
                         </select></label
                     >
                     <label v-else class="sm:col-span-2"
@@ -596,10 +671,43 @@ function feeNote(type) {
                     <label v-if="form.fulfillment_method === 'delivery'"
                         >Delivery address<textarea v-model="form.delivery_address" rows="2" class="field" />
                     </label>
+                    <p
+                        v-if="form.fulfillment_method === 'delivery'"
+                        class="rounded-lg bg-sky-50 p-3 text-sm text-sky-900 sm:col-span-2"
+                    >
+                        Delivery is handled through a courier. The registrar will add the courier name and tracking
+                        number when the request is ready.
+                    </p>
                     <label class="flex min-h-11 items-center gap-2"
                         ><input v-model="form.is_proxy_request" type="checkbox" class="rounded text-brand-700" /> A
                         representative will process or claim this request</label
                     >
+                    <div
+                        v-if="form.is_proxy_request"
+                        class="grid gap-4 rounded-xl border border-brand-100 bg-brand-50 p-4 sm:col-span-2 sm:grid-cols-2"
+                    >
+                        <label
+                            >Claimant / representative name<input v-model="form.requester_claimant_name" class="field"
+                        /></label>
+                        <label
+                            >Relationship to owner<input
+                                v-model="form.representative_relationship"
+                                class="field"
+                                placeholder="e.g. Mother"
+                        /></label>
+                        <label class="sm:col-span-2"
+                            >Where does the document owner reside?<select v-model="form.owner_residence" class="field">
+                                <option value="" disabled>Select residence</option>
+                                <option
+                                    v-for="(label, value) in requestOptions.owner_residences"
+                                    :key="value"
+                                    :value="value"
+                                >
+                                    {{ label }}
+                                </option>
+                            </select></label
+                        >
+                    </div>
                 </div>
             </section>
 
@@ -635,7 +743,16 @@ function feeNote(type) {
                     <article class="rounded-2xl border border-slate-200 bg-white p-5">
                         <h3 class="font-semibold">Requestor</h3>
                         <p class="mt-2 text-sm leading-6 text-slate-600">
-                            {{ form.requester_name }}<br />{{ form.requester_email }}<br />
+                            {{
+                                [
+                                    form.requester_last_name,
+                                    form.requester_first_name,
+                                    form.requester_middle_name,
+                                    form.requester_suffix,
+                                ]
+                                    .filter(Boolean)
+                                    .join(' ')
+                            }}<br />{{ form.requester_email }}<br />
                             <template v-if="isBasicEducation">
                                 Basic Education Campus — {{ selectedBasicEducationLevel?.label }}
                             </template>
@@ -650,7 +767,7 @@ function feeNote(type) {
                     </article>
                 </div>
                 <div class="rounded-2xl border border-brand-200 bg-brand-50 p-5 text-sm leading-6 text-brand-950">
-                    <strong>What happens next:</strong> registrar review → sequential clearance → payment receipt →
+                    <strong>What happens next:</strong> registrar review → parallel office clearance → payment receipt →
                     accounting validation → processing → ready for release. Working days exclude weekends, holidays, and
                     official work suspensions.
                 </div>

@@ -11,6 +11,7 @@ use App\Services\RequestService;
 use App\Support\ClearanceSignatories;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -88,6 +89,7 @@ class RequestController extends Controller
                 ->all(),
             'requirements',
             'claimSlip',
+            'feedback',
         ]);
 
         $batchRequests = $documentRequest->user_id === null
@@ -170,6 +172,8 @@ class RequestController extends Controller
         $validated = $request->validate([
             'shipping_fee' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'quote_notes' => ['nullable', 'string', 'max:1000'],
+            'expected_release_on' => ['nullable', 'date', 'after_or_equal:today'],
+            'release_channel' => ['nullable', Rule::in(array_keys(config('policy.release_channels', [])))],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer'],
             'items.*.page_count' => ['required', 'integer', 'min:1', 'max:500'],
@@ -240,10 +244,14 @@ class RequestController extends Controller
 
         $validated = $request->validate([
             'processing_stage' => ['required', 'in:processing,ready_for_pickup,released'],
+            'expected_release_on' => ['nullable', 'date', 'after_or_equal:today'],
+            'release_channel' => ['nullable', Rule::in(array_keys(config('policy.release_channels', [])))],
+            'courier_name' => ['nullable', 'string', 'max:120'],
+            'courier_tracking_number' => ['nullable', 'string', 'max:120'],
         ]);
 
         try {
-            $requestService->updateStage($documentRequest, $request->user(), $validated['processing_stage']);
+            $requestService->updateStage($documentRequest, $request->user(), $validated['processing_stage'], $validated);
         } catch (\Throwable $exception) {
             return back()->withErrors(['processing_stage' => $exception->getMessage()]);
         }

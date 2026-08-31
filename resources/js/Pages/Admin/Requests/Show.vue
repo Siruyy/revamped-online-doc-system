@@ -32,7 +32,13 @@ const props = defineProps({
 
 const denyForm = useForm({ denial_reason: '' });
 const approvePackageForm = useForm({});
-const stageForm = useForm({ processing_stage: props.request.processing_stage || 'processing' });
+const stageForm = useForm({
+    processing_stage: props.request.processing_stage || 'processing',
+    expected_release_on: props.request.expected_release_on || '',
+    release_channel: props.request.release_channel || '',
+    courier_name: props.request.courier_name || '',
+    courier_tracking_number: props.request.courier_tracking_number || '',
+});
 const pauseForm = useForm({ reason: '' });
 const rejectForm = useForm({ notes: '' });
 const page = usePage();
@@ -439,7 +445,9 @@ function fmtPeso(value) {
                                         <dt class="text-slate-500">Course / Year</dt>
                                         <dd class="text-slate-900">
                                             {{ request.requester_course || '—' }} · Y{{
-                                                request.requester_year_level || '?'
+                                                request.requester_year_level ||
+                                                request.requester_year_level_status ||
+                                                '?'
                                             }}
                                         </dd>
                                     </div>
@@ -465,6 +473,27 @@ function fmtPeso(value) {
                                         <dt class="text-slate-500">Shipping address</dt>
                                         <dd class="font-medium leading-5 text-slate-900">
                                             {{ request.delivery_address || 'Address not provided' }}
+                                        </dd>
+                                    </div>
+                                    <div v-if="request.is_proxy_request" class="sm:col-span-3">
+                                        <dt class="text-slate-500">Claimant / representative</dt>
+                                        <dd class="text-slate-900">
+                                            {{ request.requester_claimant_name || '—' }} ·
+                                            {{ request.representative_relationship || 'Relationship not provided' }} ·
+                                            {{
+                                                request.owner_residence === 'outside_country'
+                                                    ? 'Owner outside the Philippines'
+                                                    : 'Owner within the Philippines'
+                                            }}
+                                        </dd>
+                                    </div>
+                                    <div v-if="request.fulfillment_method === 'delivery'" class="sm:col-span-3">
+                                        <dt class="text-slate-500">Courier</dt>
+                                        <dd class="text-slate-900">
+                                            {{ request.courier_name || 'To be assigned'
+                                            }}<span v-if="request.courier_tracking_number">
+                                                · {{ request.courier_tracking_number }}</span
+                                            >
                                         </dd>
                                     </div>
                                 </template>
@@ -590,6 +619,22 @@ function fmtPeso(value) {
                             </div>
                         </li>
                     </ol>
+                </section>
+
+                <section v-if="request.feedback" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                    <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Requestor feedback</h3>
+                    <p class="mt-3 text-sm text-slate-700">
+                        Overall rating: <strong>{{ request.feedback.rating }}/5</strong
+                        ><span v-if="request.feedback.service_rating">
+                            · Service rating: <strong>{{ request.feedback.service_rating }}/5</strong></span
+                        >
+                    </p>
+                    <p v-if="request.feedback.comments" class="mt-2 text-sm leading-6 text-slate-700">
+                        {{ request.feedback.comments }}
+                    </p>
+                    <p v-if="request.feedback.suggestions" class="mt-2 text-sm leading-6 text-slate-700">
+                        <strong>Suggestions:</strong> {{ request.feedback.suggestions }}
+                    </p>
                 </section>
 
                 <!-- Request details -->
@@ -902,9 +947,14 @@ function fmtPeso(value) {
                                         type="number"
                                         min="0"
                                         step="0.01"
+                                        readonly
                                         class="mt-1 min-h-11 w-full rounded-md border-slate-300 text-sm"
                                 /></label>
                             </div>
+                            <p class="text-[11px] leading-4 text-slate-500">
+                                Documentary stamp is calculated automatically at ₱40 per copy; diploma and special-order
+                                documents are exempt.
+                            </p>
                             <label class="block text-xs font-medium"
                                 >Line note<input
                                     v-model="line.evaluation_notes"
@@ -1052,6 +1102,43 @@ function fmtPeso(value) {
                             <option value="ready_for_pickup">Ready for pickup</option>
                             <option value="released">Released</option>
                         </select>
+                        <div class="grid gap-2 sm:grid-cols-2">
+                            <label class="text-xs font-medium text-slate-700"
+                                >Expected release date
+                                <input
+                                    v-model="stageForm.expected_release_on"
+                                    type="date"
+                                    class="mt-1 block min-h-10 w-full rounded-md border-slate-300 text-sm"
+                                />
+                            </label>
+                            <label class="text-xs font-medium text-slate-700"
+                                >Release channel
+                                <select
+                                    v-model="stageForm.release_channel"
+                                    class="mt-1 block min-h-10 w-full rounded-md border-slate-300 text-sm"
+                                >
+                                    <option value="">Use document default</option>
+                                    <option v-for="(label, key) in policy.release_channels" :key="key" :value="key">
+                                        {{ label }}
+                                    </option>
+                                </select>
+                            </label>
+                        </div>
+                        <div
+                            v-if="stageForm.release_channel === 'delivery' || request.fulfillment_method === 'delivery'"
+                            class="grid gap-2 sm:grid-cols-2"
+                        >
+                            <label class="text-xs font-medium text-slate-700"
+                                >Courier name<input
+                                    v-model="stageForm.courier_name"
+                                    class="mt-1 block min-h-10 w-full rounded-md border-slate-300 text-sm"
+                            /></label>
+                            <label class="text-xs font-medium text-slate-700"
+                                >Tracking number<input
+                                    v-model="stageForm.courier_tracking_number"
+                                    class="mt-1 block min-h-10 w-full rounded-md border-slate-300 text-sm"
+                            /></label>
+                        </div>
                         <button
                             type="submit"
                             class="w-full rounded-md bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-700"

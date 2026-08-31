@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-labelledby="title">
+  <title>St. Vincent's College Incorporated</title>
+  <circle cx="90" cy="90" r="83" fill="#173b75"/>
+  <circle cx="90" cy="90" r="70" fill="#fff" stroke="#173b75" stroke-width="4"/>
+  <path d="M82 27h16v45h45v16h-45v45H82V88H37V72h45z" fill="#173b75"/>
+  <circle cx="90" cy="90" r="14" fill="#fff" stroke="#173b75" stroke-width="4"/>
+  <text x="90" y="17" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="#fff">ST. VINCENT'S COLLEGE</text>
+  <text x="90" y="171" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="#fff">INCORPORATED</text>
+</svg>

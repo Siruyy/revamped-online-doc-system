@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Clearance;
 use App\Models\ClearanceStep;
 use App\Models\DocumentRequest;
+use App\Models\DocumentType;
 use App\Models\Payment;
 use App\Models\RequestRequirement;
 use App\Models\User;
@@ -19,7 +20,7 @@ class PublicRequestWorkflowService
     /**
      * Lock the registrar's item-by-item quote and open the correct clearance route.
      *
-     * @param  array{shipping_fee?: numeric, quote_notes?: string|null, items: list<array{id: int, page_count?: int, base_amount: numeric, authentication_amount?: numeric, documentary_stamp_amount?: numeric, evaluation_notes?: string|null}>}  $quote
+     * @param  array{shipping_fee?: numeric, quote_notes?: string|null, expected_release_on?: string|null, release_channel?: string|null, items: list<array{id: int, page_count?: int, base_amount: numeric, authentication_amount?: numeric, documentary_stamp_amount?: numeric, evaluation_notes?: string|null}>}  $quote
      */
     public function evaluate(DocumentRequest $request, User $registrar, array $quote): DocumentRequest
     {
@@ -42,7 +43,10 @@ class PublicRequestWorkflowService
                 $item = $items->get((int) $line['id']);
                 $base = max(0, (float) $line['base_amount']);
                 $authentication = max(0, (float) ($line['authentication_amount'] ?? 0));
-                $stamp = max(0, (float) ($line['documentary_stamp_amount'] ?? 0));
+                $documentType = $item->documentType;
+                $stamp = $documentType instanceof DocumentType && $this->isStampExempt($documentType)
+                    ? 0.0
+                    : 40.0 * max(1, (int) $item->copies);
                 $lineTotal = $base + $authentication + $stamp;
 
                 $item->update([
@@ -64,10 +68,16 @@ class PublicRequestWorkflowService
                 ['user_id' => $locked->user_id, 'overall_status' => 'in_progress'],
             );
             $this->seedSteps($clearance, $locked);
-            $firstStep = $clearance->steps()->orderBy('sequence')->first();
+            $nonAccountingSteps = $clearance->steps()->where('office_code', '!=', 'accounting')->where('status', 'pending')->get();
 
-            if ($firstStep instanceof ClearanceStep) {
-                $this->stepNotifications->notifyActionable($firstStep);
+            if ($nonAccountingSteps->isNotEmpty()) {
+                $nonAccountingSteps->each(fn (ClearanceStep $step) => $this->stepNotifications->notifyActionable($step));
+            } else {
+                $accountingStep = $clearance->steps()->where('office_code', 'accounting')->where('status', 'pending')->first();
+
+                if ($accountingStep instanceof ClearanceStep) {
+                    $this->stepNotifications->notifyActionable($accountingStep);
+                }
             }
 
             $locked->update([
@@ -75,6 +85,8 @@ class PublicRequestWorkflowService
                 'shipping_fee' => $shipping,
                 'quote_total' => $total,
                 'quote_notes' => $quote['quote_notes'] ?? null,
+                'expected_release_on' => $quote['expected_release_on'] ?? $locked->expected_release_on,
+                'release_channel' => $quote['release_channel'] ?? $locked->release_channel,
                 'evaluated_by' => $registrar->id,
                 'evaluated_at' => now(),
                 'workflow_stage' => 'clearance',
@@ -105,8 +117,12 @@ class PublicRequestWorkflowService
                 throw new \RuntimeException('This clearance step is no longer pending.');
             }
 
-            if ($locked->clearance->steps()->where('sequence', '<', $locked->sequence)->where('status', '!=', 'cleared')->exists()) {
-                throw new \RuntimeException('The previous clearance office must sign first.');
+            if ($locked->office_code === 'accounting'
+                && $locked->clearance->steps()
+                    ->where('office_code', '!=', 'accounting')
+                    ->where('status', '!=', 'cleared')
+                    ->exists()) {
+                throw new \RuntimeException('All other clearance offices must be cleared before the Accounting Office can sign.');
             }
 
             $locked->update([
@@ -133,14 +149,20 @@ class PublicRequestWorkflowService
                 $this->notify($request, 'Clearance complete — payment is now open', "Clearance for {$request->reference_no} is complete. Upload your payment receipt on the tracking page.");
             } else {
                 $this->notify($clearance->documentRequest, 'Clearance progress updated', "{$locked->label} cleared request {$clearance->documentRequest->reference_no}.");
-                $nextStep = $clearance->steps()
-                    ->where('sequence', '>', $locked->sequence)
-                    ->where('status', 'pending')
-                    ->orderBy('sequence')
-                    ->first();
+                $pendingNonAccounting = $clearance->steps()
+                    ->where('office_code', '!=', 'accounting')
+                    ->where('status', '!=', 'cleared')
+                    ->exists();
 
-                if ($nextStep instanceof ClearanceStep) {
-                    $this->stepNotifications->notifyActionable($nextStep);
+                if (! $pendingNonAccounting) {
+                    $accountingStep = $clearance->steps()
+                        ->where('office_code', 'accounting')
+                        ->where('status', 'pending')
+                        ->first();
+
+                    if ($accountingStep instanceof ClearanceStep) {
+                        $this->stepNotifications->notifyActionable($accountingStep);
+                    }
                 }
             }
 
@@ -259,5 +281,12 @@ class PublicRequestWorkflowService
             'message' => $message,
             'url' => route('track-document', ['reference_no' => $request->reference_no]),
         ]));
+    }
+
+    private function isStampExempt(DocumentType $type): bool
+    {
+        return $type->hasFlag('stamp_exempt')
+            || in_array($type->code, ['special_order', 'diploma', 'diploma_reissue_college', 'diploma_reissue_basic'], true)
+            || in_array('stamp_exempt', (array) config('policy.document_types.'.$type->code.'.flags', []), true);
     }
 }

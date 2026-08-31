@@ -105,7 +105,7 @@ class RevisedPublicWorkflowTest extends TestCase
 
         $request->refresh();
         $this->assertSame('clearance', $request->workflow_stage);
-        $this->assertSame(290.0, (float) $request->quote_total);
+        $this->assertSame(370.0, (float) $request->quote_total);
         $this->assertNotNull($request->evaluated_at);
         $this->assertSame(
             ['dean', 'accounting'],
@@ -172,7 +172,7 @@ class RevisedPublicWorkflowTest extends TestCase
         );
     }
 
-    public function test_clearance_is_sequential_and_payment_opens_only_after_accounting_clears(): void
+    public function test_clearance_runs_in_parallel_and_payment_opens_only_after_accounting_clears(): void
     {
         $request = DocumentRequest::factory()->create([
             'user_id' => null,
@@ -202,7 +202,7 @@ class RevisedPublicWorkflowTest extends TestCase
             app(PublicRequestWorkflowService::class)->signStep($accountingStep, $accounting);
             $this->fail('Accounting must not sign before the dean.');
         } catch (\RuntimeException $exception) {
-            $this->assertSame('The previous clearance office must sign first.', $exception->getMessage());
+            $this->assertSame('All other clearance offices must be cleared before the Accounting Office can sign.', $exception->getMessage());
         }
 
         app(PublicRequestWorkflowService::class)->signStep($deanStep, $dean);

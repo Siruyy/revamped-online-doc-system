@@ -15,6 +15,16 @@ class PublicRequestOptions
         'senior_high' => ['code' => 'SHS', 'label' => 'Senior High School'],
     ];
 
+    public const YEAR_LEVEL_STATUSES = [
+        'graduated' => 'Graduated',
+        'graduate_school' => 'Graduate School',
+    ];
+
+    public const OWNER_RESIDENCES = [
+        'within_country' => 'Owner residing within the Philippines',
+        'outside_country' => 'Owner residing outside the Philippines',
+    ];
+
     public const TERMS = [
         'first_semester' => 'First Semester',
         'second_semester' => 'Second Semester',

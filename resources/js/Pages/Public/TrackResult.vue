@@ -16,6 +16,7 @@ const accessCode = ref('');
 const requirementFiles = ref({});
 const paymentForm = useForm({ access_code: '', payment_method: '', reference_number: '', receipt: null });
 const requirementForm = useForm({ access_code: '', file: null });
+const feedbackForm = useForm({ access_code: '', rating: 5, service_rating: '', comments: '', suggestions: '' });
 const downloadingClaimSlip = ref(false);
 const claimSlipError = ref('');
 
@@ -32,6 +33,13 @@ function uploadPayment() {
     paymentForm.access_code = accessCode.value;
     paymentForm.post(route('public.requests.payment.upload', props.reference_no), {
         forceFormData: true,
+        preserveScroll: true,
+    });
+}
+
+function submitFeedback() {
+    feedbackForm.access_code = accessCode.value;
+    feedbackForm.post(route('public.requests.feedback.store', props.reference_no), {
         preserveScroll: true,
     });
 }
@@ -281,6 +289,20 @@ function timelineTone(state) {
                         </button>
                     </form>
 
+                    <section
+                        v-if="result.payment_profile && result.payment_open"
+                        class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950"
+                    >
+                        <h2 class="font-semibold">Payment details</h2>
+                        <p class="mt-2">
+                            {{ result.payment_profile.bank_name }} · {{ result.payment_profile.account_name }} ·
+                            {{ result.payment_profile.account_number }}
+                        </p>
+                        <p v-if="result.payment_profile.instructions" class="mt-2 whitespace-pre-line leading-6">
+                            {{ result.payment_profile.instructions }}
+                        </p>
+                    </section>
+
                     <div
                         v-if="result.denial_reason"
                         class="rounded-2xl bg-rose-50 p-4 text-sm leading-6 text-rose-800 ring-1 ring-rose-100"
@@ -294,11 +316,18 @@ function timelineTone(state) {
                         v-if="result.claim_slip"
                         class="rounded-2xl bg-emerald-50 p-4 text-sm leading-6 text-emerald-900 ring-1 ring-emerald-100"
                     >
-                        <p class="font-semibold">Ready for pickup</p>
+                        <p class="font-semibold">
+                            {{ result.fulfillment_method === 'delivery' ? 'Ready for delivery' : 'Ready for pickup' }}
+                        </p>
                         <p class="mt-1">
                             Claim number: <strong>{{ result.claim_slip.claim_number }}</strong>
                         </p>
-                        <p v-if="result.claim_slip.claim_date">Pickup date: {{ result.claim_slip.claim_date }}</p>
+                        <p v-if="result.claim_slip.claim_date">Release date: {{ result.claim_slip.claim_date }}</p>
+                        <p v-if="result.release_channel" class="mt-1">Release channel: {{ result.release_channel }}</p>
+                        <p v-if="result.courier_name" class="mt-1">
+                            Courier: {{ result.courier_name
+                            }}<span v-if="result.courier_tracking_number"> · {{ result.courier_tracking_number }}</span>
+                        </p>
                         <label class="mt-3 block font-semibold"
                             >Private access code<input
                                 v-model="accessCode"
@@ -347,7 +376,14 @@ function timelineTone(state) {
                                 :key="`${document.name}-${document.copies}-${index}`"
                                 class="flex justify-between gap-4 p-4 text-sm"
                             >
-                                <span>{{ document.name }} × {{ document.copies }}</span>
+                                <span
+                                    ><strong>{{ document.name }}</strong> × {{ document.copies
+                                    }}<span v-if="result.quote?.is_locked" class="mt-1 block text-xs text-slate-500"
+                                        >Base PHP {{ document.base_amount }} · Authentication PHP
+                                        {{ document.authentication_amount }} · Documentary stamp PHP
+                                        {{ document.documentary_stamp_amount }}</span
+                                    ></span
+                                >
                                 <span class="font-semibold">PHP {{ document.line_total }}</span>
                             </li>
                         </ul>
@@ -393,6 +429,78 @@ function timelineTone(state) {
                             </p>
                             <p v-if="result.claim_slip.claim_date">{{ result.claim_slip.claim_date }}</p>
                         </div>
+                    </div>
+
+                    <form
+                        v-if="result.processing_stage === 'released' && !result.feedback_submitted"
+                        class="space-y-4 rounded-2xl border border-brand-200 bg-brand-50 p-5"
+                        @submit.prevent="submitFeedback"
+                    >
+                        <div>
+                            <h2 class="font-semibold text-brand-950">How was your experience?</h2>
+                            <p class="mt-1 text-sm text-brand-900">
+                                Your feedback helps the Registrar improve document services.
+                            </p>
+                        </div>
+                        <label class="block text-sm font-semibold"
+                            >Private access code<input
+                                v-model="accessCode"
+                                class="mt-1 min-h-11 w-full rounded-lg border-brand-300 bg-white font-mono uppercase"
+                                required
+                        /></label>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <label class="block text-sm font-semibold"
+                                >Overall rating<select
+                                    v-model.number="feedbackForm.rating"
+                                    class="mt-1 min-h-11 w-full rounded-lg border-brand-300 bg-white"
+                                >
+                                    <option v-for="rating in 5" :key="rating" :value="rating">{{ rating }} / 5</option>
+                                </select></label
+                            >
+                            <label class="block text-sm font-semibold"
+                                >Service rating <span class="font-normal text-slate-500">(optional)</span
+                                ><select
+                                    v-model="feedbackForm.service_rating"
+                                    class="mt-1 min-h-11 w-full rounded-lg border-brand-300 bg-white"
+                                >
+                                    <option value="">Not answered</option>
+                                    <option v-for="rating in 5" :key="rating" :value="rating">{{ rating }} / 5</option>
+                                </select></label
+                            >
+                        </div>
+                        <label class="block text-sm font-semibold"
+                            >Comments<textarea
+                                v-model="feedbackForm.comments"
+                                rows="3"
+                                maxlength="1000"
+                                class="mt-1 w-full rounded-lg border-brand-300 bg-white"
+                            />
+                        </label>
+                        <label class="block text-sm font-semibold"
+                            >Suggestions <span class="font-normal text-slate-500">(optional)</span
+                            ><textarea
+                                v-model="feedbackForm.suggestions"
+                                rows="2"
+                                maxlength="1000"
+                                class="mt-1 w-full rounded-lg border-brand-300 bg-white"
+                            />
+                        </label>
+                        <p v-if="feedbackForm.errors.feedback" class="text-sm text-rose-700">
+                            {{ feedbackForm.errors.feedback }}
+                        </p>
+                        <button
+                            type="submit"
+                            :disabled="feedbackForm.processing || !accessCode"
+                            class="min-h-11 rounded-lg bg-brand-700 px-5 font-semibold text-white disabled:opacity-40"
+                        >
+                            {{ feedbackForm.processing ? 'Submitting…' : 'Submit feedback' }}
+                        </button>
+                    </form>
+                    <div
+                        v-else-if="result.feedback_submitted"
+                        class="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-900 ring-1 ring-emerald-100"
+                    >
+                        Thank you — your feedback has been recorded.
                     </div>
                     <div class="rounded-2xl bg-slate-100 p-4 text-sm text-slate-700">
                         Need help? Contact the Registrar at <strong>{{ result.registrar_contact.phone }}</strong> or

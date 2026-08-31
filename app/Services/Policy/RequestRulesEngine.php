@@ -19,7 +19,7 @@ class RequestRulesEngine
      * @return array{
      *   code:string, name:string, category:string, fee:float, fee_formula:string,
      *   sla_days:int, submission_window:?string, release_channel:?string,
-     *   offices:array<int,string>, requirements:array<int,string>, flags:array<int,string>
+     *   offices:array<int,string>, requirements:array<int,string>, flags:array<int,string>, bundle_documents:array<int,string>
      * }
      */
     public function rulesFor(DocumentType $type): array
@@ -38,6 +38,7 @@ class RequestRulesEngine
             'offices' => (array) ($type->offices ?: ($configured['offices'] ?? [])),
             'requirements' => (array) ($type->requirements ?: ($configured['requirements'] ?? [])),
             'flags' => (array) ($type->flags ?: ($configured['flags'] ?? [])),
+            'bundle_documents' => (array) ($configured['bundle_documents'] ?? []),
         ];
     }
 

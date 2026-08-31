@@ -106,7 +106,7 @@ return [
         ],
 
         'tor_transfer' => [
-            'name' => 'Transcript of Records (valid for Transfer)',
+            'name' => 'Transfer Credentials',
             'category' => 'Academic',
             'fee' => 165.00,
             'fee_formula' => 'per_page',
@@ -115,7 +115,12 @@ return [
             'release_channel' => 'registrar_window_9',
             'offices' => ['president', 'dean', 'alumni', 'guidance', 'sao', 'library', 'registrar', 'accounting'],
             'requirements' => ['valid_id_photocopy_claimant'],
-            'flags' => ['requires_hd_return'],
+            'flags' => ['requires_hd_return', 'transfer_bundle'],
+            'bundle_documents' => [
+                'Honorable Dismissal',
+                'Certificate of Good Moral Character',
+                'Transcript of Records (valid for Transfer)',
+            ],
         ],
 
         'diploma' => [
@@ -128,7 +133,7 @@ return [
             'release_channel' => 'registrar_window_9',
             'offices' => ['president', 'dean', 'alumni', 'guidance', 'sao', 'library', 'registrar', 'accounting'],
             'requirements' => ['valid_id_photocopy_claimant'],
-            'flags' => [],
+            'flags' => ['stamp_exempt'],
         ],
 
         'diploma_reissue_college' => [
@@ -141,7 +146,7 @@ return [
             'release_channel' => 'registrar_window_9',
             'offices' => ['president', 'dean', 'alumni', 'guidance', 'sao', 'library', 'registrar', 'accounting'],
             'requirements' => ['valid_id_photocopy_claimant'],
-            'flags' => [],
+            'flags' => ['stamp_exempt'],
         ],
 
         'diploma_reissue_basic' => [
@@ -154,7 +159,7 @@ return [
             'release_channel' => 'annex_principal',
             'offices' => ['registrar', 'accounting'],
             'requirements' => ['valid_id_photocopy_claimant'],
-            'flags' => ['basic_ed'],
+            'flags' => ['basic_ed', 'stamp_exempt'],
         ],
 
         'special_order' => [
@@ -167,7 +172,7 @@ return [
             'release_channel' => 'registrar_window_9',
             'offices' => ['president', 'dean', 'alumni', 'guidance', 'sao', 'library', 'registrar', 'accounting'],
             'requirements' => [],
-            'flags' => [],
+            'flags' => ['stamp_exempt'],
         ],
 
         // Certifications

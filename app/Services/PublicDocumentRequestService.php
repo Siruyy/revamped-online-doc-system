@@ -60,6 +60,7 @@ class PublicDocumentRequestService
             $basicEducation = $isBasicEducation
                 ? PublicRequestOptions::BASIC_EDUCATION_LEVELS[$data['basic_education_level']]
                 : null;
+            $requesterName = $this->resolveRequesterName($data);
             $requesterCourse = $isBasicEducation ? $basicEducation['code'] : $program->code;
             $programSnapshot = $isBasicEducation ? $basicEducation['label'] : $program->displayName();
             $departmentCode = $isBasicEducation ? 'BEC' : $program->department->code;
@@ -73,7 +74,7 @@ class PublicDocumentRequestService
                     'type' => $type,
                     'copies' => $copies,
                     'authentication_requested' => (bool) ($item['authentication_requested'] ?? false),
-                    'documentary_stamp_requested' => (bool) ($item['documentary_stamp_requested'] ?? false),
+                    'documentary_stamp_requested' => ! $this->isStampExempt($type),
                     'semester_requested' => $item['semester_requested'] ?? null,
                 ];
             }
@@ -85,7 +86,11 @@ class PublicDocumentRequestService
             $documentRequest = DocumentRequest::query()->create([
                 'reference_no' => $this->generateReferenceNumber(),
                 'user_id' => null,
-                'requester_name' => $data['requester_name'],
+                'requester_name' => $requesterName,
+                'requester_last_name' => $data['requester_last_name'] ?? null,
+                'requester_first_name' => $data['requester_first_name'] ?? null,
+                'requester_middle_name' => $data['requester_middle_name'] ?? null,
+                'requester_suffix' => $data['requester_suffix'] ?? null,
                 'requester_email' => $data['requester_email'] ?? null,
                 'requester_contact_number' => $data['requester_contact_number'],
                 'requester_student_id' => $data['requester_student_id'] ?? null,
@@ -96,6 +101,7 @@ class PublicDocumentRequestService
                 'academic_program_snapshot' => $programSnapshot,
                 'academic_department_code_snapshot' => $departmentCode,
                 'requester_year_level' => $data['requester_year_level'] ?? null,
+                'requester_year_level_status' => $data['requester_year_level_status'] ?? null,
                 'requester_graduation_or_last_sem' => PublicRequestOptions::attendanceLabel(
                     $data['requester_last_term_attended'],
                     $data['requester_last_year_attended'],
@@ -129,9 +135,17 @@ class PublicDocumentRequestService
                     'employment_status' => $data['employment_status'],
                     'company_name' => $data['company_name'] ?? null,
                     'company_address' => $data['company_address'] ?? null,
+                    'requester_last_name' => $data['requester_last_name'] ?? null,
+                    'requester_first_name' => $data['requester_first_name'] ?? null,
+                    'requester_middle_name' => $data['requester_middle_name'] ?? null,
+                    'requester_suffix' => $data['requester_suffix'] ?? null,
                 ],
                 'fulfillment_method' => $data['fulfillment_method'],
                 'delivery_address' => $data['delivery_address'] ?? null,
+                'delivery_provider' => $data['delivery_provider'] ?? null,
+                'requester_claimant_name' => $data['requester_claimant_name'] ?? null,
+                'representative_relationship' => $data['representative_relationship'] ?? null,
+                'owner_residence' => $data['owner_residence'] ?? null,
                 'is_proxy_request' => (bool) ($data['is_proxy_request'] ?? false),
                 'tracking_access_hash' => hash('sha256', $accessCode),
                 'requires_hd_return' => collect($resolvedItems)->contains(
@@ -158,7 +172,13 @@ class PublicDocumentRequestService
                 ->flatMap(fn (array $item): array => (array) $item['type']->requirements)
                 ->merge(['photo_2x2', 'psa_birth_certificate'])
                 ->when($data['civil_status'] === 'Married', fn ($keys) => $keys->push('marriage_certificate'))
-                ->when((bool) ($data['is_proxy_request'] ?? false), fn ($keys) => $keys->push('authorization_letter')->push('spa'))
+                ->when((bool) ($data['is_proxy_request'] ?? false), function ($keys) use ($data) {
+                    $keys->push('valid_id_photocopy_owner')->push('valid_id_photocopy_claimant');
+
+                    return ($data['owner_residence'] ?? null) === 'within_country'
+                        ? $keys->push('spa')
+                        : $keys->push('authorization_letter');
+                })
                 ->unique()
                 ->values()
                 ->all();
@@ -186,7 +206,9 @@ class PublicDocumentRequestService
                 ->notify(new WorkflowStatusNotification([
                     'type' => 'public_request_received',
                     'title' => 'Your SVCI document request was received',
-                    'message' => "Reference: {$documentRequest->reference_no}. Private access code: {$accessCode}. Save both; the access code is required for corrections, payment, and the claim slip.",
+                    'message' => 'Save these details. The private access code is required for corrections, payment, and the claim slip.',
+                    'reference_no' => $documentRequest->reference_no,
+                    'access_code' => $accessCode,
                     'url' => route('track-document', ['reference_no' => $documentRequest->reference_no]),
                 ]));
 
@@ -243,5 +265,27 @@ class PublicDocumentRequestService
         }
 
         throw new \RuntimeException('Unable to generate a unique request reference number.');
+    }
+
+    /** @param array<string, mixed> $data */
+    private function resolveRequesterName(array $data): string
+    {
+        if (filled($data['requester_name'] ?? null)) {
+            return trim((string) $data['requester_name']);
+        }
+
+        $last = trim((string) ($data['requester_last_name'] ?? ''));
+        $first = trim((string) ($data['requester_first_name'] ?? ''));
+        $middle = trim((string) ($data['requester_middle_name'] ?? ''));
+        $suffix = trim((string) ($data['requester_suffix'] ?? ''));
+
+        return trim($last.', '.$first.($middle !== '' ? ' '.$middle : '').($suffix !== '' ? ' '.$suffix : ''));
+    }
+
+    private function isStampExempt(DocumentType $type): bool
+    {
+        return $type->hasFlag('stamp_exempt')
+            || in_array($type->code, ['special_order', 'diploma', 'diploma_reissue_college', 'diploma_reissue_basic'], true)
+            || in_array('stamp_exempt', (array) config('policy.document_types.'.$type->code.'.flags', []), true);
     }
 }

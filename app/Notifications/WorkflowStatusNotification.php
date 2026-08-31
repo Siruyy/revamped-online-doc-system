@@ -8,6 +8,7 @@ use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\HtmlString;
 
 class WorkflowStatusNotification extends Notification implements ShouldQueue
 {
@@ -37,11 +38,22 @@ class WorkflowStatusNotification extends Notification implements ShouldQueue
     {
         $message = (new MailMessage)
             ->subject($this->stringOrDefault($this->data['title'] ?? null, 'Workflow update'))
-            ->greeting('SVCI Document Request Update')
-            ->line($this->stringOrDefault($this->data['message'] ?? null, 'Your workflow status was updated.'));
+            ->greeting('SVCI Document Request Update');
 
-        if (is_string($this->data['url'] ?? null)) {
-            $message->action('Open workflow', $this->data['url']);
+        if (isset($this->data['reference_no'])) {
+            $message->line(new HtmlString('<strong>Reference number:</strong> '.e((string) $this->data['reference_no'])));
+        }
+
+        if (isset($this->data['access_code'])) {
+            $message->line(new HtmlString('<strong>Private access code:</strong> '.e((string) $this->data['access_code'])));
+        }
+
+        $message->line($this->stringOrDefault($this->data['message'] ?? null, 'Your workflow status was updated.'));
+
+        $actionUrl = $this->data['feedback_url'] ?? $this->data['url'] ?? null;
+
+        if (is_string($actionUrl)) {
+            $message->action(isset($this->data['feedback_url']) ? 'Open tracking and feedback' : 'Open workflow', $actionUrl);
         }
 
         return $message;

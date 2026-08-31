@@ -3,19 +3,38 @@
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\DocumentRequestController as PublicDocumentRequestController;
+use App\Http\Controllers\Public\FeedbackController;
 use App\Http\Controllers\Public\TrackDocumentController;
 use App\Http\Controllers\Public\WorkflowActionController;
+use App\Models\Announcement;
+use App\Models\Faq;
+use App\Models\PaymentProfile;
 use App\Models\User;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+    $paymentProfile = PaymentProfile::active();
+
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
+        'announcements' => Announcement::query()
+            ->where('audience', 'all')
+            ->whereNotNull('published_at')
+            ->latest('pinned')
+            ->latest('published_at')
+            ->limit(3)
+            ->get(['id', 'title', 'body', 'published_at']),
+        'faqs' => Faq::query()
+            ->where('role', 'all')
+            ->orderBy('sort_order')
+            ->limit(8)
+            ->get(['id', 'question', 'answer']),
+        'paymentInstructions' => $paymentProfile?->instructions,
     ]);
 });
 
@@ -46,6 +65,8 @@ Route::middleware('throttle:public-requests')->group(function () {
         ->name('public.requests.payment.upload');
     Route::post('/public/requests/{documentRequest:reference_no}/claim-slip', [WorkflowActionController::class, 'downloadClaimSlip'])
         ->name('public.requests.claim-slip.download');
+    Route::post('/public/requests/{documentRequest:reference_no}/feedback', [FeedbackController::class, 'store'])
+        ->name('public.requests.feedback.store');
 });
 Route::get('/public/files/payment-qr/{paymentProfile}', [FileController::class, 'publicPaymentQr'])
     ->name('public.files.payment-qr');

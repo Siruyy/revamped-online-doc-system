@@ -662,7 +662,8 @@ class RequestService
         return $documentRequest->refresh();
     }
 
-    public function updateStage(DocumentRequest $documentRequest, User $admin, string $stage): DocumentRequest
+    /** @param array<string, mixed> $options */
+    public function updateStage(DocumentRequest $documentRequest, User $admin, string $stage, array $options = []): DocumentRequest
     {
         $allowedStages = ['processing', 'ready_for_pickup', 'released'];
 
@@ -677,6 +678,16 @@ class RequestService
         $this->ensureStageGatesArePassed($documentRequest, $stage);
 
         $updates = ['processing_stage' => $stage];
+
+        foreach (['expected_release_on', 'release_channel', 'courier_name', 'courier_tracking_number'] as $field) {
+            if (array_key_exists($field, $options)) {
+                $updates[$field] = $options[$field] ?: null;
+            }
+        }
+
+        if (($options['release_channel'] ?? null) === null && $documentRequest->release_channel === null) {
+            $updates['release_channel'] = $documentRequest->documentType?->release_channel;
+        }
 
         if ($documentRequest->intake_mode === 'public') {
             $updates['workflow_stage'] = match ($stage) {
@@ -718,21 +729,41 @@ class RequestService
             User::query()->findOrFail($documentRequest->user_id)->notify(new WorkflowStatusNotification([
                 'type' => 'request_stage_updated',
                 'title' => 'Request status updated',
-                'message' => "Your request {$documentRequest->reference_no} moved to {$documentRequest->processing_stage}.",
+                'message' => $this->publicStageMessage($documentRequest),
                 'document_request_id' => $documentRequest->id,
                 'processing_stage' => $documentRequest->processing_stage,
                 'status' => $documentRequest->status,
+                'reference_no' => $documentRequest->reference_no,
+                'feedback_url' => $documentRequest->processing_stage === 'released'
+                    ? route('track-document', ['reference_no' => $documentRequest->reference_no])
+                    : null,
             ]));
         } elseif ($documentRequest->intake_mode === 'public') {
             $this->notifyPublicRequestor($documentRequest, [
                 'type' => 'request_stage_updated',
                 'title' => 'Your document request moved forward',
-                'message' => "Request {$documentRequest->reference_no} is now ".str_replace('_', ' ', $documentRequest->workflow_stage).'.',
+                'message' => $this->publicStageMessage($documentRequest),
                 'url' => route('track-document', ['reference_no' => $documentRequest->reference_no]),
+                'reference_no' => $documentRequest->reference_no,
+                'feedback_url' => $documentRequest->processing_stage === 'released'
+                    ? route('track-document', ['reference_no' => $documentRequest->reference_no])
+                    : null,
             ]);
         }
 
         return $documentRequest;
+    }
+
+    private function publicStageMessage(DocumentRequest $documentRequest): string
+    {
+        return match ($documentRequest->processing_stage) {
+            'processing' => "Request {$documentRequest->reference_no} is now being processed by the registrar.",
+            'ready_for_pickup' => $documentRequest->fulfillment_method === 'delivery'
+                ? "Request {$documentRequest->reference_no} is ready for delivery. The courier details will appear on the tracking page."
+                : "Request {$documentRequest->reference_no} is ready for pickup. Bring your reference number and one valid ID.",
+            'released' => "Request {$documentRequest->reference_no} has been released. Please share your feedback using the tracking page.",
+            default => "Request {$documentRequest->reference_no} moved to ".str_replace('_', ' ', $documentRequest->workflow_stage).'.',
+        };
     }
 
     private function ensureStageGatesArePassed(DocumentRequest $documentRequest, string $stage): void

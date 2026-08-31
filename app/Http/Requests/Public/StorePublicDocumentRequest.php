@@ -24,7 +24,11 @@ class StorePublicDocumentRequest extends FormRequest
         $maxFileKilobytes = FileUploadLimits::publicIntakeMaxFileKilobytes();
 
         return [
-            'requester_name' => ['required', 'string', 'max:150'],
+            'requester_name' => ['nullable', 'string', 'max:150'],
+            'requester_last_name' => ['nullable', 'string', 'max:100'],
+            'requester_first_name' => ['nullable', 'string', 'max:100'],
+            'requester_middle_name' => ['nullable', 'string', 'max:100'],
+            'requester_suffix' => ['nullable', 'string', 'max:32'],
             'requester_email' => ['required', 'email', 'max:150'],
             'requester_contact_number' => ['required', 'string', 'max:30'],
             'requester_student_id' => ['nullable', 'string', 'max:50'],
@@ -36,7 +40,8 @@ class StorePublicDocumentRequest extends FormRequest
                 'integer',
                 Rule::exists('academic_programs', 'id')->where('is_active', true),
             ],
-            'requester_year_level' => ['nullable', 'required_if:requester_division,college', 'integer', 'min:1', 'max:8'],
+            'requester_year_level' => ['nullable', 'integer', 'min:1', 'max:8'],
+            'requester_year_level_status' => ['nullable', Rule::in(array_keys(PublicRequestOptions::YEAR_LEVEL_STATUSES))],
             'requester_last_term_attended' => ['required', Rule::in(array_keys(PublicRequestOptions::TERMS))],
             'requester_last_year_attended' => ['required', Rule::in(PublicRequestOptions::academicYears())],
             'birth_date' => ['required', 'date', 'before:today'],
@@ -73,7 +78,11 @@ class StorePublicDocumentRequest extends FormRequest
             'purpose_other' => ['nullable', 'required_if:purpose,Other official purpose', 'string', 'min:3', 'max:300'],
             'fulfillment_method' => ['required', 'in:pickup,delivery'],
             'delivery_address' => ['nullable', 'required_if:fulfillment_method,delivery', 'string', 'max:500'],
+            'delivery_provider' => ['nullable', Rule::in(['courier'])],
             'is_proxy_request' => ['sometimes', 'boolean'],
+            'requester_claimant_name' => ['nullable', 'required_if:is_proxy_request,1', 'string', 'max:150'],
+            'representative_relationship' => ['nullable', 'required_if:is_proxy_request,1', 'string', 'max:100'],
+            'owner_residence' => ['nullable', 'required_if:is_proxy_request,1', Rule::in(array_keys(PublicRequestOptions::OWNER_RESIDENCES))],
             'requirements' => ['nullable', 'array'],
             'requirements.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:'.$maxFileKilobytes],
         ];
@@ -82,6 +91,27 @@ class StorePublicDocumentRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            $hasSplitName = filled($this->input('requester_last_name')) || filled($this->input('requester_first_name'));
+
+            if ($hasSplitName && (blank($this->input('requester_last_name')) || blank($this->input('requester_first_name')))) {
+                $validator->errors()->add('requester_last_name', 'Last name and first name are both required.');
+            }
+
+            if (! $hasSplitName && blank($this->input('requester_name'))) {
+                $validator->errors()->add('requester_name', 'Enter the requestor full name.');
+            }
+
+            if ($this->input('requester_division') === 'college'
+                && blank($this->input('requester_year_level'))
+                && blank($this->input('requester_year_level_status'))) {
+                $validator->errors()->add('requester_year_level', 'Select a year level or an academic status.');
+            }
+
+            if ($this->boolean('is_proxy_request') && $this->input('owner_residence') === 'within_country'
+                && ! $this->hasFile('requirements.spa')) {
+                $validator->errors()->add('requirements.spa', 'A Special Power of Attorney is required when the owner resides within the Philippines.');
+            }
+
             $items = (array) $this->input('items', []);
             $documentTypeIds = collect($items)
                 ->pluck('document_type_id')
@@ -137,7 +167,13 @@ class StorePublicDocumentRequest extends FormRequest
                 ->flatMap(fn (DocumentType $type): array => (array) $type->requirements)
                 ->merge(['photo_2x2', 'psa_birth_certificate'])
                 ->when($this->input('civil_status') === 'Married', fn ($keys) => $keys->push('marriage_certificate'))
-                ->when($this->boolean('is_proxy_request'), fn ($keys) => $keys->push('authorization_letter')->push('spa'))
+                ->when($this->boolean('is_proxy_request'), function ($keys) {
+                    $keys->push('valid_id_photocopy_owner')->push('valid_id_photocopy_claimant');
+
+                    return $this->input('owner_residence') === 'within_country'
+                        ? $keys->push('spa')
+                        : $keys->push('authorization_letter');
+                })
                 ->filter()
                 ->unique()
                 ->values();

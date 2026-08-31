@@ -21,6 +21,10 @@ class DocumentRequest extends Model
         'reference_no',
         'user_id',
         'requester_name',
+        'requester_last_name',
+        'requester_first_name',
+        'requester_middle_name',
+        'requester_suffix',
         'requester_email',
         'requester_contact_number',
         'requester_student_id',
@@ -31,6 +35,7 @@ class DocumentRequest extends Model
         'academic_program_snapshot',
         'academic_department_code_snapshot',
         'requester_year_level',
+        'requester_year_level_status',
         'requester_graduation_or_last_sem',
         'requester_last_term_attended',
         'requester_last_year_attended',
@@ -49,8 +54,14 @@ class DocumentRequest extends Model
         'purpose',
         'extra_data',
         'requester_profile',
+        'requester_claimant_name',
+        'representative_relationship',
+        'owner_residence',
         'fulfillment_method',
         'delivery_address',
+        'delivery_provider',
+        'courier_name',
+        'courier_tracking_number',
         'is_proxy_request',
         'tracking_access_hash',
         'shipping_fee',
@@ -64,6 +75,7 @@ class DocumentRequest extends Model
         'sla_resumed_at',
         'sla_pause_reason',
         'expected_release_on',
+        'release_channel',
 
         'requires_hd_return',
         'hd_received_at',
@@ -179,6 +191,14 @@ class DocumentRequest extends Model
     public function claimSlip(): HasOne
     {
         return $this->hasOne(ClaimSlip::class);
+    }
+
+    /**
+     * @return HasOne<RequestFeedback, $this>
+     */
+    public function feedback(): HasOne
+    {
+        return $this->hasOne(RequestFeedback::class);
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Models\DocumentRequest;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use Barryvdh\DomPDF\Facade\Pdf;
+use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -21,8 +22,15 @@ class ClaimSlipService
     public function issueForRequest(DocumentRequest $request, User $actor): ClaimSlip
     {
         return DB::transaction(function () use ($request, $actor): ClaimSlip {
-            $claimDate = $this->sla->addWorkingDays(now(), 1)->toDateString();
-            $channel = $request->documentType->release_channel ?? 'registrar_window_9';
+            $expectedRelease = $request->getAttribute('expected_release_on');
+            $claimDate = $expectedRelease instanceof DateTimeInterface
+                ? $expectedRelease->format('Y-m-d')
+                : (is_string($expectedRelease) && $expectedRelease !== ''
+                    ? $expectedRelease
+                    : $this->sla->addWorkingDays(now(), 1)->toDateString());
+            $channel = $request->release_channel
+                ?? $request->documentType->release_channel
+                ?? 'registrar_window_9';
 
             $slip = ClaimSlip::query()->updateOrCreate(
                 ['document_request_id' => $request->id],
@@ -36,7 +44,7 @@ class ClaimSlipService
 
             $relativePath = 'pdfs/claim-slips/'.$request->id.'/claim-slip-'.$slip->id.'.pdf';
             $pdf = Pdf::loadView('pdf.claim-slip', [
-                'slip' => $slip->load('documentRequest.items.documentType'),
+                'slip' => $slip->load('documentRequest.user', 'documentRequest.items.documentType'),
                 'generatedAt' => now(),
             ])->setPaper('a4');
             Storage::disk('local')->put($relativePath, $pdf->output());

@@ -10,6 +10,7 @@ use App\Models\ClearanceStep;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\Payment;
+use App\Models\PaymentProfile;
 use App\Models\RequestRequirement;
 use App\Support\PublicRequestOptions;
 use DateTimeInterface;
@@ -36,11 +37,12 @@ class TrackDocumentController extends Controller
             ->with([
                 'items.documentType:id,name',
                 'documentType:id,name',
-                'payments:id,document_request_id,total_amount,status,submitted_at',
+                'payments:id,document_request_id,total_amount,status,submitted_at,payment_method,reference_number,denial_reason,receipt_path',
                 'clearances:id,document_request_id,overall_status',
                 'clearances.steps:id,clearance_id,office_code,label,sequence,status,remarks',
                 'requirements:id,document_request_id,requirement_key,label,status,notes',
-                'claimSlip:id,document_request_id,claim_number,claim_date,state',
+                'claimSlip:id,document_request_id,claim_number,claim_date,state,release_channel',
+                'feedback:id,document_request_id,rating,service_rating,comments,suggestions,submitted_at',
             ])
             ->first();
 
@@ -73,11 +75,21 @@ class TrackDocumentController extends Controller
             'timeline' => $this->timelinePayload($documentRequest),
             'submitted_at' => $documentRequest->created_at?->toDateString(),
             'expected_release_on' => $this->formatDate($documentRequest->expected_release_on),
+            'fulfillment_method' => $documentRequest->fulfillment_method,
+            'delivery_provider' => $documentRequest->delivery_provider,
+            'courier_name' => $documentRequest->courier_name,
+            'courier_tracking_number' => $documentRequest->courier_tracking_number,
+            'release_channel' => $documentRequest->release_channel
+                ? config('policy.release_channels.'.$documentRequest->release_channel, $documentRequest->release_channel)
+                : null,
             'next_step' => $this->nextStep($documentRequest, $clearance, $claimSlip),
             'documents' => $this->documentsPayload($documentRequest),
             'payment' => $payment ? [
                 'status' => $payment->status,
                 'total_amount' => $this->formatCurrency($payment->total_amount),
+                'payment_method' => $payment->payment_method,
+                'reference_number' => $payment->reference_number,
+                'denial_reason' => $payment->status === 'denied' ? $payment->denial_reason : null,
             ] : null,
             'quote' => [
                 'is_locked' => $documentRequest->quote_total !== null,
@@ -89,6 +101,8 @@ class TrackDocumentController extends Controller
                 ),
             ],
             'payment_methods' => PublicRequestOptions::PAYMENT_METHODS,
+            'payment_profile' => $this->paymentProfilePayload($documentRequest),
+            'feedback_submitted' => $documentRequest->feedback !== null,
             'clearance' => $clearance ? [
                 'overall_status' => $clearance->overall_status,
                 'steps' => $clearance->steps->map(fn (ClearanceStep $step): array => [
@@ -119,6 +133,7 @@ class TrackDocumentController extends Controller
             $payload['claim_slip'] = [
                 'claim_number' => $claimSlip->claim_number,
                 'claim_date' => $this->formatDate($claimSlip->claim_date),
+                'release_channel' => config('policy.release_channels.'.$claimSlip->release_channel, $claimSlip->release_channel),
             ];
         }
 
@@ -159,7 +174,7 @@ class TrackDocumentController extends Controller
         if ($documentRequest->intake_mode === 'public' && $documentRequest->workflow_stage !== 'submitted') {
             return [
                 'registrar_review' => 'The registrar is checking document details and preparing the final amount.',
-                'clearance' => 'Required offices are signing in sequence. Any correction will appear below.',
+                'clearance' => 'Required offices sign in parallel; Accounting validates last. Any correction will appear below.',
                 'awaiting_payment' => 'Clearance is complete. Upload the payment receipt using your private access code.',
                 'payment_review' => 'Accounting is validating the submitted payment receipt.',
                 'processing' => 'The registrar is preparing the requested documents.',
@@ -200,7 +215,7 @@ class TrackDocumentController extends Controller
             $stages = [
                 ['key' => 'submitted', 'label' => 'Submitted', 'description' => 'Request and initial requirements received.'],
                 ['key' => 'registrar_review', 'label' => 'Registrar review', 'description' => 'Items, pages, authentication, and delivery are quoted.'],
-                ['key' => 'clearance', 'label' => 'Clearance', 'description' => 'Required offices sign sequentially.'],
+                ['key' => 'clearance', 'label' => 'Clearance', 'description' => 'Required offices sign in parallel; Accounting validates last.'],
                 ['key' => 'awaiting_payment', 'label' => 'Payment', 'description' => 'Receipt upload opens after clearance.'],
                 ['key' => 'processing', 'label' => 'Process', 'description' => 'Registrar prepares the records.'],
                 ['key' => 'ready', 'label' => 'Ready', 'description' => 'Claim slip and release date are available.'],
@@ -287,7 +302,9 @@ class TrackDocumentController extends Controller
                 'awaiting_payment' => 'Enter your private access code and upload the payment receipt below.',
                 'payment_review' => 'Wait for accounting validation. A rejected receipt can be replaced on this page.',
                 'processing' => 'No action is needed while the registrar prepares the documents.',
-                'ready' => 'Download the claim slip and bring it with one valid ID.',
+                'ready' => $documentRequest->fulfillment_method === 'delivery'
+                    ? 'Your documents are ready for courier delivery. Keep the tracking number and stay available at the delivery address.'
+                    : 'Download the claim slip and bring it with one valid ID.',
                 'released' => 'Keep the reference number for your records.',
             ][$documentRequest->workflow_stage] ?? 'Keep checking this page for updates.';
         }
@@ -330,6 +347,9 @@ class TrackDocumentController extends Controller
                 $documents[] = [
                     'name' => $documentType?->name,
                     'copies' => (int) $item->copies,
+                    'base_amount' => $this->formatCurrency($item->base_amount),
+                    'authentication_amount' => $this->formatCurrency($item->authentication_amount),
+                    'documentary_stamp_amount' => $this->formatCurrency($item->documentary_stamp_amount),
                     'line_total' => $this->formatCurrency($item->line_total),
                 ];
             }
@@ -343,6 +363,9 @@ class TrackDocumentController extends Controller
         return [[
             'name' => $documentType?->name,
             'copies' => (int) ($request->quantity ?? 1),
+            'base_amount' => $this->formatCurrency($request->fee_snapshot),
+            'authentication_amount' => '0.00',
+            'documentary_stamp_amount' => '0.00',
             'line_total' => $this->formatCurrency($request->fee_snapshot ?? 0),
         ]];
     }
@@ -359,5 +382,23 @@ class TrackDocumentController extends Controller
         }
 
         return is_string($value) ? $value : null;
+    }
+
+    /** @return array<string, mixed>|null */
+    private function paymentProfilePayload(DocumentRequest $request): ?array
+    {
+        if (! $request->quote_total && ! $request->payments->contains(fn (Payment $payment): bool => $payment->receipt_path !== null)) {
+            return null;
+        }
+
+        $profile = PaymentProfile::active();
+
+        return $profile ? [
+            'bank_name' => $profile->bank_name,
+            'account_name' => $profile->account_name,
+            'account_number' => $profile->account_number,
+            'instructions' => $profile->instructions,
+            'qr_url' => $profile->qr_path ? route('public.files.payment-qr', $profile->id) : null,
+        ] : null;
     }
 }

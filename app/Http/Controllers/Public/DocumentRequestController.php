@@ -57,6 +57,7 @@ class DocumentRequestController extends Controller
                             'hint' => config('policy.requirements.'.$key.'.hint'),
                         ])->values(),
                     'flags' => $spec['flags'],
+                    'bundle_documents' => $spec['bundle_documents'],
                 ];
             })
             ->groupBy('category');
@@ -96,6 +97,8 @@ class DocumentRequestController extends Controller
                 'basic_education_levels' => PublicRequestOptions::BASIC_EDUCATION_LEVELS,
                 'terms' => PublicRequestOptions::TERMS,
                 'academic_years' => PublicRequestOptions::academicYears(),
+                'year_level_statuses' => PublicRequestOptions::YEAR_LEVEL_STATUSES,
+                'owner_residences' => PublicRequestOptions::OWNER_RESIDENCES,
                 'purposes' => PublicRequestOptions::PURPOSES,
             ],
         ]);

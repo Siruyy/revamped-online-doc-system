@@ -31,6 +31,9 @@ defineProps({
         type: String,
         required: true,
     },
+    announcements: { type: Array, default: () => [] },
+    faqs: { type: Array, default: () => [] },
+    paymentInstructions: { type: String, default: null },
 });
 
 const serviceFacts = [
@@ -386,6 +389,61 @@ onBeforeUnmount(() => revealObserver?.disconnect());
                                 <CheckCircleIcon class="mt-0.5 h-5 w-5 shrink-0 text-brand-700" aria-hidden="true" />
                                 Payment is requested only after review and required clearance are complete.
                             </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section
+                v-if="announcements.length || faqs.length || paymentInstructions"
+                class="border-t border-slate-200 bg-slate-50 py-20 sm:py-24"
+            >
+                <div class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+                    <div v-if="announcements.length" data-landing-reveal class="landing-reveal">
+                        <p class="text-sm font-bold uppercase tracking-[0.2em] text-brand-700">Registrar updates</p>
+                        <h2 class="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950">
+                            What you should know
+                        </h2>
+                        <div class="mt-6 space-y-4">
+                            <article
+                                v-for="announcement in announcements"
+                                :key="announcement.id"
+                                class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                            >
+                                <h3 class="font-display text-lg font-bold text-slate-950">{{ announcement.title }}</h3>
+                                <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">
+                                    {{ announcement.body }}
+                                </p>
+                            </article>
+                        </div>
+                    </div>
+                    <div v-if="faqs.length || paymentInstructions" data-landing-reveal class="landing-reveal">
+                        <p class="text-sm font-bold uppercase tracking-[0.2em] text-brand-700">Helpful answers</p>
+                        <h2 class="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950">
+                            Before you submit
+                        </h2>
+                        <div
+                            v-if="paymentInstructions"
+                            class="mt-6 rounded-2xl border border-brand-200 bg-brand-50 p-5 text-sm leading-6 text-brand-950"
+                        >
+                            <p class="font-bold">Payment instructions</p>
+                            <p class="mt-2 whitespace-pre-line">{{ paymentInstructions }}</p>
+                            <p class="mt-2 text-xs text-brand-800">
+                                A final amount and payment reference will appear only after registrar review.
+                            </p>
+                        </div>
+                        <div
+                            v-if="faqs.length"
+                            class="mt-4 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white px-5"
+                        >
+                            <details v-for="faq in faqs" :key="faq.id" class="py-4">
+                                <summary class="cursor-pointer font-semibold text-slate-900">
+                                    {{ faq.question }}
+                                </summary>
+                                <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">
+                                    {{ faq.answer }}
+                                </p>
+                            </details>
                         </div>
                     </div>
                 </div>
