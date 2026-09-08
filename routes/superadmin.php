@@ -3,9 +3,11 @@
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\DocumentTypeController;
 use App\Http\Controllers\Admin\FaqController;
+use App\Http\Controllers\Admin\PaymentProfileController;
 use App\Http\Controllers\Admin\ReleaseController;
 use App\Http\Controllers\Admin\ReportExportController;
 use App\Http\Controllers\Admin\RequestController;
+use App\Http\Controllers\Admin\SchoolBrandingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SuperAdmin\ActivityLogExportController;
@@ -33,8 +35,17 @@ Route::get('/reports/exports/payments', [ReportExportController::class, 'payment
 Route::get('/document-types', [DocumentTypeController::class, 'index'])->name('document-types.index');
 Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
 Route::get('/faqs', [FaqController::class, 'index'])->name('faqs.index');
+Route::get('/settings/payment-profile', [PaymentProfileController::class, 'index'])->name('settings.payment-profile.index');
+Route::get('/settings/branding', [SchoolBrandingController::class, 'index'])->name('settings.branding.index');
 
 Route::middleware('throttle:sensitive-actions')->group(function () {
+    Route::post('/settings/branding', [SchoolBrandingController::class, 'update'])->name('settings.branding.update');
+    Route::delete('/settings/branding', [SchoolBrandingController::class, 'destroy'])->name('settings.branding.destroy');
+    Route::post('/settings/payment-profile', [PaymentProfileController::class, 'store'])->name('settings.payment-profile.store');
+    Route::patch('/settings/payment-profile/{paymentProfile}', [PaymentProfileController::class, 'update'])->name('settings.payment-profile.update');
+    Route::patch('/settings/payment-profile/{paymentProfile}/toggle', [PaymentProfileController::class, 'toggle'])->name('settings.payment-profile.toggle');
+    Route::delete('/settings/payment-profile/{paymentProfile}', [PaymentProfileController::class, 'destroy'])->name('settings.payment-profile.destroy');
+    Route::delete('/settings/payment-profile/{paymentProfile}/qr', [PaymentProfileController::class, 'removeQr'])->name('settings.payment-profile.remove-qr');
     Route::post('/requests/{documentRequest}/approve', [RequestController::class, 'approve'])->name('requests.approve');
     Route::post('/requests/{documentRequest}/evaluate', [RequestController::class, 'evaluate'])->name('requests.evaluate');
     Route::post('/requests/{documentRequest}/registrar-clearance', [RequestController::class, 'signRegistrarClearance'])->name('requests.registrar-clearance');

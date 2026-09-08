@@ -40,6 +40,10 @@ const deleteAnnouncement = (id) => router.delete(route(`${routeBase.value}.annou
     <StaffLayout>
         <template #header>
             <h2 class="text-xl font-semibold leading-tight text-slate-900">Announcements</h2>
+            <p class="mt-2 text-sm text-slate-600">
+                Choose “All” and publish to show an announcement on the public landing page. Drafts and staff-only
+                announcements stay off the landing page.
+            </p>
         </template>
 
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">

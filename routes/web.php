@@ -25,6 +25,7 @@ Route::get('/', function () {
         'announcements' => Announcement::query()
             ->where('audience', 'all')
             ->whereNotNull('published_at')
+            ->where('published_at', '<=', now())
             ->latest('pinned')
             ->latest('published_at')
             ->limit(3)

@@ -290,7 +290,9 @@ function timelineTone(state) {
                     </form>
 
                     <section
-                        v-if="result.payment_profile"
+                        v-for="(profile, index) in result.payment_profiles ||
+                        (result.payment_profile ? [result.payment_profile] : [])"
+                        :key="index"
                         class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950"
                     >
                         <h2 class="font-semibold">Payment details</h2>
@@ -298,15 +300,15 @@ function timelineTone(state) {
                             Use these official payment details when your request reaches the payment stage.
                         </p>
                         <p class="mt-2">
-                            {{ result.payment_profile.bank_name }} · {{ result.payment_profile.account_name }} ·
-                            {{ result.payment_profile.account_number }}
+                            {{ profile.bank_name }} · {{ profile.account_name }} ·
+                            {{ profile.account_number }}
                         </p>
-                        <p v-if="result.payment_profile.instructions" class="mt-2 whitespace-pre-line leading-6">
-                            {{ result.payment_profile.instructions }}
+                        <p v-if="profile.instructions" class="mt-2 whitespace-pre-line leading-6">
+                            {{ profile.instructions }}
                         </p>
                         <img
-                            v-if="result.payment_profile.qr_url"
-                            :src="result.payment_profile.qr_url"
+                            v-if="profile.qr_url"
+                            :src="profile.qr_url"
                             alt="Official payment QR code"
                             width="176"
                             height="176"

@@ -400,10 +400,10 @@ onBeforeUnmount(() => revealObserver?.disconnect());
                 class="border-t border-slate-200 bg-slate-50 py-20 sm:py-24"
             >
                 <div class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-                    <div v-if="announcements.length" data-landing-reveal class="landing-reveal">
+                    <div v-if="announcements.length" id="announcements">
                         <p class="text-sm font-bold uppercase tracking-[0.2em] text-brand-700">Registrar updates</p>
                         <h2 class="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950">
-                            What you should know
+                            Announcements
                         </h2>
                         <div class="mt-6 space-y-4">
                             <article
@@ -418,14 +418,10 @@ onBeforeUnmount(() => revealObserver?.disconnect());
                             </article>
                         </div>
                     </div>
-                    <div
-                        v-if="faqs.length || paymentProfile || paymentInstructions"
-                        data-landing-reveal
-                        class="landing-reveal"
-                    >
+                    <div v-if="faqs.length || paymentProfile || paymentInstructions" id="faqs">
                         <p class="text-sm font-bold uppercase tracking-[0.2em] text-brand-700">Helpful answers</p>
                         <h2 class="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950">
-                            Before you submit
+                            Frequently asked questions
                         </h2>
                         <div
                             v-if="paymentProfile || paymentInstructions"

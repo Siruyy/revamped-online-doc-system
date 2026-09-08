@@ -6,6 +6,7 @@ use App\Models\ClaimSlip;
 use App\Models\DocumentRequest;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\SchoolBrandingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +47,7 @@ class ClaimSlipService
             $pdf = Pdf::loadView('pdf.claim-slip', [
                 'slip' => $slip->load('documentRequest.user', 'documentRequest.items.documentType'),
                 'generatedAt' => now(),
+                'logoDataUri' => app(SchoolBrandingService::class)->logoDataUri(),
             ])->setPaper('a4');
             Storage::disk('local')->put($relativePath, $pdf->output());
             $slip->update(['pdf_path' => $relativePath]);

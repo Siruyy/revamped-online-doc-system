@@ -102,6 +102,7 @@ class TrackDocumentController extends Controller
             ],
             'payment_methods' => PublicRequestOptions::PAYMENT_METHODS,
             'payment_profile' => $this->paymentProfilePayload(),
+            'payment_profiles' => PaymentProfile::activeProfiles()->map(fn (PaymentProfile $profile) => $profile->publicDetails())->all(),
             'feedback_submitted' => $documentRequest->feedback !== null,
             'clearance' => $clearance ? [
                 'overall_status' => $clearance->overall_status,

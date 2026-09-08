@@ -40,4 +40,16 @@ class PaymentProfile extends Model
     {
         return self::query()->where('is_active', true)->latest()->first();
     }
+
+    /** @return array<string, mixed> */
+    public function publicDetails(): array
+    {
+        return [
+            'bank_name' => $this->bank_name,
+            'account_name' => $this->account_name,
+            'account_number' => $this->account_number,
+            'instructions' => $this->instructions,
+            'qr_url' => $this->qr_path ? route('public.files.payment-qr', $this->id) : null,
+        ];
+    }
 }

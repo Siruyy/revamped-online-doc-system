@@ -1,7 +1,7 @@
 <script setup>
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import FormField from '@/Components/UI/FormField.vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import {
     BanknotesIcon,
@@ -14,12 +14,18 @@ import {
     XMarkIcon,
 } from '@heroicons/vue/24/outline';
 
-defineProps({
+const props = defineProps({
     profiles: { type: Array, default: () => [] },
 });
 
 // ─── Create form ─────────────────────────────────────────────────────────────
-const showCreate = ref(false);
+const page = usePage();
+const settingsRoute = (action, id) =>
+    route(
+        `${page.props.auth.user.role === 'superadmin' ? 'superadmin' : 'admin'}.settings.payment-profile.${action}`,
+        id,
+    );
+const showCreate = ref(props.profiles.length === 0);
 
 const createForm = useForm({
     bank_name: '',
@@ -44,7 +50,7 @@ function onCreateQrChange(e) {
 }
 
 function submitCreate() {
-    createForm.post(route('admin.settings.payment-profile.store'), {
+    createForm.post(settingsRoute('store'), {
         forceFormData: true,
         preserveScroll: true,
         onSuccess: () => {
@@ -100,7 +106,7 @@ function onEditQrChange(profileId, e) {
 
 function submitEdit(profileId) {
     const form = editForms[profileId];
-    form.patch(route('admin.settings.payment-profile.update', profileId), {
+    form.transform((data) => ({ ...data, _method: 'patch' })).post(settingsRoute('update', profileId), {
         forceFormData: true,
         preserveScroll: true,
         onSuccess: () => {
@@ -111,17 +117,17 @@ function submitEdit(profileId) {
 }
 
 function toggleActive(profile) {
-    router.patch(route('admin.settings.payment-profile.toggle', profile.id), {}, { preserveScroll: true });
+    router.patch(settingsRoute('toggle', profile.id), {}, { preserveScroll: true });
 }
 
 function deleteProfile(profile) {
     if (!window.confirm(`Delete "${profile.bank_name}" profile? This cannot be undone.`)) return;
-    router.delete(route('admin.settings.payment-profile.destroy', profile.id), { preserveScroll: true });
+    router.delete(settingsRoute('destroy', profile.id), { preserveScroll: true });
 }
 
 function removeQr(profile) {
     if (!window.confirm('Remove the QR code image?')) return;
-    router.delete(route('admin.settings.payment-profile.remove-qr', profile.id), { preserveScroll: true });
+    router.delete(settingsRoute('remove-qr', profile.id), { preserveScroll: true });
 }
 </script>
 
@@ -134,7 +140,8 @@ function removeQr(profile) {
                 <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Settings</p>
                 <h2 class="mt-1 text-2xl font-display font-bold text-slate-900">School Payment Profiles</h2>
                 <p class="text-sm text-slate-500 mt-0.5">
-                    Configure one or more payment channels. All active profiles are shown to students when they pay.
+                    Manage bank accounts, e-wallet details, payment instructions, and QR codes. Active profiles appear
+                    on public request tracking.
                 </p>
             </div>
         </template>

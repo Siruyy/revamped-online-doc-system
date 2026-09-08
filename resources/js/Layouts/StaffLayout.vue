@@ -122,6 +122,8 @@ const links = computed(() => {
             { route: 'superadmin.document-types.index', label: 'Document Types' },
             { route: 'superadmin.announcements.index', label: 'Announcements' },
             { route: 'superadmin.faqs.index', label: 'FAQs' },
+            { route: 'superadmin.settings.payment-profile.index', label: 'Payment Settings' },
+            { route: 'superadmin.settings.branding.index', label: 'Claim Slip Branding' },
             { route: 'superadmin.notifications.index', label: 'Notifications' },
             { route: 'superadmin.profile.edit', label: 'Profile' },
         ].map((link) => ({ ...link, icon: getIconForRoute(link.route) }));
@@ -152,6 +154,7 @@ const links = computed(() => {
         { route: 'admin.announcements.index', label: 'Announcements' },
         { route: 'admin.faqs.index', label: 'FAQs' },
         { route: 'admin.settings.payment-profile.index', label: 'Payment Settings' },
+        { route: 'admin.settings.branding.index', label: 'Claim Slip Branding' },
         { route: 'admin.reports.index', label: 'Reports' },
         { route: 'admin.notifications.index', label: 'Notifications' },
         { route: 'admin.profile.edit', label: 'Profile' },

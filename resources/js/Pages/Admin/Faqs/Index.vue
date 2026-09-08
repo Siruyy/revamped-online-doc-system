@@ -38,6 +38,10 @@ const deleteFaq = (id) => router.delete(route(`${routeBase.value}.faqs.destroy`,
     <StaffLayout>
         <template #header>
             <h2 class="text-xl font-semibold leading-tight text-slate-900">FAQs</h2>
+            <p class="mt-2 text-sm text-slate-600">
+                Choose “All” to show an answer on the public landing page. Student and staff entries remain in their
+                respective portals.
+            </p>
         </template>
 
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">

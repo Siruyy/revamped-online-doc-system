@@ -8,7 +8,7 @@
         h1, h2, p { margin: 0; }
         .center { text-align: center; }
         .brand { color: #173b75; font-weight: bold; letter-spacing: .4px; }
-        .logo { height: 58px; margin-bottom: 6px; }
+        .logo { max-height: 58px; max-width: 180px; margin-bottom: 6px; }
         .muted { color: #475569; }
         .slip { border: 2px solid #173b75; margin-top: 28px; padding: 24px; }
         .number { color: #173b75; font-size: 22px; font-weight: bold; letter-spacing: 1px; margin: 14px 0; }
@@ -21,7 +21,9 @@
 <body>
     @php($request = $slip->documentRequest)
     <div class="center">
-        @if (file_exists(public_path('images/svci-logo.svg')))
+        @if (!empty($logoDataUri))
+            <img class="logo" src="{{ $logoDataUri }}" alt="SVCI logo">
+        @elseif (file_exists(public_path('images/svci-logo.svg')))
             <img class="logo" src="{{ public_path('images/svci-logo.svg') }}" alt="SVCI logo">
         @endif
         <h1>ST. VINCENT'S COLLEGE INCORPORATED</h1>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\SavePaymentProfileRequest;
 use App\Models\PaymentProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,18 +29,11 @@ class PaymentProfileController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(SavePaymentProfileRequest $request): RedirectResponse
     {
         $this->authorize('manage', PaymentProfile::class);
 
-        $validated = $request->validate([
-            'bank_name' => ['required', 'string', 'max:120'],
-            'account_name' => ['required', 'string', 'max:180'],
-            'account_number' => ['required', 'string', 'max:60'],
-            'instructions' => ['nullable', 'string', 'max:2000'],
-            'is_active' => ['boolean'],
-            'qr_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:4096'],
-        ]);
+        $validated = $request->validated();
 
         $profile = new PaymentProfile([
             'bank_name' => $validated['bank_name'],
@@ -58,18 +52,11 @@ class PaymentProfileController extends Controller
         return back()->with('status', 'Payment profile created.');
     }
 
-    public function update(Request $request, PaymentProfile $paymentProfile): RedirectResponse
+    public function update(SavePaymentProfileRequest $request, PaymentProfile $paymentProfile): RedirectResponse
     {
         $this->authorize('manage', PaymentProfile::class);
 
-        $validated = $request->validate([
-            'bank_name' => ['required', 'string', 'max:120'],
-            'account_name' => ['required', 'string', 'max:180'],
-            'account_number' => ['required', 'string', 'max:60'],
-            'instructions' => ['nullable', 'string', 'max:2000'],
-            'is_active' => ['boolean'],
-            'qr_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:4096'],
-        ]);
+        $validated = $request->validated();
 
         $paymentProfile->fill([
             'bank_name' => $validated['bank_name'],
@@ -79,12 +66,17 @@ class PaymentProfileController extends Controller
             'is_active' => $validated['is_active'] ?? $paymentProfile->is_active,
         ]);
 
+        $oldPath = $paymentProfile->qr_path;
+
         if ($request->hasFile('qr_image')) {
-            $this->deleteQrFile($paymentProfile->qr_path);
             $paymentProfile->qr_path = $this->storeQrFile($request);
         }
 
         $paymentProfile->save();
+
+        if ($oldPath !== $paymentProfile->qr_path) {
+            $this->deleteQrFile($oldPath);
+        }
 
         return back()->with('status', 'Payment profile updated.');
     }
