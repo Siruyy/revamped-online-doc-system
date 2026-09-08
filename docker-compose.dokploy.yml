@@ -49,6 +49,8 @@ services:
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      # Resend's HTTPS transport reads this key instead of SMTP credentials.
+      RESEND_KEY: ${RESEND_KEY:-}
       MAIL_ENCRYPTION: ${MAIL_ENCRYPTION:-tls}
       MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-noreply@siruyy.cloud}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-SVCI Document System}
@@ -97,6 +99,8 @@ services:
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      # Resend's HTTPS transport reads this key instead of SMTP credentials.
+      RESEND_KEY: ${RESEND_KEY:-}
       MAIL_ENCRYPTION: ${MAIL_ENCRYPTION:-tls}
       MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-noreply@siruyy.cloud}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-SVCI Document System}
