@@ -340,3 +340,12 @@ npm run build
 - [x] Public payment submission rejects unsupported methods or a missing reference number.
 - [x] Admin and tracking payloads expose the required delivery and quote information without exposing private file paths.
 - [x] Full tests, Pint, PHPStan, ESLint, and Vite build pass.
+
+## Agent Task 15.12 — Client Revision Follow-up (2026-09-08)
+
+**Steps:**
+- [x] Attach the generated private claim-slip PDF to ready-for-pickup/delivery workflow emails without exposing its storage path in database or broadcast notifications.
+- [x] Show public-intake Personal Data and Education sections to authorized Admin and SuperAdmin request-detail views.
+- [x] Make registrar base fees and documentary stamps derive from the document type and copies; show the calculation in the evaluator UI.
+- [x] Auto-break down Transfer Credentials into Honorable Dismissal, Good Moral, and registrar-evaluated TOR components.
+- [x] Show official payment profile details on the landing page and tracking page, and show courier/tracking fields in delivery tracking.

@@ -58,6 +58,7 @@ class DocumentRequestController extends Controller
                         ])->values(),
                     'flags' => $spec['flags'],
                     'bundle_documents' => $spec['bundle_documents'],
+                    'bundle_note' => $spec['bundle_note'],
                 ];
             })
             ->groupBy('category');

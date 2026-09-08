@@ -8,6 +8,7 @@ use App\Models\DocumentRequest;
 use App\Models\DocumentRequestItem;
 use App\Models\DocumentType;
 use App\Models\Payment;
+use App\Models\PaymentProfile;
 use App\Models\RequestRequirement;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -129,6 +130,41 @@ class PublicTrackingTest extends TestCase
                 ->where('reference_no', 'REQ-2026-000000')
                 ->where('result', null)
                 ->where('notFound', true)
+            );
+    }
+
+    public function test_delivery_tracking_exposes_courier_details_without_requestor_profile(): void
+    {
+        PaymentProfile::query()->create([
+            'bank_name' => 'Test Bank',
+            'account_name' => 'SVCI',
+            'account_number' => '123',
+            'instructions' => 'Use the reference number.',
+            'is_active' => true,
+        ]);
+        $request = DocumentRequest::factory()->create([
+            'reference_no' => 'REQ-2026-778899',
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'fulfillment_method' => 'delivery',
+            'delivery_provider' => 'courier',
+            'courier_name' => 'J&T Express',
+            'courier_tracking_number' => 'JT123456789',
+            'requester_profile' => [
+                'birth_place' => 'Private City',
+                'education' => ['elementary' => ['school' => 'Private School']],
+            ],
+        ]);
+
+        $this->post('/track-document', ['reference_no' => $request->reference_no])
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('result.fulfillment_method', 'delivery')
+                ->where('result.delivery_provider', 'courier')
+                ->where('result.courier_name', 'J&T Express')
+                ->where('result.courier_tracking_number', 'JT123456789')
+                ->where('result.payment_profile.account_number', '123')
+                ->missing('result.requester_profile')
             );
     }
 

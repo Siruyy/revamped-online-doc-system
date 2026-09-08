@@ -65,4 +65,20 @@ class DocumentType extends Model
     {
         return ! $this->hasFlag('no_clearance_needed');
     }
+
+    public function calculateBaseAmount(int $pageCount, int $copies): float
+    {
+        $pageCount = max(1, $pageCount);
+        $copies = max(1, $copies);
+        $fee = (float) $this->fee;
+
+        $amount = match ($this->fee_formula) {
+            'flat', 'per_set' => $fee * $copies,
+            'per_5_copies' => $fee * ceil($copies / 5),
+            'per_page' => $fee * $pageCount * $copies,
+            default => $fee * $pageCount * $copies,
+        };
+
+        return round($amount, 2);
+    }
 }

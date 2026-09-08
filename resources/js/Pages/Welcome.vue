@@ -34,6 +34,7 @@ defineProps({
     announcements: { type: Array, default: () => [] },
     faqs: { type: Array, default: () => [] },
     paymentInstructions: { type: String, default: null },
+    paymentProfile: { type: Object, default: null },
 });
 
 const serviceFacts = [
@@ -395,7 +396,7 @@ onBeforeUnmount(() => revealObserver?.disconnect());
             </section>
 
             <section
-                v-if="announcements.length || faqs.length || paymentInstructions"
+                v-if="announcements.length || faqs.length || paymentProfile || paymentInstructions"
                 class="border-t border-slate-200 bg-slate-50 py-20 sm:py-24"
             >
                 <div class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
@@ -417,17 +418,39 @@ onBeforeUnmount(() => revealObserver?.disconnect());
                             </article>
                         </div>
                     </div>
-                    <div v-if="faqs.length || paymentInstructions" data-landing-reveal class="landing-reveal">
+                    <div
+                        v-if="faqs.length || paymentProfile || paymentInstructions"
+                        data-landing-reveal
+                        class="landing-reveal"
+                    >
                         <p class="text-sm font-bold uppercase tracking-[0.2em] text-brand-700">Helpful answers</p>
                         <h2 class="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950">
                             Before you submit
                         </h2>
                         <div
-                            v-if="paymentInstructions"
+                            v-if="paymentProfile || paymentInstructions"
                             class="mt-6 rounded-2xl border border-brand-200 bg-brand-50 p-5 text-sm leading-6 text-brand-950"
                         >
                             <p class="font-bold">Payment instructions</p>
-                            <p class="mt-2 whitespace-pre-line">{{ paymentInstructions }}</p>
+                            <p v-if="paymentProfile" class="mt-2 font-semibold">
+                                {{ paymentProfile.bank_name }} · {{ paymentProfile.account_name }} ·
+                                {{ paymentProfile.account_number }}
+                            </p>
+                            <p
+                                v-if="paymentProfile?.instructions || paymentInstructions"
+                                class="mt-2 whitespace-pre-line"
+                            >
+                                {{ paymentProfile?.instructions || paymentInstructions }}
+                            </p>
+                            <img
+                                v-if="paymentProfile?.qr_url"
+                                :src="paymentProfile.qr_url"
+                                alt="Official payment QR code"
+                                width="176"
+                                height="176"
+                                loading="lazy"
+                                class="mt-4 h-44 w-44 rounded-xl border border-brand-200 bg-white object-contain p-2"
+                            />
                             <p class="mt-2 text-xs text-brand-800">
                                 A final amount and payment reference will appear only after registrar review.
                             </p>

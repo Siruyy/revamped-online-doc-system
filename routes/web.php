@@ -35,6 +35,15 @@ Route::get('/', function () {
             ->limit(8)
             ->get(['id', 'question', 'answer']),
         'paymentInstructions' => $paymentProfile?->instructions,
+        'paymentProfile' => $paymentProfile ? [
+            'bank_name' => $paymentProfile->bank_name,
+            'account_name' => $paymentProfile->account_name,
+            'account_number' => $paymentProfile->account_number,
+            'qr_url' => $paymentProfile->qr_path
+                ? route('public.files.payment-qr', $paymentProfile->id)
+                : null,
+            'instructions' => $paymentProfile->instructions,
+        ] : null,
     ]);
 });
 

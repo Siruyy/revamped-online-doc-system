@@ -19,7 +19,7 @@ class RequestRulesEngine
      * @return array{
      *   code:string, name:string, category:string, fee:float, fee_formula:string,
      *   sla_days:int, submission_window:?string, release_channel:?string,
-     *   offices:array<int,string>, requirements:array<int,string>, flags:array<int,string>, bundle_documents:array<int,string>
+     *   offices:array<int,string>, requirements:array<int,string>, flags:array<int,string>, bundle_documents:array<int,string>, bundle_note:?string
      * }
      */
     public function rulesFor(DocumentType $type): array
@@ -39,6 +39,7 @@ class RequestRulesEngine
             'requirements' => (array) ($type->requirements ?: ($configured['requirements'] ?? [])),
             'flags' => (array) ($type->flags ?: ($configured['flags'] ?? [])),
             'bundle_documents' => (array) ($configured['bundle_documents'] ?? []),
+            'bundle_note' => $configured['bundle_note'] ?? null,
         ];
     }
 
@@ -104,17 +105,16 @@ class RequestRulesEngine
     }
 
     /**
-     * Compute total fee: fee_per_page × page_count × quantity (copies).
+     * Compute the document fee using the configured formula.
      *
      * @param  array<string, mixed>  $spec
      */
     public function computeFee(DocumentType $type, array $spec = []): float
     {
-        $fee = (float) $type->fee;
         $pages = max(1, (int) ($spec['page_count'] ?? $type->default_page_count ?? 1));
         $quantity = max(1, (int) ($spec['quantity'] ?? 1));
 
-        return round($fee * $pages * $quantity, 2);
+        return $type->calculateBaseAmount($pages, $quantity);
     }
 
     /**

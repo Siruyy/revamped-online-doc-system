@@ -31,6 +31,7 @@ use App\Support\ClearanceSignatories;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification as NotificationFake;
 use Illuminate\Support\Facades\Storage;
@@ -327,6 +328,29 @@ class BroadcastNotificationRegressionTest extends TestCase
 
         $this->assertSame(['mail', 'database', 'broadcast'], $notification->via($student));
         $this->assertSame($notification->toArray($student), $notification->toBroadcast($student)->data);
+    }
+
+    public function test_workflow_status_notification_can_attach_a_private_storage_file_without_broadcasting_its_path(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('pdfs/claim-slips/1/claim-slip-1.pdf', '%PDF-1.7');
+
+        $student = $this->activeUser('student');
+        $notification = new WorkflowStatusNotification([
+            'type' => 'request_stage_updated',
+            'title' => 'Your document is ready',
+            'message' => 'Your claim slip is attached.',
+            'reference_no' => 'REQ-2026-000001',
+            'attachment_path' => 'pdfs/claim-slips/1/claim-slip-1.pdf',
+            'attachment_name' => 'SVCI-Claim-Slip-REQ-2026-000001.pdf',
+        ]);
+
+        $mail = $notification->toMail(new AnonymousNotifiable);
+
+        $this->assertCount(1, $mail->rawAttachments);
+        $this->assertSame('SVCI-Claim-Slip-REQ-2026-000001.pdf', $mail->rawAttachments[0]['name']);
+        $this->assertArrayNotHasKey('attachment_path', $notification->toArray($student));
+        $this->assertArrayNotHasKey('attachment_name', $notification->toArray($student));
     }
 
     public function test_workflow_status_notification_normalizes_required_bell_keys(): void

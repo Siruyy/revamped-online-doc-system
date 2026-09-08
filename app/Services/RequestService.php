@@ -6,6 +6,7 @@ use App\Events\RequestApproved;
 use App\Events\RequestDenied;
 use App\Events\RequestStageUpdated;
 use App\Events\RequestSubmitted;
+use App\Models\ClaimSlip;
 use App\Models\DocumentRequest;
 use App\Models\DocumentRequestItem;
 use App\Models\DocumentType;
@@ -531,6 +532,21 @@ class RequestService
             ->notify(new WorkflowStatusNotification($data));
     }
 
+    /**
+     * @return array<string, string>
+     */
+    private function claimSlipNotificationData(?ClaimSlip $claimSlip, string $referenceNo): array
+    {
+        if (! $claimSlip instanceof ClaimSlip || ! is_string($claimSlip->pdf_path) || $claimSlip->pdf_path === '') {
+            return [];
+        }
+
+        return [
+            'attachment_path' => $claimSlip->pdf_path,
+            'attachment_name' => "SVCI-Claim-Slip-{$referenceNo}.pdf",
+        ];
+    }
+
     public function validateRequirement(DocumentRequest $documentRequest, RequestRequirement $requirement, User $admin): RequestRequirement
     {
         $this->ensureRequirementBelongsToRequest($documentRequest, $requirement);
@@ -714,9 +730,9 @@ class RequestService
 
         $documentRequest->refresh();
 
-        if ($stage === 'ready_for_pickup') {
-            $this->claimSlips->issueForRequest($documentRequest, $admin);
-        }
+        $claimSlip = $stage === 'ready_for_pickup'
+            ? $this->claimSlips->issueForRequest($documentRequest, $admin)
+            : null;
 
         RequestStageUpdated::dispatch(
             $documentRequest->id,
@@ -737,6 +753,7 @@ class RequestService
                 'feedback_url' => $documentRequest->processing_stage === 'released'
                     ? route('track-document', ['reference_no' => $documentRequest->reference_no])
                     : null,
+                ...$this->claimSlipNotificationData($claimSlip, $documentRequest->reference_no),
             ]));
         } elseif ($documentRequest->intake_mode === 'public') {
             $this->notifyPublicRequestor($documentRequest, [
@@ -748,6 +765,7 @@ class RequestService
                 'feedback_url' => $documentRequest->processing_stage === 'released'
                     ? route('track-document', ['reference_no' => $documentRequest->reference_no])
                     : null,
+                ...$this->claimSlipNotificationData($claimSlip, $documentRequest->reference_no),
             ]);
         }
 
@@ -891,11 +909,11 @@ class RequestService
     }
 
     /**
-     * Compute line total: fee_per_page × page_count × copies.
+     * Compute a request line total using the document type's fee formula.
      */
     public function computeLineTotal(DocumentType $type, int $pageCount, int $copies): float
     {
-        return round((float) $type->fee * $pageCount * $copies, 2);
+        return $type->calculateBaseAmount($pageCount, $copies);
     }
 
     protected function seedRequirements(DocumentRequest $request, DocumentType $type): void

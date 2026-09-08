@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Attachment;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -54,6 +55,23 @@ class WorkflowStatusNotification extends Notification implements ShouldQueue
 
         if (is_string($actionUrl)) {
             $message->action(isset($this->data['feedback_url']) ? 'Open tracking and feedback' : 'Open workflow', $actionUrl);
+        }
+
+        $attachmentPath = $this->data['attachment_path'] ?? null;
+        $attachmentName = $this->data['attachment_name'] ?? null;
+
+        if (
+            is_string($attachmentPath)
+            && str_starts_with($attachmentPath, 'pdfs/claim-slips/')
+            && ! str_contains($attachmentPath, '..')
+            && is_string($attachmentName)
+            && $attachmentName !== ''
+        ) {
+            $message->attach(
+                Attachment::fromStorageDisk('local', $attachmentPath)
+                    ->as($attachmentName)
+                    ->withMime('application/pdf'),
+            );
         }
 
         return $message;

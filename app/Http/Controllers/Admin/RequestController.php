@@ -81,7 +81,7 @@ class RequestController extends Controller
         $documentRequest->load([
             'user:id,fullname,email,course,year_level,student_id,contact_number,academic_status',
             'documentType',
-            'items.documentType:id,code,name,category,fee,fee_formula,default_page_count',
+            'items.documentType:id,code,name,category,fee,fee_formula,default_page_count,flags',
             'payments',
             'clearances.steps.signer:id,fullname',
             ...collect(ClearanceSignatories::signerRelations())
@@ -110,6 +110,7 @@ class RequestController extends Controller
                 'sla_pause_reasons' => config('policy.sla.pause_reasons', []),
                 'release_channels' => config('policy.release_channels', []),
                 'requirements_catalog' => config('policy.requirements', []),
+                'transfer_bundle_fee' => (float) config('policy.document_types.cert_transfer_credential.fee', 0),
             ],
         ]);
     }

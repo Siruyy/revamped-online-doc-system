@@ -42,6 +42,7 @@ class RevisedPublicWorkflowTest extends TestCase
         $this->assertSame('registrar_review', $request->workflow_stage);
         $this->assertSame(0.0, (float) $request->fee_snapshot);
         $this->assertNull($request->evaluated_at);
+        $this->assertSame((float) $type->fee, (float) $request->items()->firstOrFail()->fee_per_page_snapshot);
         $this->assertSame($program->id, $request->academic_program_id);
         $this->assertSame('CSD', $request->academic_department_code_snapshot);
         $this->assertSame(0, Payment::query()->count());
@@ -58,6 +59,8 @@ class RevisedPublicWorkflowTest extends TestCase
         $type = DocumentType::factory()->create([
             'code' => 'cert_enrollment',
             'category' => 'Certification',
+            'fee' => 120,
+            'fee_formula' => 'flat',
             'requirements' => [],
         ]);
         $program = AcademicProgram::query()->where('code', 'BSCS')->firstOrFail();
@@ -107,6 +110,9 @@ class RevisedPublicWorkflowTest extends TestCase
         $this->assertSame('clearance', $request->workflow_stage);
         $this->assertSame(370.0, (float) $request->quote_total);
         $this->assertNotNull($request->evaluated_at);
+        $this->assertSame(120.0, (float) $item->refresh()->fee_per_page_snapshot);
+        $this->assertSame(240.0, (float) $item->base_amount);
+        $this->assertSame(80.0, (float) $item->documentary_stamp_amount);
         $this->assertSame(
             ['dean', 'accounting'],
             $request->clearances()->firstOrFail()->steps()->orderBy('sequence')->pluck('office_code')->all()
@@ -124,6 +130,96 @@ class RevisedPublicWorkflowTest extends TestCase
             );
         }
         Notification::assertNotSentTo([$otherDean, $accounting], WorkflowStatusNotification::class);
+    }
+
+    public function test_registrar_quote_derives_per_page_base_amount_and_documentary_stamp(): void
+    {
+        Notification::fake();
+        $type = DocumentType::factory()->create([
+            'code' => 'tor',
+            'name' => 'Transcript of Records',
+            'fee' => 165,
+            'fee_formula' => 'per_page',
+            'requirements' => [],
+        ]);
+        $request = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'workflow_stage' => 'registrar_review',
+            'requester_email' => 'requestor@example.test',
+        ]);
+        $item = $request->items()->create([
+            'document_type_id' => $type->id,
+            'copies' => 1,
+            'page_count_snapshot' => 1,
+            'fee_per_page_snapshot' => 0,
+            'line_total' => 0,
+        ]);
+        $admin = User::factory()->admin()->create(['status' => 'active']);
+
+        app(PublicRequestWorkflowService::class)->evaluate($request, $admin, [
+            'shipping_fee' => 0,
+            'items' => [[
+                'id' => $item->id,
+                'page_count' => 4,
+                'base_amount' => 1,
+                'authentication_amount' => 0,
+                'documentary_stamp_amount' => 0,
+            ]],
+        ]);
+
+        $item->refresh();
+        $request->refresh();
+
+        $this->assertSame(165.0, (float) $item->fee_per_page_snapshot);
+        $this->assertSame(660.0, (float) $item->base_amount);
+        $this->assertSame(40.0, (float) $item->documentary_stamp_amount);
+        $this->assertSame(700.0, (float) $item->line_total);
+        $this->assertSame(700.0, (float) $request->quote_total);
+    }
+
+    public function test_transfer_credentials_quote_adds_automatic_hd_good_moral_and_tor_breakdown(): void
+    {
+        Notification::fake();
+        $type = DocumentType::factory()->create([
+            'code' => 'tor_transfer',
+            'name' => 'Transfer Credentials',
+            'fee' => 165,
+            'fee_formula' => 'per_page',
+            'requirements' => [],
+        ]);
+        $request = DocumentRequest::factory()->create([
+            'user_id' => null,
+            'intake_mode' => 'public',
+            'workflow_stage' => 'registrar_review',
+            'requester_email' => 'requestor@example.test',
+        ]);
+        $item = $request->items()->create([
+            'document_type_id' => $type->id,
+            'copies' => 1,
+            'page_count_snapshot' => 1,
+            'fee_per_page_snapshot' => 0,
+            'line_total' => 0,
+        ]);
+        $admin = User::factory()->admin()->create(['status' => 'active']);
+
+        app(PublicRequestWorkflowService::class)->evaluate($request, $admin, [
+            'items' => [[
+                'id' => $item->id,
+                'page_count' => 4,
+                'base_amount' => 0,
+            ]],
+        ]);
+
+        $item->refresh();
+        $this->assertSame(900.0, (float) $item->base_amount);
+        $this->assertSame(120.0, (float) $item->documentary_stamp_amount);
+        $this->assertSame(1020.0, (float) $item->line_total);
+        $this->assertSame([
+            'Honorable Dismissal',
+            'Certificate of Good Moral Character',
+            'TOR Valid for Transfer',
+        ], collect($item->quote_breakdown)->pluck('label')->all());
     }
 
     public function test_basic_education_evaluation_routes_to_principal_then_accounting(): void

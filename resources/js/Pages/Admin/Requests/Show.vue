@@ -100,6 +100,89 @@ const requestItemsTotal = computed(() =>
     requestItems.value.reduce((sum, item) => sum + Number(item.line_total || 0), 0),
 );
 const isPublicRequest = computed(() => props.request.intake_mode === 'public');
+const requesterProfile = computed(() => props.request.requester_profile || {});
+const educationHistory = computed(() => {
+    const education = requesterProfile.value.education || {};
+
+    return [
+        { key: 'elementary', label: 'Elementary', value: education.elementary },
+        { key: 'junior_high', label: 'Junior High School', value: education.junior_high },
+        { key: 'senior_high', label: 'Senior High School', value: education.senior_high },
+    ].filter((entry) => entry.value && Object.values(entry.value).some((value) => value));
+});
+const hasRequesterProfile = computed(() => Object.keys(requesterProfile.value).length > 0);
+const transferBundleFee = computed(() => Number(props.policy.transfer_bundle_fee || 0));
+
+function isStampExempt(item) {
+    const type = item?.document_type;
+
+    return Boolean(
+        type?.flags?.includes?.('stamp_exempt') ||
+        ['special_order', 'diploma', 'diploma_reissue_college', 'diploma_reissue_basic'].includes(type?.code),
+    );
+}
+
+function transferBundleBreakdown(line, index) {
+    const item = requestItems.value[index];
+    const type = item?.document_type;
+
+    if (type?.code !== 'tor_transfer') return [];
+
+    const copies = Math.max(1, Number(item?.copies || 1));
+    const pages = Math.max(1, Number(line.page_count || 1));
+    const fixedBase = transferBundleFee.value * copies;
+    const stamp = 40 * copies;
+    const torBase = Number(type?.fee || 0) * pages * copies;
+
+    return [
+        { label: 'Honorable Dismissal', base: fixedBase, stamp, total: fixedBase + stamp, automatic: true },
+        {
+            label: 'Certificate of Good Moral Character',
+            base: fixedBase,
+            stamp,
+            total: fixedBase + stamp,
+            automatic: true,
+        },
+        {
+            label: 'TOR Valid for Transfer',
+            base: torBase,
+            stamp,
+            total: torBase + stamp,
+            automatic: false,
+        },
+    ];
+}
+
+function baseAmountFor(line, index) {
+    const item = requestItems.value[index];
+    const type = item?.document_type;
+    const pages = Math.max(1, Number(line.page_count || 1));
+    const copies = Math.max(1, Number(item?.copies || 1));
+    const bundle = transferBundleBreakdown(line, index);
+
+    if (bundle.length) return bundle.reduce((sum, component) => sum + component.base, 0);
+
+    const fee = Number(type?.fee || 0);
+
+    return (
+        {
+            flat: fee * copies,
+            per_set: fee * copies,
+            per_5_copies: fee * Math.ceil(copies / 5),
+            per_page: fee * pages * copies,
+        }[type?.fee_formula] ?? fee * pages * copies
+    );
+}
+
+function documentaryStampFor(line, index) {
+    const item = requestItems.value[index];
+
+    if (transferBundleBreakdown(line, index).length) {
+        return transferBundleBreakdown(line, index).reduce((sum, component) => sum + component.stamp, 0);
+    }
+
+    return isStampExempt(item) ? 0 : 40 * Math.max(1, Number(item?.copies || 1));
+}
 const hasLockedQuote = computed(() => props.request.quote_total !== null && props.request.quote_total !== undefined);
 const allReqsValidated = computed(
     () => requirements.value.length === 0 || requirements.value.every((r) => r.status === 'validated'),
@@ -236,7 +319,16 @@ function approvePackage() {
 }
 
 function evaluateRequest() {
-    evaluationForm.post(route(`${routeBase.value}.requests.evaluate`, props.request.id), { preserveScroll: true });
+    evaluationForm
+        .transform((data) => ({
+            ...data,
+            items: data.items.map((line, index) => ({
+                ...line,
+                base_amount: baseAmountFor(line, index).toFixed(2),
+                documentary_stamp_amount: documentaryStampFor(line, index).toFixed(2),
+            })),
+        }))
+        .post(route(`${routeBase.value}.requests.evaluate`, props.request.id), { preserveScroll: true });
 }
 
 function signRegistrarClearance() {
@@ -510,6 +602,133 @@ function fmtPeso(value) {
                     </div>
                 </section>
 
+                <!-- Public intake profile -->
+                <template v-if="isPublicRequest && hasRequesterProfile">
+                    <section
+                        class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
+                        aria-labelledby="personal-data-heading"
+                    >
+                        <div class="flex items-start gap-3">
+                            <div class="rounded-xl bg-brand-50 p-3 text-brand-700">
+                                <UserCircleIcon class="h-6 w-6" aria-hidden="true" />
+                            </div>
+                            <div>
+                                <h3
+                                    id="personal-data-heading"
+                                    class="font-display text-lg font-semibold text-slate-900"
+                                >
+                                    Personal data
+                                </h3>
+                                <p class="mt-1 text-sm text-slate-600">
+                                    Details submitted by the requestor for registrar verification.
+                                </p>
+                            </div>
+                        </div>
+                        <dl class="mt-5 grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                            <div>
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Birth date</dt>
+                                <dd class="mt-1 text-slate-900">{{ requesterProfile.birth_date || '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Birth place</dt>
+                                <dd class="mt-1 text-slate-900">{{ requesterProfile.birth_place || '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Sex</dt>
+                                <dd class="mt-1 text-slate-900">{{ requesterProfile.sex || '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Civil status</dt>
+                                <dd class="mt-1 text-slate-900">{{ requesterProfile.civil_status || '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Citizenship</dt>
+                                <dd class="mt-1 text-slate-900">{{ requesterProfile.citizenship || '—' }}</dd>
+                            </div>
+                            <div class="sm:col-span-2 lg:col-span-3">
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Home address</dt>
+                                <dd class="mt-1 leading-6 text-slate-900">
+                                    {{ requesterProfile.home_address || '—' }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Father’s name</dt>
+                                <dd class="mt-1 text-slate-900">{{ requesterProfile.father_name || '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Mother’s maiden name</dt>
+                                <dd class="mt-1 text-slate-900">{{ requesterProfile.mother_maiden_name || '—' }}</dd>
+                            </div>
+                            <div class="sm:col-span-2 lg:col-span-3">
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Parents’ address</dt>
+                                <dd class="mt-1 leading-6 text-slate-900">
+                                    {{ requesterProfile.parents_address || '—' }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Guardian</dt>
+                                <dd class="mt-1 text-slate-900">{{ requesterProfile.guardian_name || '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Guardian’s address</dt>
+                                <dd class="mt-1 text-slate-900">{{ requesterProfile.guardian_address || '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Employment status</dt>
+                                <dd class="mt-1 capitalize text-slate-900">
+                                    {{ (requesterProfile.employment_status || '—').replaceAll('_', ' ') }}
+                                </dd>
+                            </div>
+                            <div v-if="requesterProfile.company_name">
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Company / business</dt>
+                                <dd class="mt-1 text-slate-900">{{ requesterProfile.company_name }}</dd>
+                            </div>
+                            <div v-if="requesterProfile.company_address" class="sm:col-span-2">
+                                <dt class="text-xs uppercase tracking-wide text-slate-500">Company address</dt>
+                                <dd class="mt-1 leading-6 text-slate-900">{{ requesterProfile.company_address }}</dd>
+                            </div>
+                        </dl>
+                    </section>
+
+                    <section
+                        class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
+                        aria-labelledby="education-heading"
+                    >
+                        <div>
+                            <h3 id="education-heading" class="font-display text-lg font-semibold text-slate-900">
+                                Educational background
+                            </h3>
+                            <p class="mt-1 text-sm text-slate-600">School history submitted with the public request.</p>
+                        </div>
+                        <div v-if="educationHistory.length" class="mt-5 grid gap-3 md:grid-cols-3">
+                            <article
+                                v-for="entry in educationHistory"
+                                :key="entry.key"
+                                class="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                            >
+                                <h4 class="font-semibold text-slate-900">{{ entry.label }}</h4>
+                                <dl class="mt-3 space-y-2 text-sm">
+                                    <div>
+                                        <dt class="text-xs uppercase tracking-wide text-slate-500">School</dt>
+                                        <dd class="mt-1 text-slate-900">{{ entry.value.school || '—' }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-xs uppercase tracking-wide text-slate-500">Address</dt>
+                                        <dd class="mt-1 text-slate-900">{{ entry.value.address || '—' }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-xs uppercase tracking-wide text-slate-500">Year completed</dt>
+                                        <dd class="mt-1 text-slate-900">{{ entry.value.year || '—' }}</dd>
+                                    </div>
+                                </dl>
+                            </article>
+                        </div>
+                        <p v-else class="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                            No preliminary education records were provided.
+                        </p>
+                    </section>
+                </template>
+
                 <!-- Readiness -->
                 <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -664,6 +883,20 @@ function fmtPeso(value) {
                                     <tr v-for="item in requestItems" :key="item.id">
                                         <td class="px-4 py-3 font-medium text-slate-900">
                                             {{ item.document_type?.name || docType?.name || 'Document request' }}
+                                            <div
+                                                v-if="item.quote_breakdown?.length"
+                                                class="mt-2 space-y-1 text-xs font-normal text-slate-500"
+                                            >
+                                                <p class="font-semibold text-slate-700">Transfer bundle</p>
+                                                <p
+                                                    v-for="component in item.quote_breakdown"
+                                                    :key="component.label"
+                                                    class="flex justify-between gap-3"
+                                                >
+                                                    <span>{{ component.label }}</span>
+                                                    <span class="font-mono">{{ fmtPeso(component.line_total) }}</span>
+                                                </p>
+                                            </div>
                                         </td>
                                         <td class="px-4 py-3 text-slate-700">{{ item.copies || 1 }}</td>
                                         <td class="px-4 py-3 text-slate-700">{{ item.page_count_snapshot || '—' }}</td>
@@ -926,12 +1159,12 @@ function fmtPeso(value) {
                                         class="mt-1 min-h-11 w-full rounded-md border-slate-300 text-sm"
                                 /></label>
                                 <label class="text-xs font-medium"
-                                    >Base amount<input
-                                        v-model.number="line.base_amount"
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        class="mt-1 min-h-11 w-full rounded-md border-slate-300 text-sm"
+                                    >Base amount (automatic)<input
+                                        :value="baseAmountFor(line, index).toFixed(2)"
+                                        type="text"
+                                        inputmode="decimal"
+                                        readonly
+                                        class="mt-1 min-h-11 w-full rounded-md border-slate-300 bg-slate-50 text-sm"
                                 /></label>
                                 <label class="text-xs font-medium"
                                     >Authentication<input
@@ -942,15 +1175,43 @@ function fmtPeso(value) {
                                         class="mt-1 min-h-11 w-full rounded-md border-slate-300 text-sm"
                                 /></label>
                                 <label class="text-xs font-medium"
-                                    >Doc. stamp<input
-                                        v-model.number="line.documentary_stamp_amount"
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
+                                    >Doc. stamp (automatic)<input
+                                        :value="documentaryStampFor(line, index).toFixed(2)"
+                                        type="text"
+                                        inputmode="decimal"
                                         readonly
-                                        class="mt-1 min-h-11 w-full rounded-md border-slate-300 text-sm"
+                                        class="mt-1 min-h-11 w-full rounded-md border-slate-300 bg-slate-50 text-sm"
                                 /></label>
                             </div>
+                            <div
+                                v-if="transferBundleBreakdown(line, index).length"
+                                class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950"
+                            >
+                                <p class="font-semibold">Transfer Credentials bundle</p>
+                                <p class="mt-1 leading-5 text-amber-800">
+                                    HD and Good Moral are automatic. Enter only the TOR page count; the receiving-school
+                                    form is still evaluated before the TOR is released.
+                                </p>
+                                <dl class="mt-2 space-y-1">
+                                    <div
+                                        v-for="component in transferBundleBreakdown(line, index)"
+                                        :key="component.label"
+                                        class="flex items-center justify-between gap-3"
+                                    >
+                                        <dt>{{ component.label }}{{ component.automatic ? ' · automatic' : '' }}</dt>
+                                        <dd class="font-mono font-semibold">₱{{ component.total.toFixed(2) }}</dd>
+                                    </div>
+                                </dl>
+                            </div>
+                            <p class="text-xs font-semibold text-slate-700">
+                                Calculated line total: ₱{{
+                                    (
+                                        baseAmountFor(line, index) +
+                                        Number(line.authentication_amount || 0) +
+                                        documentaryStampFor(line, index)
+                                    ).toFixed(2)
+                                }}
+                            </p>
                             <p class="text-[11px] leading-4 text-slate-500">
                                 Documentary stamp is calculated automatically at ₱40 per copy; diploma and special-order
                                 documents are exempt.

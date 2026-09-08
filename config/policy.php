@@ -119,8 +119,9 @@ return [
             'bundle_documents' => [
                 'Honorable Dismissal',
                 'Certificate of Good Moral Character',
-                'Transcript of Records (valid for Transfer)',
+                'TOR Valid for Transfer',
             ],
+            'bundle_note' => 'HD and Good Moral are released first. The TOR is released after the receiving-school form is received and evaluated.',
         ],
 
         'diploma' => [

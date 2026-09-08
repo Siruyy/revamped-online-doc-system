@@ -359,6 +359,17 @@ class RequestServiceTest extends TestCase
             'release_channel' => 'registrar_window_9',
             'state' => 'ready',
         ]);
+        Notification::assertSentTo(
+            $student,
+            WorkflowStatusNotification::class,
+            function (WorkflowStatusNotification $notification, array $channels) use ($student, $request): bool {
+                $mail = $notification->toMail($student);
+
+                return $channels === ['mail', 'database', 'broadcast']
+                    && count($mail->rawAttachments) === 1
+                    && $mail->rawAttachments[0]['name'] === 'SVCI-Claim-Slip-'.$request->reference_no.'.pdf';
+            },
+        );
         Event::assertDispatched(RequestStageUpdated::class);
     }
 

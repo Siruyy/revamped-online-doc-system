@@ -290,10 +290,13 @@ function timelineTone(state) {
                     </form>
 
                     <section
-                        v-if="result.payment_profile && result.payment_open"
+                        v-if="result.payment_profile"
                         class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950"
                     >
                         <h2 class="font-semibold">Payment details</h2>
+                        <p class="mt-1 text-xs text-amber-800">
+                            Use these official payment details when your request reaches the payment stage.
+                        </p>
                         <p class="mt-2">
                             {{ result.payment_profile.bank_name }} · {{ result.payment_profile.account_name }} ·
                             {{ result.payment_profile.account_number }}
@@ -301,6 +304,15 @@ function timelineTone(state) {
                         <p v-if="result.payment_profile.instructions" class="mt-2 whitespace-pre-line leading-6">
                             {{ result.payment_profile.instructions }}
                         </p>
+                        <img
+                            v-if="result.payment_profile.qr_url"
+                            :src="result.payment_profile.qr_url"
+                            alt="Official payment QR code"
+                            width="176"
+                            height="176"
+                            loading="lazy"
+                            class="mt-4 h-44 w-44 rounded-xl border border-amber-200 bg-white object-contain p-2"
+                        />
                     </section>
 
                     <div
@@ -310,6 +322,19 @@ function timelineTone(state) {
                         <p class="font-semibold">Request denied</p>
                         <p class="mt-1"><strong>Reason:</strong> {{ result.denial_reason }}</p>
                         <p class="mt-2">Review the reason above and contact the registrar if you need to resubmit.</p>
+                    </div>
+
+                    <div
+                        v-if="result.fulfillment_method === 'delivery'"
+                        class="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-sm leading-6 text-sky-950"
+                    >
+                        <h2 class="font-semibold">Delivery details</h2>
+                        <p class="mt-1">Provider: {{ result.delivery_provider || 'Courier' }}</p>
+                        <p class="mt-1">Courier: {{ result.courier_name || 'To be assigned' }}</p>
+                        <p class="mt-1">
+                            Tracking number:
+                            <strong>{{ result.courier_tracking_number || 'Will appear here when assigned' }}</strong>
+                        </p>
                     </div>
 
                     <div
@@ -382,6 +407,18 @@ function timelineTone(state) {
                                         >Base PHP {{ document.base_amount }} · Authentication PHP
                                         {{ document.authentication_amount }} · Documentary stamp PHP
                                         {{ document.documentary_stamp_amount }}</span
+                                    ><span
+                                        v-if="document.quote_breakdown?.length"
+                                        class="mt-2 block space-y-1 text-xs text-slate-500"
+                                        ><span class="block font-semibold text-slate-700"
+                                            >Transfer bundle breakdown</span
+                                        ><span
+                                            v-for="component in document.quote_breakdown"
+                                            :key="component.label"
+                                            class="flex justify-between gap-3"
+                                            ><span>{{ component.label }}</span
+                                            ><span class="font-mono">PHP {{ component.line_total }}</span></span
+                                        ></span
                                     ></span
                                 >
                                 <span class="font-semibold">PHP {{ document.line_total }}</span>

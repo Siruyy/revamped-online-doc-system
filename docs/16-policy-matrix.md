@@ -18,7 +18,7 @@ Record types sourced from policy sections 1, 3–11, 13, and 17.
 | Code | Name | Policy § | Category | Fee (PHP) | SLA (work days) | Submission Window | Release Window |
 |------|------|----------|----------|-----------|------------------|-------------------|----------------|
 | `tor` | Transcript of Records | §1.1, §13.1, §17 | Academic | `165.00 / page` | 14 | Window 5 | Window 9 |
-| `tor_transfer` | Transcript of Records (valid for Transfer) | §3, §13.1, §17 | Academic | `165.00 / page` | 14 (after receiving Honorable Dismissal lower portion) | Window 5 | Window 9 |
+| `tor_transfer` | Transfer Credentials | §3, §13.1, §17 | Academic | `165.00 / page` for TOR portion; HD and Good Moral are bundled | 14 (after receiving Honorable Dismissal lower portion) | Window 5 | Window 9 |
 | `diploma` | Diploma | §1.2, §13.1, §17 | Academic | Registrar-entered; base fee not provided | 5 | Window 5 | Window 9 |
 | `diploma_reissue_college` | Diploma Re-issuance (College/Masteral/Doctoral) | §7.2.1, §17 | Academic | `365.00` | 5 | Window 5 | Window 9 |
 | `diploma_reissue_basic` | Diploma Re-issuance (Kinder/Elem/JHS/SHS) | §7.2.2, §17 | Academic | `310.00` | 5 | OP (Annex) | OP (Annex) |
@@ -108,8 +108,10 @@ Mandatory uploads are policy-driven.
 
 - **Transfer Credentials (`tor_transfer`):** `requires_hd_return = true`. TOR clock
   (14 days) starts only after the Office of the Registrar receives the lower
-  portion of the Honorable Dismissal from the new school. Expose this in
-  the student timeline as a "Waiting on receiving school" state (§3.2).
+  portion of the Honorable Dismissal from the new school. The quote automatically
+  includes Honorable Dismissal and Good Moral (each with documentary stamp), while
+  the registrar evaluates the TOR page count. HD and Good Moral are released first;
+  the TOR follows after the receiving-school form is received and evaluated.
 - **Transferred/Dismissed Students (§16):** block ALL record release by default.
   Allowed ONLY if `certificate_of_no_objection` + `official_external_notice`
   are submitted and an admin flips the `transfer_exception_approved` flag.

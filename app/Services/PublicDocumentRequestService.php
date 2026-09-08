@@ -160,7 +160,7 @@ class PublicDocumentRequestService
                     'document_type_id' => $item['type']->id,
                     'copies' => $item['copies'],
                     'page_count_snapshot' => 1,
-                    'fee_per_page_snapshot' => 0,
+                    'fee_per_page_snapshot' => $item['type']->fee,
                     'line_total' => 0,
                     'authentication_requested' => $item['authentication_requested'],
                     'documentary_stamp_requested' => $item['documentary_stamp_requested'],

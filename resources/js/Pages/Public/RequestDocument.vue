@@ -478,8 +478,14 @@ function isStampExempt(type) {
                                     class="rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-800"
                                 >
                                     Bundle contents:
-                                    {{ type.bundle_documents?.join(', ') || 'HD, Good Moral, and TOR records' }}. Bundle
-                                    price is subject to registrar assessment.
+                                    {{
+                                        type.bundle_documents?.join(', ') ||
+                                        'Honorable Dismissal, Good Moral, and TOR Valid for Transfer'
+                                    }}.
+                                    {{
+                                        type.bundle_note ||
+                                        'HD and Good Moral are released first. The TOR is released after the receiving-school form is received and evaluated.'
+                                    }}
                                 </p>
                                 <label v-if="type.code === 'cert_enrollment'" class="block text-sm font-medium">
                                     Semester requested

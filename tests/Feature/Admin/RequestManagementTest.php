@@ -202,6 +202,27 @@ class RequestManagementTest extends TestCase
             'requester_student_id' => 'PUBLIC-DETAIL-001',
             'requester_course' => 'BSIT',
             'requester_year_level' => 2,
+            'requester_profile' => [
+                'birth_date' => '2000-01-02',
+                'birth_place' => 'Dipolog City',
+                'sex' => 'Female',
+                'civil_status' => 'Single',
+                'citizenship' => 'Filipino',
+                'home_address' => 'Estaka, Dipolog City',
+                'father_name' => 'Juan Dela Cruz',
+                'mother_maiden_name' => 'Maria Santos',
+                'parents_address' => 'Dipolog City',
+                'guardian_name' => 'Ana Dela Cruz',
+                'guardian_address' => 'Dipolog City',
+                'education' => [
+                    'elementary' => ['school' => 'SVCI Elementary', 'address' => 'Dipolog', 'year' => '2012'],
+                    'junior_high' => ['school' => 'SVCI Junior High', 'address' => 'Dipolog', 'year' => '2016'],
+                    'senior_high' => ['school' => 'SVCI Senior High', 'address' => 'Dipolog', 'year' => '2018'],
+                ],
+                'employment_status' => 'not_employed',
+                'company_name' => null,
+                'company_address' => null,
+            ],
             'fulfillment_method' => 'delivery',
             'delivery_address' => 'Estaka, Dipolog City',
         ]);
@@ -245,6 +266,9 @@ class RequestManagementTest extends TestCase
                 ->where('request.requester_student_id', 'PUBLIC-DETAIL-001')
                 ->where('request.requester_course', 'BSIT')
                 ->where('request.requester_year_level', 2)
+                ->where('request.requester_profile.birth_place', 'Dipolog City')
+                ->where('request.requester_profile.education.elementary.school', 'SVCI Elementary')
+                ->where('request.requester_profile.employment_status', 'not_employed')
                 ->where('request.fulfillment_method', 'delivery')
                 ->where('request.delivery_address', 'Estaka, Dipolog City')
                 ->where('request.clearances.0.user_id', null)

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\PaymentProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -25,6 +26,26 @@ class ExampleTest extends TestCase
 
         $this->assertFileExists(public_path('images/landing/registrar-service.png'));
         $this->assertFileExists(public_path('images/landing/study-materials.jpg'));
+    }
+
+    public function test_landing_page_exposes_active_payment_details(): void
+    {
+        PaymentProfile::query()->create([
+            'bank_name' => 'Test Bank',
+            'account_name' => 'SVCI',
+            'account_number' => '1234567890',
+            'instructions' => 'Use the request reference number.',
+            'is_active' => true,
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('paymentProfile.bank_name', 'Test Bank')
+                ->where('paymentProfile.account_number', '1234567890')
+                ->where('paymentProfile.instructions', 'Use the request reference number.')
+                ->where('paymentProfile.qr_url', null)
+            );
     }
 
     public function test_not_found_errors_use_the_branded_error_page(): void

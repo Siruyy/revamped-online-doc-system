@@ -101,7 +101,7 @@ class TrackDocumentController extends Controller
                 ),
             ],
             'payment_methods' => PublicRequestOptions::PAYMENT_METHODS,
-            'payment_profile' => $this->paymentProfilePayload($documentRequest),
+            'payment_profile' => $this->paymentProfilePayload(),
             'feedback_submitted' => $documentRequest->feedback !== null,
             'clearance' => $clearance ? [
                 'overall_status' => $clearance->overall_status,
@@ -333,7 +333,7 @@ class TrackDocumentController extends Controller
     }
 
     /**
-     * @return list<array{name: string|null, copies: int, line_total: string}>
+     * @return list<array{name: string|null, copies: int, line_total: string, quote_breakdown: list<array<string, mixed>>|null}>
      */
     private function documentsPayload(DocumentRequest $request): array
     {
@@ -351,6 +351,7 @@ class TrackDocumentController extends Controller
                     'authentication_amount' => $this->formatCurrency($item->authentication_amount),
                     'documentary_stamp_amount' => $this->formatCurrency($item->documentary_stamp_amount),
                     'line_total' => $this->formatCurrency($item->line_total),
+                    'quote_breakdown' => $this->formatQuoteBreakdown($item->quote_breakdown),
                 ];
             }
 
@@ -367,12 +368,43 @@ class TrackDocumentController extends Controller
             'authentication_amount' => '0.00',
             'documentary_stamp_amount' => '0.00',
             'line_total' => $this->formatCurrency($request->fee_snapshot ?? 0),
+            'quote_breakdown' => null,
         ]];
     }
 
     private function formatCurrency(mixed $value): string
     {
         return number_format((float) $value, 2, '.', '');
+    }
+
+    /**
+     * @return list<array{label: string|null, copies: int, page_count: int, unit_fee: string, base_amount: string, documentary_stamp_amount: string, line_total: string}>|null
+     */
+    private function formatQuoteBreakdown(mixed $breakdown): ?array
+    {
+        if (! is_array($breakdown) || $breakdown === []) {
+            return null;
+        }
+
+        $formatted = [];
+
+        foreach ($breakdown as $component) {
+            if (! is_array($component)) {
+                continue;
+            }
+
+            $formatted[] = [
+                'label' => is_string($component['label'] ?? null) ? $component['label'] : null,
+                'copies' => (int) ($component['copies'] ?? 1),
+                'page_count' => (int) ($component['page_count'] ?? 1),
+                'unit_fee' => $this->formatCurrency($component['unit_fee'] ?? 0),
+                'base_amount' => $this->formatCurrency($component['base_amount'] ?? 0),
+                'documentary_stamp_amount' => $this->formatCurrency($component['documentary_stamp_amount'] ?? 0),
+                'line_total' => $this->formatCurrency($component['line_total'] ?? 0),
+            ];
+        }
+
+        return $formatted === [] ? null : $formatted;
     }
 
     private function formatDate(mixed $value): ?string
@@ -385,12 +417,8 @@ class TrackDocumentController extends Controller
     }
 
     /** @return array<string, mixed>|null */
-    private function paymentProfilePayload(DocumentRequest $request): ?array
+    private function paymentProfilePayload(): ?array
     {
-        if (! $request->quote_total && ! $request->payments->contains(fn (Payment $payment): bool => $payment->receipt_path !== null)) {
-            return null;
-        }
-
         $profile = PaymentProfile::active();
 
         return $profile ? [

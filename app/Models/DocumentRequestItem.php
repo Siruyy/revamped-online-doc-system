@@ -24,6 +24,7 @@ class DocumentRequestItem extends Model
         'base_amount',
         'authentication_amount',
         'documentary_stamp_amount',
+        'quote_breakdown',
         'evaluation_notes',
     ];
 
@@ -40,6 +41,7 @@ class DocumentRequestItem extends Model
             'base_amount' => 'decimal:2',
             'authentication_amount' => 'decimal:2',
             'documentary_stamp_amount' => 'decimal:2',
+            'quote_breakdown' => 'array',
         ];
     }
 

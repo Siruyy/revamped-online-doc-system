@@ -41,20 +41,31 @@ class PublicRequestWorkflowService
 
             foreach ($quote['items'] as $line) {
                 $item = $items->get((int) $line['id']);
-                $base = max(0, (float) $line['base_amount']);
-                $authentication = max(0, (float) ($line['authentication_amount'] ?? 0));
                 $documentType = $item->documentType;
-                $stamp = $documentType instanceof DocumentType && $this->isStampExempt($documentType)
-                    ? 0.0
-                    : 40.0 * max(1, (int) $item->copies);
+
+                if (! $documentType instanceof DocumentType) {
+                    throw new \RuntimeException('Every request item must have an active document type.');
+                }
+                $pageCount = max(1, (int) ($line['page_count'] ?? 1));
+                $copies = max(1, (int) $item->copies);
+                $bundleBreakdown = $this->transferBundleBreakdown($documentType, $pageCount, $copies);
+                $base = $bundleBreakdown === null
+                    ? $documentType->calculateBaseAmount($pageCount, $copies)
+                    : collect($bundleBreakdown)->sum('base_amount');
+                $authentication = max(0, (float) ($line['authentication_amount'] ?? 0));
+                $stamp = $bundleBreakdown === null
+                    ? ($this->isStampExempt($documentType) ? 0.0 : 40.0 * $copies)
+                    : collect($bundleBreakdown)->sum('documentary_stamp_amount');
                 $lineTotal = $base + $authentication + $stamp;
 
                 $item->update([
-                    'evaluated_page_count' => max(1, (int) ($line['page_count'] ?? 1)),
-                    'page_count_snapshot' => max(1, (int) ($line['page_count'] ?? 1)),
+                    'evaluated_page_count' => $pageCount,
+                    'page_count_snapshot' => $pageCount,
+                    'fee_per_page_snapshot' => $documentType->fee,
                     'base_amount' => $base,
                     'authentication_amount' => $authentication,
                     'documentary_stamp_amount' => $stamp,
+                    'quote_breakdown' => $bundleBreakdown,
                     'line_total' => $lineTotal,
                     'evaluation_notes' => $line['evaluation_notes'] ?? null,
                 ]);
@@ -288,5 +299,54 @@ class PublicRequestWorkflowService
         return $type->hasFlag('stamp_exempt')
             || in_array($type->code, ['special_order', 'diploma', 'diploma_reissue_college', 'diploma_reissue_basic'], true)
             || in_array('stamp_exempt', (array) config('policy.document_types.'.$type->code.'.flags', []), true);
+    }
+
+    /**
+     * Transfer Credentials includes fixed Honorable Dismissal and Good Moral
+     * components while the TOR portion keeps the registrar-entered page count.
+     * A null result means the request uses the normal single-document formula.
+     *
+     * @return list<array{label: string, copies: int, page_count: int, unit_fee: float, base_amount: float, documentary_stamp_amount: float, line_total: float}>|null
+     */
+    private function transferBundleBreakdown(DocumentType $type, int $pageCount, int $copies): ?array
+    {
+        if ($type->code !== 'tor_transfer') {
+            return null;
+        }
+
+        $fixedFee = (float) config('policy.document_types.cert_transfer_credential.fee', 0);
+        $stamp = round(40.0 * $copies, 2);
+        $fixedBase = round($fixedFee * $copies, 2);
+        $torBase = $type->calculateBaseAmount($pageCount, $copies);
+
+        return [
+            [
+                'label' => 'Honorable Dismissal',
+                'copies' => $copies,
+                'page_count' => 1,
+                'unit_fee' => $fixedFee,
+                'base_amount' => $fixedBase,
+                'documentary_stamp_amount' => $stamp,
+                'line_total' => round($fixedBase + $stamp, 2),
+            ],
+            [
+                'label' => 'Certificate of Good Moral Character',
+                'copies' => $copies,
+                'page_count' => 1,
+                'unit_fee' => $fixedFee,
+                'base_amount' => $fixedBase,
+                'documentary_stamp_amount' => $stamp,
+                'line_total' => round($fixedBase + $stamp, 2),
+            ],
+            [
+                'label' => 'TOR Valid for Transfer',
+                'copies' => $copies,
+                'page_count' => $pageCount,
+                'unit_fee' => (float) $type->fee,
+                'base_amount' => $torBase,
+                'documentary_stamp_amount' => $stamp,
+                'line_total' => round($torBase + $stamp, 2),
+            ],
+        ];
     }
 }
