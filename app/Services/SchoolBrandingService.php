@@ -26,7 +26,7 @@ class SchoolBrandingService
                 $branding = SchoolBranding::query()->lockForUpdate()->findOrFail(1);
                 $oldPath = $branding->logo_path;
                 $branding->update(['logo_path' => $path]);
-                ActivityLogger::log('school_branding_updated', $path ? 'Claim-slip logo updated.' : 'Claim-slip logo removed.', $actor);
+                ActivityLogger::log('school_branding_updated', $path ? 'School branding logo updated.' : 'School branding logo removed.', $actor);
 
                 return $oldPath;
             });

@@ -1,6 +1,8 @@
 <script setup>
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
+
+const page = usePage();
 </script>
 
 <template>
@@ -13,7 +15,13 @@ import { Link } from '@inertiajs/vue3';
                     <span
                         class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-sm"
                     >
-                        <ApplicationLogo class="h-7 w-7 fill-current" />
+                        <img
+                            v-if="page.props.branding?.logo"
+                            :src="page.props.branding.logo"
+                            alt=""
+                            class="h-full w-full object-contain"
+                        />
+                        <ApplicationLogo v-else class="h-7 w-7 fill-current" />
                     </span>
                     <span class="font-display text-xl font-bold tracking-tight text-slate-950">SVCI Docs</span>
                 </Link>

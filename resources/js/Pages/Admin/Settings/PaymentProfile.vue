@@ -2,7 +2,7 @@
 import StaffLayout from '@/Layouts/StaffLayout.vue';
 import FormField from '@/Components/UI/FormField.vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import {
     BanknotesIcon,
     CheckCircleIcon,
@@ -20,11 +20,13 @@ const props = defineProps({
 
 // ─── Create form ─────────────────────────────────────────────────────────────
 const page = usePage();
-const settingsRoute = (action, id) =>
-    route(
-        `${page.props.auth.user.role === 'superadmin' ? 'superadmin' : 'admin'}.settings.payment-profile.${action}`,
-        id,
-    );
+const settingsPrefix = computed(() => {
+    if (page.props.auth.user.role === 'superadmin') return 'superadmin';
+    if (page.props.auth.user.role === 'accounting') return 'department';
+
+    return 'admin';
+});
+const settingsRoute = (action, id) => route(`${settingsPrefix.value}.settings.payment-profile.${action}`, id);
 const showCreate = ref(props.profiles.length === 0);
 
 const createForm = useForm({

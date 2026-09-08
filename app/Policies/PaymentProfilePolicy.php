@@ -9,17 +9,17 @@ class PaymentProfilePolicy
 {
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'superadmin'], true);
+        return in_array($user->role, ['admin', 'accounting', 'superadmin'], true);
     }
 
     public function manage(User $user): bool
     {
-        return in_array($user->role, ['admin', 'superadmin'], true);
+        return in_array($user->role, ['admin', 'accounting', 'superadmin'], true);
     }
 
     public function viewQr(User $user, PaymentProfile $paymentProfile): bool
     {
-        if (in_array($user->role, ['admin', 'superadmin'], true)) {
+        if (in_array($user->role, ['admin', 'accounting', 'superadmin'], true)) {
             return true;
         }
 

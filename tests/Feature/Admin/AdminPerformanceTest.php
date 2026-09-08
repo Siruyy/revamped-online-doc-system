@@ -35,9 +35,10 @@ class AdminPerformanceTest extends TestCase
                 ->has('requests.data', 15)));
 
         // Keep these close to the measured values so N+1 regressions fail fast.
+        // The shared staff branding prop adds one bounded lookup for the configurable logo.
         // The request list includes two bounded eager-load queries for clearances and steps.
-        $this->assertLessThanOrEqual(20, $dashboardQueries, "Admin dashboard used {$dashboardQueries} queries.");
-        $this->assertLessThanOrEqual(10, $requestListQueries, "Admin request list used {$requestListQueries} queries.");
+        $this->assertLessThanOrEqual(21, $dashboardQueries, "Admin dashboard used {$dashboardQueries} queries.");
+        $this->assertLessThanOrEqual(11, $requestListQueries, "Admin request list used {$requestListQueries} queries.");
     }
 
     public function test_performance_check_command_seeds_volume_and_reports_query_counts(): void

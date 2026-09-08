@@ -148,9 +148,15 @@ onBeforeUnmount(() => revealObserver?.disconnect());
                     class="group flex items-center gap-3 rounded-xl active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
                 >
                     <span
-                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-700 text-white shadow-[0_8px_22px_rgba(29,78,216,0.2)] transition duration-200 group-hover:-translate-y-0.5 group-hover:bg-brand-600 motion-reduce:group-hover:translate-y-0"
+                        class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-brand-700 text-white shadow-[0_8px_22px_rgba(29,78,216,0.2)] transition duration-200 group-hover:-translate-y-0.5 group-hover:bg-brand-600 motion-reduce:group-hover:translate-y-0"
                     >
-                        <BuildingLibraryIcon class="h-5 w-5" aria-hidden="true" />
+                        <img
+                            v-if="$page.props.branding?.logo"
+                            :src="$page.props.branding.logo"
+                            alt=""
+                            class="h-full w-full object-contain"
+                        />
+                        <BuildingLibraryIcon v-else class="h-5 w-5" aria-hidden="true" />
                     </span>
                     <span>
                         <span class="block font-display text-lg font-bold tracking-tight text-slate-950"
@@ -474,8 +480,16 @@ onBeforeUnmount(() => revealObserver?.disconnect());
                 class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-9 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8"
             >
                 <div class="flex items-center gap-3">
-                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-700 text-white">
-                        <BuildingLibraryIcon class="h-4 w-4" aria-hidden="true" />
+                    <span
+                        class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-brand-700 text-white"
+                    >
+                        <img
+                            v-if="$page.props.branding?.logo"
+                            :src="$page.props.branding.logo"
+                            alt=""
+                            class="h-full w-full object-contain"
+                        />
+                        <BuildingLibraryIcon v-else class="h-4 w-4" aria-hidden="true" />
                     </span>
                     <p class="font-semibold text-slate-700">
                         &copy; {{ new Date().getFullYear() }} St. Vincent College Incorporated.

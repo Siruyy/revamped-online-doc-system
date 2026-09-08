@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Message;
+use App\Services\SchoolBrandingService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -37,6 +38,9 @@ class HandleInertiaRequests extends Middleware
             ],
             'auth' => [
                 'user' => $request->user(),
+            ],
+            'branding' => [
+                'logo' => fn () => app(SchoolBrandingService::class)->logoDataUri(),
             ],
             'unreadNotificationsCount' => fn () => $request->user()?->unreadNotifications()->count() ?? 0,
             'unreadMessagesCount' => fn () => $request->user()

@@ -24,7 +24,7 @@ class SchoolBrandingController extends Controller
     {
         $branding->saveLogo($request->file('logo'), $request->user());
 
-        return back()->with('status', 'Claim-slip logo saved.');
+        return back()->with('status', 'School branding logo saved.');
     }
 
     public function destroy(Request $request, SchoolBrandingService $branding): RedirectResponse
@@ -32,6 +32,6 @@ class SchoolBrandingController extends Controller
         $this->authorize('manage', SchoolBranding::class);
         $branding->saveLogo(null, $request->user());
 
-        return back()->with('status', 'Uploaded claim-slip logo removed.');
+        return back()->with('status', 'School branding logo removed.');
     }
 }

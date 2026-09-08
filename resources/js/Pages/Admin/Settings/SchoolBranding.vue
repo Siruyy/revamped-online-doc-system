@@ -56,12 +56,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <Head title="Claim Slip Branding" />
+    <Head title="School Branding" />
     <StaffLayout>
         <div class="mx-auto max-w-4xl space-y-6">
             <PageHeader
-                title="Claim Slip Branding"
-                subtitle="Choose the school logo used on new claim slips and their email attachments."
+                title="School Branding"
+                subtitle="Choose the logo used across the portal, new claim slips, and their email attachments."
             />
             <section class="grid gap-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 md:grid-cols-2">
                 <form class="space-y-5" @submit.prevent="save">
@@ -87,8 +87,8 @@ onBeforeUnmount(() => {
                         </template>
                     </FormField>
                     <p class="text-sm leading-6 text-slate-600">
-                        Saving a logo applies to claim slips generated afterward. Previously issued PDFs and sent
-                        attachments stay unchanged.
+                        The logo appears on the public page and staff layouts immediately after saving. Previously
+                        issued PDFs and sent attachments stay unchanged.
                     </p>
                     <p v-if="form.progress" role="status" class="text-sm text-brand-700">
                         Uploading: {{ form.progress.percentage }}%

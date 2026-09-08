@@ -123,7 +123,7 @@ const links = computed(() => {
             { route: 'superadmin.announcements.index', label: 'Announcements' },
             { route: 'superadmin.faqs.index', label: 'FAQs' },
             { route: 'superadmin.settings.payment-profile.index', label: 'Payment Settings' },
-            { route: 'superadmin.settings.branding.index', label: 'Claim Slip Branding' },
+            { route: 'superadmin.settings.branding.index', label: 'School Branding' },
             { route: 'superadmin.notifications.index', label: 'Notifications' },
             { route: 'superadmin.profile.edit', label: 'Profile' },
         ].map((link) => ({ ...link, icon: getIconForRoute(link.route) }));
@@ -137,7 +137,12 @@ const links = computed(() => {
         return [
             { route: 'department.dashboard', label: 'Dashboard' },
             { route: 'department.clearances.index', label: 'Clearances' },
-            ...(role.value === 'accounting' ? [{ route: 'department.payments.index', label: 'Receipt Review' }] : []),
+            ...(role.value === 'accounting'
+                ? [
+                      { route: 'department.payments.index', label: 'Receipt Review' },
+                      { route: 'department.settings.payment-profile.index', label: 'Payment Settings' },
+                  ]
+                : []),
             { route: 'department.notifications.index', label: 'Notifications' },
             { route: 'department.faq.index', label: 'FAQ' },
             { route: 'department.profile.edit', label: 'Profile' },
@@ -154,7 +159,7 @@ const links = computed(() => {
         { route: 'admin.announcements.index', label: 'Announcements' },
         { route: 'admin.faqs.index', label: 'FAQs' },
         { route: 'admin.settings.payment-profile.index', label: 'Payment Settings' },
-        { route: 'admin.settings.branding.index', label: 'Claim Slip Branding' },
+        { route: 'admin.settings.branding.index', label: 'School Branding' },
         { route: 'admin.reports.index', label: 'Reports' },
         { route: 'admin.notifications.index', label: 'Notifications' },
         { route: 'admin.profile.edit', label: 'Profile' },
@@ -178,9 +183,15 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
             >
                 <Link :href="route(links[0]?.route ?? 'admin.dashboard')" class="flex items-center gap-3 group">
                     <div
-                        class="bg-brand-500 p-1.5 rounded-lg shadow-sm group-hover:bg-brand-400 transition-colors shrink-0"
+                        class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-brand-500 p-1.5 shadow-sm transition-colors group-hover:bg-brand-400 shrink-0"
                     >
-                        <DocumentTextIcon class="w-5 h-5 text-white" />
+                        <img
+                            v-if="page.props.branding?.logo"
+                            :src="page.props.branding.logo"
+                            alt=""
+                            class="h-5 w-5 object-contain"
+                        />
+                        <DocumentTextIcon v-else class="w-5 h-5 text-white" />
                     </div>
                     <span
                         v-if="!sidebarCollapsed"
@@ -305,7 +316,15 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                     >
                         <Bars3Icon class="h-5 w-5" aria-hidden="true" />
                     </button>
-                    <span class="font-display font-bold text-base text-slate-900">SVCI</span>
+                    <span class="flex items-center gap-2 font-display font-bold text-base text-slate-900">
+                        <img
+                            v-if="page.props.branding?.logo"
+                            :src="page.props.branding.logo"
+                            alt=""
+                            class="h-6 w-6 object-contain"
+                        />
+                        SVCI
+                    </span>
                 </div>
 
                 <!-- Role chip (desktop) — subtle, no "Admin Console" text -->

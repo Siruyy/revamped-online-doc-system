@@ -29,6 +29,8 @@ class SchoolSettingsTest extends TestCase
             $old = SchoolBranding::findOrFail(1)->logo_path;
             Storage::disk('local')->assertExists($old);
             $this->assertStringStartsWith('data:image/png;base64,', app(SchoolBrandingService::class)->logoDataUri());
+            $this->get('/')->assertInertia(fn ($page) => $page
+                ->where('branding.logo', fn ($logo) => is_string($logo) && str_starts_with($logo, 'data:image/png;base64,')));
             $this->post(route($role.'.settings.branding.update'), ['logo' => UploadedFile::fake()->image('replacement.jpg')])
                 ->assertSessionHasNoErrors();
             Storage::disk('local')->assertMissing($old);
@@ -79,5 +81,22 @@ class SchoolSettingsTest extends TestCase
         $request = DocumentRequest::factory()->create();
         $this->post(route('track-document.show'), ['reference_no' => $request->reference_no])->assertOk()
             ->assertInertia(fn ($page) => $page->has('result.payment_profiles', 2)->where('result.payment_profiles.0.account_number', '009876'));
+    }
+
+    public function test_accounting_can_manage_payment_settings_but_other_department_roles_cannot(): void
+    {
+        $accounting = User::factory()->create(['role' => 'accounting', 'status' => 'active']);
+
+        $this->actingAs($accounting)->get(route('department.settings.payment-profile.index'))->assertOk();
+        $this->actingAs($accounting)->post(route('department.settings.payment-profile.store'), [
+            'bank_name' => 'Accounting Bank',
+            'account_name' => 'SVCI',
+            'account_number' => '123',
+            'is_active' => true,
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs(User::factory()->create(['role' => 'dean', 'status' => 'active']))
+            ->get(route('department.settings.payment-profile.index'))
+            ->assertForbidden();
     }
 }

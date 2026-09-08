@@ -52,7 +52,13 @@ const isActive = (routeName) => route().current(routeName) || route().current(ro
                             <div
                                 class="bg-brand-600 p-1.5 rounded-lg shadow-sm group-hover:bg-brand-500 transition-colors"
                             >
-                                <DocumentTextIcon class="w-5 h-5 text-white" />
+                                <img
+                                    v-if="page.props.branding?.logo"
+                                    :src="page.props.branding.logo"
+                                    alt=""
+                                    class="h-5 w-5 object-contain"
+                                />
+                                <DocumentTextIcon v-else class="w-5 h-5 text-white" />
                             </div>
                             <span class="font-display font-bold text-base text-slate-900 hidden sm:block tracking-tight"
                                 >SVCI Docs</span
