@@ -4,17 +4,15 @@ Use this checklist for items that automated tests cannot prove reliably. Run the
 
 ## Environment
 
-- [ ] Copy `.env.example` to `.env` if needed and configure MySQL, mail capture, queue, and Reverb values.
-- [ ] Run `composer install` and `npm install` if dependencies are missing or stale.
-- [ ] Run `php artisan migrate:fresh --seed` in a disposable local database.
-- [ ] Start the app stack in separate terminals:
+- [ ] For the recommended Docker path, run `./scripts/setup-local.sh` from the repository root.
+- [ ] Confirm the Docker services are running with `docker compose ps`.
+- [ ] Start the queue worker in a separate terminal:
 
 ```bash
-php artisan serve
-php artisan queue:work
-php artisan reverb:start
-npm run dev
+docker compose exec app php artisan queue:work
 ```
+
+- [ ] For native development, follow [`local-development.md`](./local-development.md#native-setup-without-docker), install dependencies, configure `.env`, and run `php artisan migrate:fresh --seed` in a disposable local database.
 
 ## Realtime Notifications
 
@@ -22,7 +20,7 @@ npm run dev
 - [ ] Submit a public document request with required attachments and receipt; confirm the admin/SuperAdmin notification bell updates without refresh.
 - [ ] Approve or deny the request as admin/SuperAdmin and confirm email is queued when the requestor provided email.
 - [ ] Complete or deny a department clearance step and confirm staff notifications update as expected.
-- [ ] Stop `php artisan reverb:start`, repeat one notification-triggering action, and confirm polling fallback still shows the notification after refresh or polling delay.
+- [ ] Stop the Docker Reverb service with `docker compose stop reverb` (or stop `php artisan reverb:start` in native mode), repeat one notification-triggering action, and confirm polling fallback still shows the notification after refresh or polling delay.
 
 ## Public No-Login Request Flow
 
@@ -42,7 +40,7 @@ npm run dev
 
 ## Queue And Mail
 
-- [ ] Keep `php artisan queue:work` running while triggering public request, password reset, request approval/denial, payment approval/denial, and clearance events.
+- [ ] Keep `docker compose exec app php artisan queue:work` running for Docker, or `php artisan queue:work` for native development, while triggering public request, password reset, request approval/denial, payment approval/denial, and clearance events.
 - [ ] Confirm no failed jobs with `php artisan queue:failed`.
 - [ ] Open Mailpit/Mailhog and confirm expected emails are captured for public request status, password reset, and workflow notifications that send mail.
 - [ ] Confirm email bodies do not expose reset tokens in notification array payloads or on-page debug output.

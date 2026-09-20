@@ -25,6 +25,7 @@ This documentation set is split into focused, single-topic files. Read them in o
 | 12 | [Notifications & Email](./12-notifications-and-email.md) | In-app + email notification system |
 | 13 | [PDF Generation](./13-pdf-generation.md) | Clearance certificate generation |
 | 14 | [Deployment](./14-deployment.md) | Dokploy + DigitalOcean VPS setup |
+| — | [Local Development](./local-development.md) | Client setup, Docker bootstrap, demo accounts, and troubleshooting |
 | 15 | [Testing Strategy](./15-testing-strategy.md) | Pest + browser testing |
 | 16 | [Policy Matrix](./16-policy-matrix.md) | Registrar policy → system rules mapping |
 | 17 | [Design System](./17-design-system.md) | UI tokens, components, accessibility |

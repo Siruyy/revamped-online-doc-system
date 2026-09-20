@@ -18,12 +18,14 @@ Legend:
 
 ## 0. Prerequisites
 
-1. Fresh install with `php artisan migrate:fresh --seed`.
+1. Run `./scripts/setup-local.sh --reset` for a clean Docker demo database, or follow the native setup in [`local-development.md`](./local-development.md#native-setup-without-docker).
 2. Test accounts (seeded):
    - Admin (Registrar): `admin@example.com` / `password`
-   - Dean, Accounting, SAO, Teacher: `dean@example.com`, `accounting@example.com`, `sao@example.com`, `teacher@example.com` (all `password`)
-   - Superadmin: from `.env` (`SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD`)
-3. Queue + broadcast workers running (`composer dev`).
+   - SuperAdmin: `superadmin@svci.test` / `password`
+   - Accounting: `accounting@svci.test` / `password`
+   - BEC Principal: `principal@svci.test` / `password`
+   - Department signatories: `dean@svci.test`, `president@svci.test`, `librarian@svci.test`, `student_affairs@svci.test`, `alumni@svci.test`, and `guidance@svci.test` (all `password`)
+3. Queue worker running: `docker compose exec app php artisan queue:work` for Docker, or `php artisan queue:work` for native development. Reverb is started by the Docker setup script or with `php artisan reverb:start` in native development.
 
 ---
 

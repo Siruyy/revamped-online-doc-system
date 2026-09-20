@@ -311,7 +311,7 @@ Configure Dokploy healthcheck → `GET /up` every 30s.
 
 ## Local-to-Production Workflow
 
-1. Develop on local Docker Compose (mirror of production).
+1. Develop on local Docker Compose using [`docs/local-development.md`](./local-development.md) and `scripts/setup-local.sh`.
 2. Push to GitHub `main` branch.
 3. Dokploy auto-pulls and deploys (configured webhook).
 4. Migrations run automatically via entrypoint.
