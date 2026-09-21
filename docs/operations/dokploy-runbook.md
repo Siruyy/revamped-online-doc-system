@@ -58,12 +58,13 @@ VITE_REVERB_SCHEME=https
 
 SESSION_SECURE_COOKIE=true
 
-MAIL_MAILER=log
-MAIL_FROM_ADDRESS=noreply@siruyy.cloud
+MAIL_MAILER=resend
+RESEND_KEY=re_replace_with_resend_api_key
+MAIL_FROM_ADDRESS=noreply@your-verified-domain.com
 MAIL_FROM_NAME="SVCI Document System"
 ```
 
-Switch `MAIL_MAILER` and SMTP variables to the real provider before testing email delivery.
+The `MAIL_FROM_ADDRESS` domain must be verified in Resend. Keep `RESEND_KEY` secret and provide it to both the `app` and `queue` services through Dokploy environment variables.
 
 ## Dokploy Setup
 

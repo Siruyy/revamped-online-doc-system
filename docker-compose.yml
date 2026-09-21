@@ -30,9 +30,10 @@ services:
       - VITE_REVERB_HOST=127.0.0.1
       - VITE_REVERB_PORT=8080
       - VITE_REVERB_SCHEME=http
-      - MAIL_MAILER=smtp
-      - MAIL_HOST=mailhog
-      - MAIL_PORT=1025
+      - MAIL_MAILER=resend
+      - RESEND_KEY=${RESEND_KEY:-}
+      - MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS:-}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME:-SVCI Document System}
     depends_on:
       mysql:
         condition: service_healthy
@@ -92,16 +93,6 @@ services:
       - '8080:8080'
     depends_on:
       - app
-    networks:
-      - svci
-
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: svci_mailhog
-    restart: unless-stopped
-    ports:
-      - '1025:1025'   # SMTP
-      - '8025:8025'   # Web UI
     networks:
       - svci
 

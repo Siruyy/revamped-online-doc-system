@@ -92,7 +92,7 @@ QUEUE_CONNECTION=database
 
 The `MAIL_FROM_ADDRESS` domain must be verified in Resend. All notifications implement `ShouldQueue`, so email sending is asynchronous and never blocks the HTTP request. Production must run a persistent `php artisan queue:work` process.
 
-For local Docker development, `docker-compose.yml` overrides the mailer to SMTP and sends it to the MailHog container. Start the queue worker with `docker compose exec app php artisan queue:work` and inspect captured messages at <http://localhost:8025>. Native development keeps the `log` mailer from `.env.example`, so inspect Laravel logs instead.
+For local Docker development, configure `MAIL_MAILER=resend`, `RESEND_KEY`, and a verified `MAIL_FROM_ADDRESS` in `.env`. Start the queue worker with `docker compose exec app php artisan queue:work` and check delivery events in Resend. Native development keeps the `log` mailer from `.env.example` unless Resend is configured explicitly.
 
 ## Mail Templates
 

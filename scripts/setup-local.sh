@@ -9,8 +9,8 @@ usage() {
     cat <<'EOF'
 Usage: scripts/setup-local.sh [--reset]
 
-Builds and starts the Docker development stack, prepares the database,
-creates the storage link, and builds the frontend assets.
+Builds and starts the Docker development stack using Resend for email,
+prepares the database, creates the storage link, and builds the frontend.
 
 Options:
   --reset    Delete local Docker volumes and recreate the demo database.
@@ -55,6 +55,19 @@ if [[ ! -f "$ENV_FILE" ]]; then
     echo "Created .env from .env.example."
 fi
 
+resend_key="$(sed -n 's/^RESEND_KEY=//p' "$ENV_FILE" | head -n 1 | tr -d '\"' | tr -d "'")"
+mail_from_address="$(sed -n 's/^MAIL_FROM_ADDRESS=//p' "$ENV_FILE" | head -n 1 | tr -d '\"' | tr -d "'")"
+
+if [[ ! "$resend_key" =~ ^re_.+ ]]; then
+    echo "Set RESEND_KEY=re_... in .env before running local setup." >&2
+    exit 1
+fi
+
+if [[ -z "$mail_from_address" || "$mail_from_address" == "hello@example.com" ]]; then
+    echo "Set MAIL_FROM_ADDRESS to an email address on your verified Resend domain in .env." >&2
+    exit 1
+fi
+
 ensure_env_default() {
     local key="$1"
     local value="$2"
@@ -76,8 +89,8 @@ if [[ "$RESET_DATABASE" == true ]]; then
     docker compose down -v
 fi
 
-echo "Starting MySQL, MailHog, and the Laravel app..."
-docker compose up -d --build mysql mailhog app
+echo "Starting MySQL and the Laravel app with Resend email..."
+docker compose up -d --build mysql app
 
 artisan() {
     docker compose exec -T app php artisan "$@"
@@ -128,7 +141,7 @@ Local setup is ready.
 App:       http://localhost:8000
 Requests:  http://localhost:8000/request-document
 Tracking:  http://localhost:8000/track-document
-MailHog:   http://localhost:8025
+Email:     Resend (configured in .env)
 Reverb:    ws://localhost:8080
 
 Useful commands:

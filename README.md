@@ -45,7 +45,7 @@ For the client setup, run the one-command Docker bootstrap from [`docs/local-dev
 ./scripts/setup-local.sh
 ```
 
-It builds the local containers, prepares the database, creates storage links, builds the frontend, and starts Reverb. The guide also includes the queue-worker command, MailHog, demo accounts, reset instructions, troubleshooting, and the native PHP fallback.
+It builds the local containers, prepares the database, creates storage links, builds the frontend, and starts Reverb. The guide also explains the required Resend settings, queue-worker command, demo accounts, reset instructions, troubleshooting, and the native PHP fallback.
 
 ## Verification
 

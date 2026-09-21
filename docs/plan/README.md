@@ -37,7 +37,7 @@ Completed phases are archived in [`finished/`](./finished/). Do not edit archive
 ## Recommended Execution Order
 
 1. Phase 15: implement public request intake and reference-number tracking. This supersedes the old requestor-facing student-registration workflow.
-2. Manual operational checks: public request submission, admin/SuperAdmin validation, private file previews, `queue:work`, and Mailpit/Mailhog capture.
+2. Manual operational checks: public request submission, admin/SuperAdmin validation, private file previews, `queue:work`, and Resend real-inbox delivery.
 3. Phase 08 remains explicitly deferred from v1 unless messaging is reactivated.
 4. Phase 14 post-launch handoff and operations after the new intake workflow is implemented.
 5. Phase 12 and Phase 13 are skipped for the current requested scope.

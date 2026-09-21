@@ -36,13 +36,13 @@ docker compose exec app php artisan queue:work
 - [ ] Confirm student and department users cannot download the public clearance PDF.
 - [ ] Move the request to ready for pickup and then released; confirm public tracking shows the correct next-step copy at each stage.
 - [ ] Confirm public requestor email receives public-safe updates when email is present and no email error occurs when email is absent.
-- [ ] Record whether Reverb, queue worker, and Mailpit/Mailhog were running; note any environment limitation instead of marking the item verified.
+- [ ] Record whether Reverb, queue worker, and Resend were running; note any environment limitation instead of marking the item verified.
 
 ## Queue And Mail
 
 - [ ] Keep `docker compose exec app php artisan queue:work` running for Docker, or `php artisan queue:work` for native development, while triggering public request, password reset, request approval/denial, payment approval/denial, and clearance events.
 - [ ] Confirm no failed jobs with `php artisan queue:failed`.
-- [ ] Open Mailpit/Mailhog and confirm expected emails are captured for public request status, password reset, and workflow notifications that send mail.
+- [ ] Open the Resend dashboard and confirm expected emails are accepted/delivered for public request status, password reset, and workflow notifications that send mail.
 - [ ] Confirm email bodies do not expose reset tokens in notification array payloads or on-page debug output.
 
 ## Role Walkthrough

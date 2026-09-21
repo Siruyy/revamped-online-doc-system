@@ -2,7 +2,7 @@
 
 This is the client-facing guide for running the SVCI Online Document System locally.
 
-The recommended path uses Docker Desktop. It runs Laravel, MySQL, Reverb, and MailHog without requiring PHP, Composer, Node.js, or MySQL on the host computer.
+The recommended path uses Docker Desktop. It runs Laravel, MySQL, and Reverb without requiring PHP, Composer, Node.js, or MySQL on the host computer. Email is delivered through Resend.
 
 ## Recommended setup: Docker Desktop
 
@@ -16,15 +16,32 @@ The bootstrap script is Bash. On Windows, run it from Git Bash or WSL.
 
 ### First setup
 
-Clone the repository, enter the project directory, and run the bootstrap script:
+Clone the repository, enter the project directory, create the environment file, configure Resend, and run the bootstrap script:
 
 ```bash
 git clone <repository-url>
 cd revamped-online-doc-system
+cp .env.example .env
+```
+
+Edit `.env` and set:
+
+```env
+MAIL_MAILER=resend
+RESEND_KEY=re_your_resend_api_key
+MAIL_FROM_ADDRESS=noreply@your-verified-domain.com
+MAIL_FROM_NAME="SVCI Document System"
+```
+
+`MAIL_FROM_ADDRESS` must use a domain that has been verified in Resend. Keep `RESEND_KEY` private and never commit `.env`.
+
+Then run:
+
+```bash
 ./scripts/setup-local.sh
 ```
 
-The script creates `.env` when needed, adds local SuperAdmin defaults, builds and starts the containers, generates the app key, applies migrations, seeds demo data, creates the storage link, builds frontend assets, and starts Reverb.
+The script validates the Resend settings, adds local SuperAdmin defaults, builds and starts the containers, generates the app key, applies migrations, seeds demo data, creates the storage link, builds frontend assets, and starts Reverb.
 
 Open these addresses:
 
@@ -33,7 +50,6 @@ Open these addresses:
 | Application | <http://localhost:8000> |
 | Public request form | <http://localhost:8000/request-document> |
 | Public tracking | <http://localhost:8000/track-document> |
-| MailHog inbox | <http://localhost:8025> |
 | Reverb WebSocket | `ws://localhost:8080` |
 
 ### Queue worker
@@ -44,7 +60,7 @@ Start this in a second terminal when testing email, notifications, PDFs, or work
 docker compose exec app php artisan queue:work
 ```
 
-Leave it running. Local email is captured by MailHog and is not sent to real recipients.
+Leave it running. Workflow emails are sent through Resend to the requestor or staff email addresses used during testing.
 
 ### Local demo accounts
 
@@ -105,11 +121,12 @@ Use `--reset` only when it is safe to discard local data.
 
 ### Common Docker issues
 
-- **Port already in use:** stop the process using port `8000`, `3306`, `8025`, or `8080`.
+- **Port already in use:** stop the process using port `8000`, `3306`, or `8080`.
 - **Missing Vite manifest:** run `docker compose exec app npm run build`.
 - **Stale dependencies:** run `docker compose exec app composer install` and `docker compose exec app npm ci`, then rebuild the frontend.
 - **Reverb restarting:** inspect `docker compose logs reverb` and run `docker compose up -d --build reverb`.
-- **No email in MailHog:** keep the queue worker running and inspect `docker compose logs app`.
+- **No email received:** keep the queue worker running, inspect `docker compose logs app`, and check Resend delivery events for rejected, bounced, or delivered messages.
+- **Resend rejects the message:** confirm `RESEND_KEY` is valid and `MAIL_FROM_ADDRESS` belongs to a verified Resend domain.
 - **Bad local database state:** use `./scripts/setup-local.sh --reset` only if the data can be discarded.
 
 ## Native setup (without Docker)
@@ -151,7 +168,7 @@ php artisan reverb:start
 npm run dev
 ```
 
-Use <http://localhost:8000>. Native mode keeps the default `log` mailer, so email is written to Laravel logs instead of MailHog. For native MySQL, set `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` in `.env` before migrating.
+Use <http://localhost:8000>. Native mode keeps the default `log` mailer unless you set `MAIL_MAILER=resend`, `RESEND_KEY`, and a verified `MAIL_FROM_ADDRESS` in `.env`. For native MySQL, set `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` in `.env` before migrating.
 
 ## Verification
 
