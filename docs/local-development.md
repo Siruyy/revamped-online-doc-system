@@ -121,6 +121,7 @@ Use `--reset` only when it is safe to discard local data.
 
 ### Common Docker issues
 
+- **`failed to read dockerfile: invalid file request Dockerfile.dev`:** update the repository before running setup. The project must contain `Dockerfile.dev` at the repository root. From Git Bash, run `git pull origin main`, confirm with `ls Dockerfile.dev`, and run `./scripts/setup-local.sh` again.
 - **Port already in use:** stop the process using port `8000`, `3306`, or `8080`.
 - **Missing Vite manifest:** run `docker compose exec app npm run build`.
 - **Stale dependencies:** run `docker compose exec app composer install` and `docker compose exec app npm ci`, then rebuild the frontend.
@@ -128,6 +129,8 @@ Use `--reset` only when it is safe to discard local data.
 - **No email received:** keep the queue worker running, inspect `docker compose logs app`, and check Resend delivery events for rejected, bounced, or delivered messages.
 - **Resend rejects the message:** confirm `RESEND_KEY` is valid and `MAIL_FROM_ADDRESS` belongs to a verified Resend domain.
 - **Bad local database state:** use `./scripts/setup-local.sh --reset` only if the data can be discarded.
+
+The first request-form screen asks whether the records are from College / Graduate School or Basic Education Campus. Select one division to reveal its document categories. If the categories still do not appear after a successful setup, run `./scripts/setup-local.sh --reset` to recreate the local database and seed the document catalog.
 
 ## Native setup (without Docker)
 
