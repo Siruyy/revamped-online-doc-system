@@ -59,7 +59,7 @@ MYSQL_ROOT_PASSWORD=replace_with_different_random_secret
 REVERB_APP_ID=svci
 REVERB_APP_KEY=replace_with_random_public_key
 REVERB_APP_SECRET=replace_with_random_secret
-REVERB_ALLOWED_ORIGINS=https://svciregistrar.com,https://www.svciregistrar.com
+REVERB_ALLOWED_ORIGINS=svciregistrar.com,www.svciregistrar.com
 VITE_REVERB_HOST=ws.svciregistrar.com
 VITE_REVERB_PORT=443
 VITE_REVERB_SCHEME=https
@@ -71,6 +71,8 @@ RESEND_KEY=re_replace_with_resend_api_key
 MAIL_FROM_ADDRESS=noreply@your-verified-domain.com
 MAIL_FROM_NAME="SVCI Document System"
 ```
+
+Reverb matches the Origin header hostname, so `REVERB_ALLOWED_ORIGINS` must contain hostnames without URL schemes.
 
 The `MAIL_FROM_ADDRESS` domain must be verified in Resend. Keep `RESEND_KEY` secret and provide it to both the `app` and `queue` services through Dokploy environment variables.
 
