@@ -55,7 +55,10 @@ class SecurityHeaders
 
         $connectSrc = "'self' ws://127.0.0.1:* ws://localhost:* wss://127.0.0.1:* wss://localhost:* ".
             'http://127.0.0.1:* http://localhost:* https://fonts.googleapis.com https://fonts.gstatic.com';
-        $reverbHost = trim((string) config('broadcasting.connections.reverb.options.host', ''));
+        $reverbHost = trim((string) (
+            config('broadcasting.connections.reverb.public_host')
+            ?: config('broadcasting.connections.reverb.options.host', '')
+        ));
 
         if ($reverbHost !== '') {
             $connectSrc .= ' wss://'.$reverbHost.' ws://'.$reverbHost;

@@ -46,16 +46,33 @@ class SecurityHeadersTest extends TestCase
         });
     }
 
-    public function test_content_security_policy_uses_configured_reverb_host(): void
+    public function test_content_security_policy_uses_public_reverb_host_instead_of_internal_host(): void
     {
-        Config::set('broadcasting.connections.reverb.options.host', 'reverb.example.test');
+        Config::set('broadcasting.connections.reverb.options.host', 'reverb');
+        Config::set('broadcasting.connections.reverb.public_host', 'ws.svciregistrar.com');
 
         $response = $this->get('/');
 
         $csp = $response->headers->get('Content-Security-Policy');
 
-        $this->assertStringContainsString('wss://reverb.example.test', $csp);
-        $this->assertStringContainsString('ws://reverb.example.test', $csp);
+        $this->assertStringContainsString('wss://ws.svciregistrar.com', $csp);
+        $this->assertStringContainsString('ws://ws.svciregistrar.com', $csp);
+        $this->assertStringNotContainsString('wss://reverb', $csp);
+        $this->assertStringNotContainsString('ws://reverb', $csp);
+        $this->assertStringNotContainsString('wss://*', $csp);
+    }
+
+    public function test_content_security_policy_falls_back_to_internal_reverb_host_when_public_host_is_empty(): void
+    {
+        Config::set('broadcasting.connections.reverb.options.host', 'reverb');
+        Config::set('broadcasting.connections.reverb.public_host', '');
+
+        $response = $this->get('/');
+
+        $csp = $response->headers->get('Content-Security-Policy');
+
+        $this->assertStringContainsString('wss://reverb', $csp);
+        $this->assertStringContainsString('ws://reverb', $csp);
     }
 
     /**
