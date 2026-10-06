@@ -102,11 +102,11 @@ php artisan svci:make-superadmin admin@example.com
 
 Replace `admin@example.com` with the authorized SuperAdmin email. The command prompts for account details and password.
 
-Do **not** run `ProductionSeeder`, `DatabaseSeeder`, `ClearanceSignatorySeeder`, `DemoDataSeeder`, or `E2eSeeder` on production: the clearance seeder currently creates active demo staff with a known password. Create real staff through the approved administration workflow.
+The clearance seeder creates active demo staff with a known password. Run it only when the user explicitly requests bundled demo staff, as authorized on 2026-10-06. It resets seeded staff passwords when rerun. Do not run the broader `DemoDataSeeder` or `E2eSeeder` for operational setup: they also add sample requests and student data. Create real staff through the approved administration workflow.
 
 A new app key, database passwords, and Reverb credentials are stored in Dokploy environment settings. Local recovery copy: `~/.codex/deployment-secrets/svci-registrar.env` (mode `0600`). Never print or commit it.
 
-No Resend API key was available in this workspace during initial setup. Mail initially uses `log`; configure `MAIL_MAILER=resend` and a valid `RESEND_KEY` in Dokploy before verifying real delivery. DNS verification records alone do not verify API access or delivery.
+Initial setup used the `log` mailer. Resend was subsequently configured on 2026-10-06 with `MAIL_MAILER=resend`, `MAIL_FROM_ADDRESS=noreply@svciregistrar.com`, and the supplied API key stored only in Dokploy and the private local recovery environment file. The domain is verified for sending, with verified SPF and DKIM records. App and queue cached configuration were refreshed by deployment.
 
 ## Smoke Test
 
@@ -142,6 +142,20 @@ Never run `migrate:fresh`, `db:wipe`, Compose `down -v`, or volume pruning on th
 - Initial storage-volume copy race resolved by retrying with existing volumes; no volume reset.
 - Local predeploy tests: 428 tests / 2378 assertions; Pint, PHPStan, ESLint, and Vite build passed. Realtime CSP regression fix: 26 focused security tests / 116 assertions passed.
 
-Mail delivery remains unverified until a Resend API key is configured. Cloudflare’s injected analytics beacon is blocked by the application CSP; realtime must use the exact public WebSocket host rather than the internal Docker host.
+Cloudflare’s injected analytics beacon is blocked by the application CSP; realtime must use the exact public WebSocket host rather than the internal Docker host.
 
 The browser WebSocket CSP correction is in commit `0efb6a4`. A temporary local snapshot verified the correction before an explicitly authorized push and return to the Git source. The snapshot remains at `/etc/dokploy/svci-releases/0efb6a4` for recovery; normal deployments use the Git provider.
+
+## Client-Requested Staff And Resend Setup — 2026-10-06
+
+The user explicitly requested the bundled `ClearanceSignatorySeeder`. It added 16 active staff accounts, all using the bundled demo password `password`; the existing temporary SuperAdmin account was preserved.
+
+- Offices: `dean`, `president`, `librarian`, `student_affairs`, `alumni`, `guidance`, `accounting`, `principal`.
+- Department Deans: `dean.gsd`, `dean.asted`, `dean.aed`, `dean.bmed`, `dean.csd`, `dean.cesd`, `dean.ihmd`, `dean.ccj`. All eight are associated with their academic departments.
+- Emails use the corresponding username at `svci.test`; these are placeholders, not deliverable inboxes. This seeder does not create a separate Registrar/admin account.
+- All seeded password hashes and active statuses were verified. No broad demo-data seeder or legacy import ran.
+- Resend domain: `svciregistrar.com`, region `ap-northeast-1`; sending enabled and domain/DKIM/SPF verified through the Resend plugin CLI.
+- Sender: `SVCI Document System <noreply@svciregistrar.com>`. Both app and persistent queue use the Resend transport and configured key.
+- Verification: a Laravel Mailable was queued to the Resend delivery simulator `delivered@resend.dev`; Resend reported `delivered`, the worker completed the job, and pending/failed queue counts were both zero. This simulator check does not establish delivery to a real staff inbox.
+
+Full bundled staff login list: `~/.codex/deployment-secrets/svci-staff-accounts.csv` (mode `0600`).
