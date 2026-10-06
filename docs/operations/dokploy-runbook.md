@@ -16,7 +16,8 @@ Use a separate Dokploy project and dedicated MySQL and app-storage volumes. Neve
 - Dokploy project: `SVCI Registrar` (`dBxJJQhgzWxMR0Zuk6FNG`)
 - Compose ID: `ofwoZ5fTVZUGXZ9igv8Tq`
 - Compose app name: `svci-registrar-mrtrcb`
-- Source: `https://github.com/Siruyy/revamped-online-doc-system.git`, branch `develop`
+- Source: `https://github.com/Siruyy/revamped-online-doc-system.git`, branch `develop`.
+- Public Reverb CSP correction: `0efb6a4`.
 - Automatic deployments: disabled; deployments are manual.
 - Initial application revision: `f89dc80ab1bd48b8e073c3ef77be93a7ec0b0769`
 
@@ -76,7 +77,7 @@ The `MAIL_FROM_ADDRESS` domain must be verified in Resend. Keep `RESEND_KEY` sec
 ## Dokploy Setup
 
 1. Create a new Dokploy project, for example `svci-document-system`.
-2. Add a Compose application from the Git repository.
+2. Add a Compose application from the Git repository on `develop`.
 3. Set the Compose file path to `docker-compose.dokploy.yml`.
 4. Add the environment variables above.
 5. Add the app domain `svciregistrar.com` to the `app` service on container port `80`.
@@ -140,3 +141,5 @@ Never run `migrate:fresh`, `db:wipe`, Compose `down -v`, or volume pruning on th
 - Local predeploy tests: 428 tests / 2378 assertions; Pint, PHPStan, ESLint, and Vite build passed. Realtime CSP regression fix: 26 focused security tests / 116 assertions passed.
 
 Mail delivery remains unverified until a Resend API key is configured. Cloudflare’s injected analytics beacon is blocked by the application CSP; realtime must use the exact public WebSocket host rather than the internal Docker host.
+
+The browser WebSocket CSP correction is in commit `0efb6a4`. A temporary local snapshot verified the correction before an explicitly authorized push and return to the Git source. The snapshot remains at `/etc/dokploy/svci-releases/0efb6a4` for recovery; normal deployments use the Git provider.
