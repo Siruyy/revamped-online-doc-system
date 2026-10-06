@@ -1,0 +1,26 @@
+config/broadcasting.php
+  s_b1dca510c622a9::t_6790d272ffb446 44
+app/Http/Middleware/SecurityHeaders.php
+  s_b1dca510c622a9::t_6790d272ffb446 58-61
+tests/Feature/Auth/SecurityHeadersTest.php
+  s_b1dca510c622a9::t_884b111642b273 49,51-52,58-75
+docs/operations/dokploy-runbook.md
+  s_b1dca510c622a9::t_f3ad93012a357a 3,7-10,14-21,25,28-29,32,50,62,82-83,95-96,100-106,110-115,119-128
+  s_b1dca510c622a9::t_2ea16946c112d1 61,129-130,132-140,142
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0efb6a43815c7fc58bf904e3ffaee771e50f01b7",
+  "prompts": {},
+  "sessions": {
+    "s_b1dca510c622a9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11028-b93b-7b41-9691-8999cf6b103b",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Siruyy <nulysses.roda@gmail.com>"
+    }
+  }
+}
