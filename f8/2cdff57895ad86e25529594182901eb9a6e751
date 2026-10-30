@@ -1,0 +1,19 @@
+resources/views/pdf/claim-slip.blade.php
+  s_ab2217b46ac37d::t_188dab16ab0510 10,13-14,26-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f82cdff57895ad86e25529594182901eb9a6e751",
+  "prompts": {},
+  "sessions": {
+    "s_ab2217b46ac37d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b06488c6-d27d-4eb3-8d1d-92a9602064e8",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Siruyy <nulysses.roda@gmail.com>"
+    }
+  }
+}
