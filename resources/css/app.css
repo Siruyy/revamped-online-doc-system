@@ -33,64 +33,91 @@
     .animate-fade-in-up {
         animation: fade-in-up 360ms ease-out both;
     }
+}
 
-    @keyframes landing-enter-copy {
+/* Public landing page motion. Reveal states apply only once Welcome.vue adds .reveal-ready. */
+@layer components {
+    @keyframes landing-rise {
         from {
             opacity: 0;
-            transform: translate3d(0, 24px, 0);
+            transform: translate3d(0, 14px, 0);
         }
 
         to {
             opacity: 1;
-            transform: translate3d(0, 0, 0);
+            transform: none;
         }
     }
 
-    @keyframes landing-enter-media {
+    @keyframes landing-seal-in {
         from {
             opacity: 0;
-            transform: translate3d(28px, 18px, 0) scale(0.98);
+            transform: rotate(-14deg) scale(0.9);
         }
 
         to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0) scale(1);
+            opacity: 0.08;
+            transform: none;
         }
     }
 
-    @media (prefers-reduced-motion: no-preference) {
-        .landing-hero-copy {
-            animation: landing-enter-copy 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-
-        .landing-hero-media {
-            animation: landing-enter-media 680ms 100ms cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
+    .enter {
+        animation: landing-rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms) backwards;
     }
 
-    .landing-hero-orbit {
-        position: absolute;
-        top: 8%;
-        right: -12rem;
-        width: 46rem;
-        height: 46rem;
-        border: 1px solid rgb(147 197 253 / 55%);
-        border-radius: 9999px;
-        background: rgb(219 234 254 / 35%);
-        pointer-events: none;
+    .hero-seal {
+        opacity: 0.08;
+        filter: grayscale(1) invert(1);
+        mix-blend-mode: screen;
+        animation: landing-seal-in 1400ms cubic-bezier(0.2, 0.7, 0.2, 1) 120ms backwards;
     }
 
-    .landing-reveal {
-        opacity: 0;
-        transform: translate3d(0, 28px, 0);
+    [data-reveal] {
         transition:
-            opacity 560ms cubic-bezier(0.16, 1, 0.3, 1) var(--landing-reveal-delay, 0ms),
-            transform 560ms cubic-bezier(0.16, 1, 0.3, 1) var(--landing-reveal-delay, 0ms);
+            opacity 700ms cubic-bezier(0.2, 0.7, 0.2, 1),
+            transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+        transition-delay: var(--delay, 0ms);
     }
 
-    .landing-reveal.is-visible {
-        opacity: 1;
-        transform: translate3d(0, 0, 0);
+    .reveal-ready [data-reveal]:not(.is-revealed) {
+        opacity: 0;
+        transform: translate3d(0, 16px, 0);
+    }
+
+    .step-bar {
+        transform-origin: left;
+        transition: transform 900ms cubic-bezier(0.65, 0, 0.35, 1) calc(var(--delay, 0ms) + 200ms);
+    }
+
+    .reveal-ready [data-reveal]:not(.is-revealed) .step-bar {
+        transform: scaleX(0);
+    }
+
+    .check-mark {
+        transition: transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--delay, 0ms) + 150ms);
+    }
+
+    .reveal-ready [data-reveal]:not(.is-revealed) .check-mark {
+        transform: scale(0.4);
+    }
+
+    details[open] .faq-answer {
+        animation: landing-rise 300ms ease-out;
+    }
+
+    .nav-link {
+        background-image: linear-gradient(currentColor, currentColor);
+        background-origin: content-box;
+        background-position: 0 100%;
+        background-repeat: no-repeat;
+        background-size: 0 1px;
+        transition:
+            background-size 250ms ease-out,
+            color 200ms;
+    }
+
+    .nav-link:hover {
+        background-size: 100% 1px;
     }
 }
 
@@ -102,11 +129,6 @@
         animation-iteration-count: 1 !important;
         scroll-behavior: auto !important;
         transition-duration: 0.01ms !important;
-    }
-
-    .landing-reveal {
-        opacity: 1 !important;
-        transform: none !important;
     }
 }
 

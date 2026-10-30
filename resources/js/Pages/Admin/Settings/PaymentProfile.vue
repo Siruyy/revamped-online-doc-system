@@ -487,7 +487,7 @@ function removeQr(profile) {
                                         type="text"
                                         required
                                         maxlength="180"
-                                        placeholder="e.g. St. Vincent College"
+                                        placeholder="e.g. St. Vincent’s College Incorporated"
                                         class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm sm:text-sm"
                                         :class="{ 'border-rose-400': createForm.errors.account_name }"
                                         :aria-describedby="describedBy"

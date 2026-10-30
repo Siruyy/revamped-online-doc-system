@@ -123,7 +123,7 @@ onBeforeUnmount(() => {
                         class="mx-auto h-24 w-40 object-contain"
                     />
                     <p v-else class="text-sm text-slate-500">No uploaded logo. The default school mark is used.</p>
-                    <p class="mt-5 font-display text-lg font-bold text-brand-900">St. Vincent College Incorporated</p>
+                    <p class="mt-5 font-display text-lg font-bold text-brand-900">St. Vincent’s College Incorporated</p>
                     <p class="mt-2 border-t border-slate-300 pt-3 text-sm font-semibold tracking-wide text-slate-700">
                         DOCUMENT CLAIM SLIP
                     </p>

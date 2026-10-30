@@ -6,10 +6,10 @@
 
         <title inertia>{{ config('app.name', 'SVCI Document System') }}</title>
 
-        <!-- Fonts: Nunito Sans (body) + Rubik (display) -->
+        <!-- Fonts: Nunito Sans (body) + Rubik (display) + Source Serif 4 (public headings) -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;500;600;700&family=Rubik:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
         @routes

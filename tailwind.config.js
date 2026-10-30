@@ -25,6 +25,15 @@ export default {
                     800: '#1e40af',
                     900: '#1e3a8a',
                 },
+                // SVCI blue; public/images/svci-seal.jpg is recolored to the 700 shade.
+                school: {
+                    50: '#eef3fc',
+                    100: '#d9e4f8',
+                    200: '#b3c8f0',
+                    700: '#1a45a8',
+                    800: '#15378a',
+                    900: '#0d255e',
+                },
                 accent: {
                     500: '#f97316', // CTA
                     600: '#ea580c',
@@ -33,6 +42,7 @@ export default {
             fontFamily: {
                 sans: ['"Nunito Sans"', ...defaultTheme.fontFamily.sans],
                 display: ['Rubik', '"Nunito Sans"', 'sans-serif'],
+                serif: ['"Source Serif 4"', ...defaultTheme.fontFamily.serif],
             },
         },
     },

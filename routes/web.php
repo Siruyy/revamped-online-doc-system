@@ -8,6 +8,7 @@ use App\Http\Controllers\Public\PriceListController;
 use App\Http\Controllers\Public\TrackDocumentController;
 use App\Http\Controllers\Public\WorkflowActionController;
 use App\Models\Announcement;
+use App\Models\DocumentType;
 use App\Models\Faq;
 use App\Models\PaymentProfile;
 use App\Models\User;
@@ -17,6 +18,7 @@ use Inertia\Inertia;
 
 Route::get('/', function () {
     $paymentProfile = PaymentProfile::active();
+    $commonDocumentCodes = ['tor', 'tor_transfer', 'diploma_reissue_college', 'form_137a_transfer', 'cert_grades', 'cert_enrollment', 'cav'];
 
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -36,6 +38,12 @@ Route::get('/', function () {
             ->orderBy('sort_order')
             ->limit(8)
             ->get(['id', 'question', 'answer']),
+        'commonDocuments' => DocumentType::query()
+            ->where('is_active', true)
+            ->whereIn('code', $commonDocumentCodes)
+            ->get(['code', 'name', 'fee', 'fee_formula', 'processing_days'])
+            ->sortBy(fn (DocumentType $type): int|false => array_search($type->code, $commonDocumentCodes, true))
+            ->values(),
         'paymentInstructions' => $paymentProfile?->instructions,
         'paymentProfile' => $paymentProfile ? [
             'bank_name' => $paymentProfile->bank_name,

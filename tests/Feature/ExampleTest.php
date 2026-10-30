@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\DocumentType;
 use App\Models\PaymentProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -23,9 +24,24 @@ class ExampleTest extends TestCase
 
         $this->get(route('public.requests.create'))->assertOk();
         $this->get(route('track-document'))->assertOk();
+        $this->get(route('public.pricelist'))->assertOk();
+    }
 
-        $this->assertFileExists(public_path('images/landing/registrar-service.png'));
-        $this->assertFileExists(public_path('images/landing/study-materials.jpg'));
+    public function test_landing_page_lists_common_active_documents_in_display_order(): void
+    {
+        DocumentType::query()->create(['code' => 'cert_grades', 'name' => 'Certificate of Grades', 'category' => 'Certification', 'fee' => 120, 'fee_formula' => 'flat', 'processing_days' => 3, 'is_active' => true]);
+        DocumentType::query()->create(['code' => 'tor', 'name' => 'Transcript of Records', 'category' => 'Academic', 'fee' => 165, 'fee_formula' => 'per_page', 'processing_days' => 14, 'is_active' => true]);
+        DocumentType::query()->create(['code' => 'cav', 'name' => 'CAV', 'category' => 'Special', 'fee' => 140, 'fee_formula' => 'flat', 'processing_days' => 3, 'is_active' => false]);
+        DocumentType::query()->create(['code' => 'grades_printout', 'name' => 'Grades Print-Out', 'category' => 'Special', 'fee' => 20, 'fee_formula' => 'per_page', 'processing_days' => 3, 'is_active' => true]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('commonDocuments', 2)
+                ->where('commonDocuments.0.code', 'tor')
+                ->where('commonDocuments.0.processing_days', 14)
+                ->where('commonDocuments.1.code', 'cert_grades')
+                ->missing('commonDocuments.0.offices'));
     }
 
     public function test_landing_page_exposes_active_payment_details(): void
