@@ -1,0 +1,21 @@
+docs/client-feedback-2026-10-30.md
+  s_ab2217b46ac37d::t_2317aaabe6ae72 30-33
+docs/operations/dokploy-runbook.md
+  s_ab2217b46ac37d::t_2317aaabe6ae72 162-172
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ce74c43428eb9b547eaf59c4aaaa1cf65cdc0236",
+  "prompts": {},
+  "sessions": {
+    "s_ab2217b46ac37d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b06488c6-d27d-4eb3-8d1d-92a9602064e8",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Siruyy <nulysses.roda@gmail.com>"
+    }
+  }
+}
