@@ -27,3 +27,7 @@ Focused regression coverage: `tests/Feature/Public/PriceListTest.php` verifies p
 - At 375px, personal and conditional employment, custom-purpose, delivery, and representative labels displayed asterisks and accessible required text. Optional personal fields remained unmarked; the rendered conditional form had no horizontal overflow.
 - Security review: existing auth/approved/verified middleware remains; new mutation is Accounting-only, policy-authorized, CSRF-protected, throttled, validated, fee-only, and audit-logged. Public serialization includes only document catalog fields. Confirmed quote snapshots remain unchanged in regression coverage.
 - No production deployment, DNS change, production data edit, real-inbox delivery test, or full legacy browser-suite run was performed for this change.
+
+## Production deployment — 2026-10-30
+
+Deployed with the landing page redesign as commit `f82cdff`. See the runbook entry "Price List And Landing Redesign Deployment — 2026-10-30" in [`operations/dokploy-runbook.md`](operations/dokploy-runbook.md).

@@ -159,3 +159,14 @@ The user explicitly requested the bundled `ClearanceSignatorySeeder`. It added 1
 - Verification: a Laravel Mailable was queued to the Resend delivery simulator `delivered@resend.dev`; Resend reported `delivered`, the worker completed the job, and pending/failed queue counts were both zero. This simulator check does not establish delivery to a real staff inbox.
 
 Full bundled staff login list: `~/.codex/deployment-secrets/svci-staff-accounts.csv` (mode `0600`).
+
+## Price List And Landing Redesign Deployment — 2026-10-30
+
+Explicitly authorized push of `develop` (`6fd6d94..f82cdff`) followed by a manual Dokploy deployment of compose `ofwoZ5fTVZUGXZ9igv8Tq` from the Git source. Existing volumes were preserved (`freshVolumes: false`); no seeders, data edits, DNS, or environment changes.
+
+- Released: public `/pricelist` with Accounting fee editor, required-field asterisks on intake, landing page redesign (SVCI seal, blue palette, live common-document fees, tracking shortcut, Registrar contact), and the blue seal on claim slips. No schema change.
+- Deployment `eB1c0bTZ2zdUE93DJJv1J` for commit `f82cdff`: status `done`, about 6 minutes.
+- Local predeploy checks: 435 tests / 2497 assertions; Pint, PHPStan, ESLint, and Vite build passed.
+- Post-deploy: `/`, `/up`, `/pricelist`, `/request-document`, `/track-document`, `/login`, and `/images/svci-seal.jpg` returned HTTP 200; the landing payload included live `commonDocuments`; a browser check of the live landing page matched the local preview.
+- Open follow-ups: Diploma, Special Order, and Enrollment Population Survey show ₱0.00 publicly until Accounting or Admin sets fees. The Cloudflare analytics beacon remains blocked by CSP.
+- Not verified after deployment: authenticated staff screens (including `/department/prices`), email delivery, realtime, queue health, and an end-to-end request workflow.
