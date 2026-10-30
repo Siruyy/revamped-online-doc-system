@@ -7,11 +7,11 @@
         body { color: #0f172a; font-family: DejaVu Sans, sans-serif; font-size: 12px; line-height: 1.5; }
         h1, h2, p { margin: 0; }
         .center { text-align: center; }
-        .brand { color: #173b75; font-weight: bold; letter-spacing: .4px; }
+        .brand { color: #1a45a8; font-weight: bold; letter-spacing: .4px; }
         .logo { max-height: 58px; max-width: 180px; margin-bottom: 6px; }
         .muted { color: #475569; }
-        .slip { border: 2px solid #173b75; margin-top: 28px; padding: 24px; }
-        .number { color: #173b75; font-size: 22px; font-weight: bold; letter-spacing: 1px; margin: 14px 0; }
+        .slip { border: 2px solid #1a45a8; margin-top: 28px; padding: 24px; }
+        .number { color: #1a45a8; font-size: 22px; font-weight: bold; letter-spacing: 1px; margin: 14px 0; }
         table { border-collapse: collapse; margin-top: 18px; width: 100%; }
         th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
         th { background: #f1f5f9; width: 32%; }
@@ -23,8 +23,8 @@
     <div class="center">
         @if (!empty($logoDataUri))
             <img class="logo" src="{{ $logoDataUri }}" alt="SVCI logo">
-        @elseif (file_exists(public_path('images/svci-logo.svg')))
-            <img class="logo" src="{{ public_path('images/svci-logo.svg') }}" alt="SVCI logo">
+        @elseif (file_exists(public_path('images/svci-seal.jpg')))
+            <img class="logo" src="{{ public_path('images/svci-seal.jpg') }}" alt="SVCI logo">
         @endif
         <h1>ST. VINCENT'S COLLEGE INCORPORATED</h1>
         <p class="brand">OFFICE OF THE REGISTRAR</p>
