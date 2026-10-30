@@ -1,0 +1,72 @@
+app/Http/Controllers/Department/DocumentPriceController.php
+  s_beac40148a870a::t_f023146f467d81 1-31
+app/Providers/AuthServiceProvider.php
+  s_beac40148a870a::t_f023146f467d81 8,15,32
+docs/client-feedback-2026-10-30.md
+  s_beac40148a870a::t_65a490d211ed36 21-29
+  s_beac40148a870a::t_15fd11738ed03d 1-20
+app/Http/Requests/Department/UpdateDocumentPriceRequest.php
+  s_beac40148a870a::t_f023146f467d81 1-21
+resources/js/Pages/Public/PriceList.vue
+  s_beac40148a870a::t_2b5820d6e7d525 1-7,14-20,25-26,30-31,35,40-44,54,60-61,69,73-75,84-86
+  s_beac40148a870a::t_97a25260b35be9 8-13,21-24,27-29,32-34,36-39,45-53,55-59,62-68,70-72,76-83
+routes/department.php
+  s_beac40148a870a::t_f023146f467d81 7,37-39
+docs/plan/phase-15-public-request-intake.md
+  s_beac40148a870a::t_bea2a3fcf50732 352-377,379
+  s_beac40148a870a::t_65a490d211ed36 378
+resources/js/Pages/Department/Prices/Index.vue
+  s_beac40148a870a::t_2b5820d6e7d525 1-20,24-30,36,50-52,57-58,68,74-75,88-89,105-109
+  s_beac40148a870a::t_97a25260b35be9 21-23,31-35,37-49,53-56,59-67,69-73,76-87,90-104
+resources/js/Layouts/StaffLayout.vue
+  s_beac40148a870a::t_f023146f467d81 143
+app/Policies/DocumentTypePolicy.php
+  s_beac40148a870a::t_f023146f467d81 1-19
+resources/js/Components/Public/FileUploadField.vue
+  s_beac40148a870a::t_11f1463798ad4a 3,49,71
+routes/web.php
+  s_beac40148a870a::t_f023146f467d81 7,59
+  s_beac40148a870a::t_c335185a710514 60
+resources/js/Components/DocumentRate.vue
+  s_beac40148a870a::t_b689d289a00e41 22
+  s_beac40148a870a::t_2b5820d6e7d525 1-11,18-21,23
+  s_beac40148a870a::t_97a25260b35be9 12-17
+docs/07-routes-and-controllers.md
+  s_beac40148a870a::t_65a490d211ed36 199-208
+tests/Feature/Public/PriceListTest.php
+  s_beac40148a870a::t_b689d289a00e41 5,36,38,50-51
+  s_beac40148a870a::t_c641442d5fde35 1-4,7-35,39-49,52-99
+  s_beac40148a870a::t_733b833f7eb97f 6
+  s_beac40148a870a::t_6fe59aaed11999 37
+resources/js/Pages/Welcome.vue
+  s_beac40148a870a::t_2b5820d6e7d525 245-250
+app/Services/DocumentPricingService.php
+  s_beac40148a870a::t_f023146f467d81 1-24
+resources/js/Pages/Public/RequestDocument.vue
+  s_beac40148a870a::t_97a25260b35be9 317-320,352-354,520-524,527-531,541,549,556-560,568-578,580-600,603-607,619-623,631-635,643-655,664-668,676-681,683-688,713-729,733-737,744-755,766,775-782,784-790,796-801,819-822,827,832-836
+  s_beac40148a870a::t_11f1463798ad4a 3,345,369-370,445
+  s_beac40148a870a::t_738b4b6bd550d6 539,547,656,758,764,772,825
+  s_beac40148a870a::t_bc1e7eaea32437 567,601
+app/Http/Controllers/Public/PriceListController.php
+  s_beac40148a870a::t_f023146f467d81 1-21
+docs/03-roles-and-permissions.md
+  s_beac40148a870a::t_65a490d211ed36 126-129
+resources/js/Components/RequiredMark.vue
+  s_beac40148a870a::t_97a25260b35be9 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f5c30e24e4038c3170b17dd158db1bccef4e3fd4",
+  "prompts": {},
+  "sessions": {
+    "s_beac40148a870a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18ba1-6a10-7cb2-ac60-1f51412b1944",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Siruyy <nulysses.roda@gmail.com>"
+    }
+  }
+}
