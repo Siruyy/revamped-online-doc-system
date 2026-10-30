@@ -242,6 +242,12 @@ onBeforeUnmount(() => revealObserver?.disconnect());
                                 />
                             </Link>
                         </div>
+                        <Link
+                            :href="route('public.pricelist')"
+                            class="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-brand-800 underline decoration-brand-300 underline-offset-4 hover:text-brand-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
+                        >
+                            View price list <ArrowUpRightIcon class="h-4 w-4" aria-hidden="true" />
+                        </Link>
                     </div>
 
                     <div class="landing-hero-media relative lg:col-span-7 lg:pl-8">

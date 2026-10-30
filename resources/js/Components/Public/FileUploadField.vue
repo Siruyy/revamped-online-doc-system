@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
+import RequiredMark from '@/Components/RequiredMark.vue';
 
 const props = defineProps({
     id: { type: String, required: true },
@@ -45,7 +46,7 @@ function onChange(event) {
             <div>
                 <label :for="id" class="block text-sm font-semibold text-slate-900">
                     {{ label }}
-                    <span v-if="required" class="text-rose-600">*</span>
+                    <RequiredMark v-if="required" />
                 </label>
                 <p class="mt-1 text-xs leading-5 text-slate-500">{{ hint }}</p>
             </div>
@@ -67,6 +68,7 @@ function onChange(event) {
         <input
             :id="id"
             type="file"
+            :aria-required="required ? 'true' : undefined"
             accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
             class="mt-3 block w-full text-sm text-slate-600 file:mr-4 file:rounded-xl file:border-0 file:bg-brand-50 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100"
             @change="onChange"

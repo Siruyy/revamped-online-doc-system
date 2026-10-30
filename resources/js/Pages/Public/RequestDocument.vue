@@ -1,5 +1,6 @@
 <script setup>
 import FileUploadField from '@/Components/Public/FileUploadField.vue';
+import RequiredMark from '@/Components/RequiredMark.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import {
@@ -313,6 +314,10 @@ function isStampExempt(type) {
         </header>
 
         <form class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8" @submit.prevent="submit">
+            <p class="mb-5 text-sm text-slate-600">
+                <span class="text-rose-600" aria-hidden="true">*</span> Required field. Additional fields become
+                required when applicable.
+            </p>
             <div
                 v-if="errorSummary"
                 role="alert"
@@ -337,14 +342,16 @@ function isStampExempt(type) {
 
             <section v-if="step === 1" class="space-y-5">
                 <div>
-                    <h2 class="font-display text-2xl font-bold">Choose documents</h2>
+                    <h2 class="font-display text-2xl font-bold">Choose documents<RequiredMark /></h2>
                     <p class="mt-1 text-sm text-slate-600">
                         Start with the school division that holds your records. The available documents will update
                         automatically.
                     </p>
                 </div>
                 <fieldset class="rounded-2xl border border-slate-200 bg-white p-5">
-                    <legend class="px-1 font-semibold text-slate-950">Where are your records from?</legend>
+                    <legend class="px-1 font-semibold text-slate-950">
+                        Where are your records from?<RequiredMark />
+                    </legend>
                     <div class="mt-3 grid gap-3 sm:grid-cols-2">
                         <label
                             v-for="(label, value) in requestOptions.divisions"
@@ -359,6 +366,8 @@ function isStampExempt(type) {
                             <input
                                 v-model="form.requester_division"
                                 type="radio"
+                                name="requester_division"
+                                aria-required="true"
                                 :value="value"
                                 class="mt-1 border-slate-300 text-brand-700 focus:ring-brand-600"
                             />
@@ -433,7 +442,7 @@ function isStampExempt(type) {
                             </label>
                             <div v-if="selected[type.id]" class="mt-4 space-y-3 border-t border-brand-200 pt-3">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium">Copies</span>
+                                    <span class="text-sm font-medium">Copies<RequiredMark /></span>
                                     <div class="flex items-center gap-2">
                                         <button
                                             type="button"
@@ -508,10 +517,18 @@ function isStampExempt(type) {
                 </div>
                 <div class="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 sm:grid-cols-2">
                     <label
-                        >Last name<input v-model="form.requester_last_name" autocomplete="family-name" class="field"
+                        >Last name<RequiredMark /><input
+                            v-model="form.requester_last_name"
+                            aria-required="true"
+                            autocomplete="family-name"
+                            class="field"
                     /></label>
                     <label
-                        >First name<input v-model="form.requester_first_name" autocomplete="given-name" class="field"
+                        >First name<RequiredMark /><input
+                            v-model="form.requester_first_name"
+                            aria-required="true"
+                            autocomplete="given-name"
+                            class="field"
                     /></label>
                     <label>Middle name<input v-model="form.requester_middle_name" class="field" /></label>
                     <label
@@ -519,49 +536,75 @@ function isStampExempt(type) {
                         ><input v-model="form.requester_suffix" class="field"
                     /></label>
                     <label
-                        >Email address<input
+                        >Email address<RequiredMark /><input
                             v-model="form.requester_email"
+                            aria-required="true"
                             type="email"
                             autocomplete="email"
                             class="field"
                     /></label>
                     <label
-                        >Contact number<input
+                        >Contact number<RequiredMark /><input
                             v-model="form.requester_contact_number"
+                            aria-required="true"
                             type="tel"
                             autocomplete="tel"
                             class="field"
                     /></label>
                     <label>Student ID (if available)<input v-model="form.requester_student_id" class="field" /></label>
                     <label v-if="!isBasicEducation"
-                        >Program / course<select v-model="form.academic_program_id" class="field">
+                        >Program / course<RequiredMark /><select
+                            v-model="form.academic_program_id"
+                            aria-required="true"
+                            class="field"
+                        >
                             <option value="" disabled>Select program</option>
                             <option v-for="program in programs" :key="program.id" :value="program.id">
                                 {{ program.code }} — {{ program.name }}
                             </option>
                         </select></label
                     >
-                    <label v-if="!isBasicEducation"
-                        >Year level<select v-model="form.requester_year_level" class="field">
-                            <option value="" disabled>Select year</option>
-                            <option v-for="year in 8" :key="year" :value="year">{{ year }}</option>
-                        </select></label
-                    >
-                    <label v-if="!isBasicEducation"
-                        >Academic status <span class="font-normal text-slate-500">(if not currently enrolled)</span
-                        ><select v-model="form.requester_year_level_status" class="field">
-                            <option value="">Currently enrolled</option>
-                            <option
-                                v-for="(label, value) in requestOptions.year_level_statuses"
-                                :key="value"
-                                :value="value"
+                    <fieldset v-if="!isBasicEducation" class="grid gap-5 sm:col-span-2 sm:grid-cols-2">
+                        <legend class="mb-2 text-sm font-medium text-slate-700">
+                            Year level or academic status<RequiredMark />
+                        </legend>
+                        <p class="text-sm text-slate-500 sm:col-span-2">
+                            Choose a year level or an academic status. Only one is required.
+                        </p>
+                        <label
+                            >Year level<select
+                                v-model="form.requester_year_level"
+                                :aria-required="!form.requester_year_level_status ? 'true' : undefined"
+                                class="field"
                             >
-                                {{ label }}
-                            </option>
-                        </select></label
-                    >
+                                <option value="" disabled>Select year</option>
+                                <option v-for="year in 8" :key="year" :value="year">{{ year }}</option>
+                            </select></label
+                        >
+                        <label
+                            >Academic status <span class="font-normal text-slate-500">(if not currently enrolled)</span
+                            ><select
+                                v-model="form.requester_year_level_status"
+                                :aria-required="!form.requester_year_level ? 'true' : undefined"
+                                class="field"
+                            >
+                                <option value="">Currently enrolled</option>
+                                <option
+                                    v-for="(label, value) in requestOptions.year_level_statuses"
+                                    :key="value"
+                                    :value="value"
+                                >
+                                    {{ label }}
+                                </option>
+                            </select></label
+                        >
+                    </fieldset>
                     <label v-else class="sm:col-span-2"
-                        >Basic education level<select v-model="form.basic_education_level" class="field">
+                        >Basic education level<RequiredMark /><select
+                            v-model="form.basic_education_level"
+                            aria-required="true"
+                            class="field"
+                        >
                             <option value="" disabled>Select level</option>
                             <option
                                 v-for="(level, value) in requestOptions.basic_education_levels"
@@ -573,7 +616,11 @@ function isStampExempt(type) {
                         </select></label
                     >
                     <label
-                        >Last term attended<select v-model="form.requester_last_term_attended" class="field">
+                        >Last term attended<RequiredMark /><select
+                            v-model="form.requester_last_term_attended"
+                            aria-required="true"
+                            class="field"
+                        >
                             <option value="" disabled>Select term</option>
                             <option v-for="(label, value) in requestOptions.terms" :key="value" :value="value">
                                 {{ label }}
@@ -581,17 +628,32 @@ function isStampExempt(type) {
                         </select></label
                     >
                     <label
-                        >Last school year attended<select v-model="form.requester_last_year_attended" class="field">
+                        >Last school year attended<RequiredMark /><select
+                            v-model="form.requester_last_year_attended"
+                            aria-required="true"
+                            class="field"
+                        >
                             <option value="" disabled>Select school year</option>
                             <option v-for="year in requestOptions.academic_years" :key="year" :value="year">
                                 {{ year }}
                             </option>
                         </select></label
                     >
-                    <label>Birth date<input v-model="form.birth_date" type="date" class="field" /></label>
-                    <label>Birth place<input v-model="form.birth_place" class="field" /></label>
                     <label
-                        >Sex<select v-model="form.sex" class="field">
+                        >Birth date<RequiredMark /><input
+                            v-model="form.birth_date"
+                            aria-required="true"
+                            type="date"
+                            class="field"
+                    /></label>
+                    <label
+                        >Birth place<RequiredMark /><input
+                            v-model="form.birth_place"
+                            aria-required="true"
+                            class="field"
+                    /></label>
+                    <label
+                        >Sex<RequiredMark /><select v-model="form.sex" aria-required="true" class="field">
                             <option value="" disabled>Select</option>
                             <option>Female</option>
                             <option>Male</option>
@@ -599,7 +661,11 @@ function isStampExempt(type) {
                         </select></label
                     >
                     <label
-                        >Civil status<select v-model="form.civil_status" class="field">
+                        >Civil status<RequiredMark /><select
+                            v-model="form.civil_status"
+                            aria-required="true"
+                            class="field"
+                        >
                             <option value="" disabled>Select</option>
                             <option>Single</option>
                             <option>Married</option>
@@ -607,9 +673,19 @@ function isStampExempt(type) {
                             <option>Separated</option>
                         </select></label
                     >
-                    <label>Citizenship<input v-model="form.citizenship" class="field" /></label>
+                    <label
+                        >Citizenship<RequiredMark /><input
+                            v-model="form.citizenship"
+                            aria-required="true"
+                            class="field"
+                    /></label>
                     <label class="sm:col-span-2"
-                        >Home address<textarea v-model="form.home_address" rows="2" class="field" />
+                        >Home address<RequiredMark /><textarea
+                            v-model="form.home_address"
+                            aria-required="true"
+                            rows="2"
+                            class="field"
+                        />
                     </label>
                     <label>Father’s name<input v-model="form.father_name" class="field" /></label>
                     <label>Mother’s maiden name<input v-model="form.mother_maiden_name" class="field" /></label>
@@ -633,49 +709,96 @@ function isStampExempt(type) {
                         class="grid gap-3 border-b border-slate-100 pb-4 sm:grid-cols-[1fr_1fr_8rem]"
                     >
                         <legend class="mb-2 font-semibold sm:col-span-3">{{ label }}</legend>
-                        <label>School<input v-model="form.education[key].school" class="field" /></label>
-                        <label>Address<input v-model="form.education[key].address" class="field" /></label>
                         <label
-                            >Year<input v-model="form.education[key].year" inputmode="numeric" class="field"
+                            >School<RequiredMark /><input
+                                v-model="form.education[key].school"
+                                aria-required="true"
+                                class="field"
+                        /></label>
+                        <label
+                            >Address<RequiredMark /><input
+                                v-model="form.education[key].address"
+                                aria-required="true"
+                                class="field"
+                        /></label>
+                        <label
+                            >Year<RequiredMark /><input
+                                v-model="form.education[key].year"
+                                aria-required="true"
+                                inputmode="numeric"
+                                class="field"
                         /></label>
                     </fieldset>
                     <label
-                        >Employment status<select v-model="form.employment_status" class="field">
+                        >Employment status<RequiredMark /><select
+                            v-model="form.employment_status"
+                            aria-required="true"
+                            class="field"
+                        >
                             <option value="employed">Employed</option>
                             <option value="not_employed">Not employed</option>
                             <option value="self_employed">Self-employed</option>
                         </select></label
                     >
                     <div v-if="form.employment_status !== 'not_employed'" class="grid gap-4 sm:grid-cols-2">
-                        <label>Company / business name<input v-model="form.company_name" class="field" /></label>
-                        <label>Company / business address<input v-model="form.company_address" class="field" /></label>
+                        <label
+                            >Company / business name<RequiredMark /><input
+                                v-model="form.company_name"
+                                aria-required="true"
+                                class="field"
+                        /></label>
+                        <label
+                            >Company / business address<RequiredMark /><input
+                                v-model="form.company_address"
+                                aria-required="true"
+                                class="field"
+                        /></label>
                     </div>
                     <label
-                        >Purpose<select v-model="form.purpose" class="field">
+                        >Purpose<RequiredMark /><select v-model="form.purpose" aria-required="true" class="field">
                             <option value="" disabled>Select purpose</option>
                             <option v-for="purpose in requestOptions.purposes" :key="purpose">{{ purpose }}</option>
                         </select></label
                     >
                     <label v-if="form.purpose === 'Other official purpose'"
-                        >Specify the official purpose<input
+                        >Specify the official purpose<RequiredMark /><input
                             v-model="form.purpose_other"
+                            aria-required="true"
                             class="field"
                             maxlength="300"
                             placeholder="e.g. Professional license application"
                     /></label>
                     <fieldset>
-                        <legend class="font-semibold">How should the documents be released?</legend>
+                        <legend class="font-semibold">How should the documents be released?<RequiredMark /></legend>
                         <div class="mt-2 flex flex-wrap gap-4">
                             <label class="flex min-h-11 items-center gap-2"
-                                ><input v-model="form.fulfillment_method" type="radio" value="pickup" /> Pickup</label
+                                ><input
+                                    v-model="form.fulfillment_method"
+                                    name="fulfillment_method"
+                                    aria-required="true"
+                                    type="radio"
+                                    value="pickup"
+                                />
+                                Pickup</label
                             ><label class="flex min-h-11 items-center gap-2"
-                                ><input v-model="form.fulfillment_method" type="radio" value="delivery" />
+                                ><input
+                                    v-model="form.fulfillment_method"
+                                    name="fulfillment_method"
+                                    aria-required="true"
+                                    type="radio"
+                                    value="delivery"
+                                />
                                 Delivery</label
                             >
                         </div>
                     </fieldset>
                     <label v-if="form.fulfillment_method === 'delivery'"
-                        >Delivery address<textarea v-model="form.delivery_address" rows="2" class="field" />
+                        >Delivery address<RequiredMark /><textarea
+                            v-model="form.delivery_address"
+                            aria-required="true"
+                            rows="2"
+                            class="field"
+                        />
                     </label>
                     <p
                         v-if="form.fulfillment_method === 'delivery'"
@@ -693,16 +816,24 @@ function isStampExempt(type) {
                         class="grid gap-4 rounded-xl border border-brand-100 bg-brand-50 p-4 sm:col-span-2 sm:grid-cols-2"
                     >
                         <label
-                            >Claimant / representative name<input v-model="form.requester_claimant_name" class="field"
+                            >Claimant / representative name<RequiredMark /><input
+                                v-model="form.requester_claimant_name"
+                                aria-required="true"
+                                class="field"
                         /></label>
                         <label
-                            >Relationship to owner<input
+                            >Relationship to owner<RequiredMark /><input
                                 v-model="form.representative_relationship"
+                                aria-required="true"
                                 class="field"
                                 placeholder="e.g. Mother"
                         /></label>
                         <label class="sm:col-span-2"
-                            >Where does the document owner reside?<select v-model="form.owner_residence" class="field">
+                            >Where does the document owner reside?<RequiredMark /><select
+                                v-model="form.owner_residence"
+                                aria-required="true"
+                                class="field"
+                            >
                                 <option value="" disabled>Select residence</option>
                                 <option
                                     v-for="(label, value) in requestOptions.owner_residences"

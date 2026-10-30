@@ -4,6 +4,7 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\DocumentRequestController as PublicDocumentRequestController;
 use App\Http\Controllers\Public\FeedbackController;
+use App\Http\Controllers\Public\PriceListController;
 use App\Http\Controllers\Public\TrackDocumentController;
 use App\Http\Controllers\Public\WorkflowActionController;
 use App\Models\Announcement;
@@ -54,6 +55,8 @@ Route::middleware('auth')->get('/dashboard', function () {
 
     return redirect()->route($user->roleHomeRoute());
 })->name('dashboard');
+
+Route::get('/pricelist', [PriceListController::class, 'index'])->name('public.pricelist');
 
 Route::get('/request-document', [PublicDocumentRequestController::class, 'create'])
     ->name('public.requests.create');

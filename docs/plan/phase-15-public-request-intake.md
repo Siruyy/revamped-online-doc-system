@@ -349,3 +349,31 @@ npm run build
 - [x] Make registrar base fees and documentary stamps derive from the document type and copies; show the calculation in the evaluator UI.
 - [x] Auto-break down Transfer Credentials into Honorable Dismissal, Good Moral, and registrar-evaluated TOR components.
 - [x] Show official payment profile details on the landing page and tracking page, and show courier/tracking fields in delivery tracking.
+
+## Agent Task 15.13 — Public Price List And Required Fields (2026-10-30)
+
+**Delegate to:** backend-patterns + frontend-patterns + security-review
+
+**Read first:**
+- `docs/client-feedback-2026-10-30.md`
+- `app/Models/DocumentType.php`
+- `app/Http/Requests/Public/StorePublicDocumentRequest.php`
+
+**Files likely touched:**
+- `app/Http/Controllers/Public/PriceListController.php`
+- `app/Http/Controllers/Department/DocumentPriceController.php`
+- `resources/js/Pages/Public/PriceList.vue`
+- `resources/js/Pages/Department/Prices/Index.vue`
+- `resources/js/Pages/Public/RequestDocument.vue`
+- `tests/Feature/Public/PriceListTest.php`
+
+**Steps:**
+- [x] Add a landing-page link and active document price list using the existing catalog.
+- [x] Allow Accounting fee updates while preserving existing Admin/SuperAdmin catalog editing and locked request quotes.
+- [x] Mark required and conditionally required intake fields with accessible asterisks.
+- [x] Add role, validation, and public-visibility regression tests and perform a security-focused review.
+
+**Acceptance:**
+- [x] Focused price-list feature tests pass.
+- [x] Local responsive browser inspection and project checks are recorded in [`../client-feedback-2026-10-30.md`](../client-feedback-2026-10-30.md).
+- [ ] Production smoke check follows a separately requested deployment.

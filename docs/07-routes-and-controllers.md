@@ -196,3 +196,13 @@ Route::middleware(['auth', 'role:teacher,dean,accounting,sao', 'approved'])
 - Routes named with dot notation: `student.requests.show`, `admin.payments.approve`.
 - Use `Route::resource()` where it cleanly fits, custom routes otherwise.
 - Form action POSTs go to a verb suffix: `/approve`, `/deny`, `/cancel`, `/sign`, `/upload`.
+
+## Price list routes — 2026-10-30
+
+| Method | URI | Name | Controller | Access |
+|---|---|---|---|---|
+| GET | `/pricelist` | `public.pricelist` | `Public/PriceListController@index` | Public; active catalog fields only |
+| GET | `/department/prices` | `department.prices.index` | `Department/DocumentPriceController@index` | Active, verified Accounting; price policy |
+| PATCH | `/department/prices/{documentType}` | `department.prices.update` | `Department/DocumentPriceController@update` | Same middleware + policy, Form Request, sensitive-action throttle |
+
+Admin/SuperAdmin continue to edit fees via their existing document-type routes. The Accounting endpoint uses `DocumentPricingService` to change only the catalog fee and record an audit entry; existing request quotes are not recalculated.

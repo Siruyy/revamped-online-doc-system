@@ -123,3 +123,7 @@ Independent of role, every account has a `status`:
 - Public request submission and tracking are guest routes. Tracking uses only a reference number and must return a privacy-safe payload.
 - Department officers can only view/sign clearances for their own department — enforced in the `ClearancePolicy`.
 - SuperAdmin bypasses all policy checks via a `Gate::before()` callback.
+
+## Price list access — 2026-10-30
+
+Guests can view active document reference rates at `/pricelist`. Admin and SuperAdmin retain their existing Document Types catalog editors. Accounting can view `/department/prices` and update only the `fee` through its policy-authorized, throttled endpoint; it does not gain document-type create/delete or metadata-edit permissions. Other department roles cannot access this editor. See [`client-feedback-2026-10-30.md`](client-feedback-2026-10-30.md).

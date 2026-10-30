@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PaymentProfileController;
 use App\Http\Controllers\Department\ClearanceController;
 use App\Http\Controllers\Department\DashboardController;
+use App\Http\Controllers\Department\DocumentPriceController;
 use App\Http\Controllers\Department\FaqController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
@@ -33,6 +34,9 @@ Route::middleware('throttle:sensitive-actions')->group(function () {
 Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');
 
 Route::middleware('role:accounting')->group(function () {
+    Route::get('/prices', [DocumentPriceController::class, 'index'])->name('prices.index');
+    Route::patch('/prices/{documentType}', [DocumentPriceController::class, 'update'])
+        ->middleware('throttle:sensitive-actions')->name('prices.update');
     Route::get('/settings/payment-profile', [PaymentProfileController::class, 'index'])->name('settings.payment-profile.index');
     Route::middleware('throttle:sensitive-actions')->group(function () {
         Route::post('/settings/payment-profile', [PaymentProfileController::class, 'store'])->name('settings.payment-profile.store');

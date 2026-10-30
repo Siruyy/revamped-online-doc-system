@@ -140,6 +140,7 @@ const links = computed(() => {
             ...(role.value === 'accounting'
                 ? [
                       { route: 'department.payments.index', label: 'Receipt Review' },
+                      { route: 'department.prices.index', label: 'Price List' },
                       { route: 'department.settings.payment-profile.index', label: 'Payment Settings' },
                   ]
                 : []),
