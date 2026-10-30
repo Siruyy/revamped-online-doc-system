@@ -8,10 +8,11 @@ The app lets public requestors submit academic document requests without creatin
 
 Core MVP flows are implemented for auth, student requests, admin processing, department clearance, SuperAdmin management, notifications, PDF generation, CSV exports, UI polish, and hardening.
 
-Deferred or out of current scope:
+Delivery and remaining work:
 
 - Messaging UI and routes are deferred in `docs/plan/phase-08-messaging.md`.
-- Deployment artifacts and legacy migration are skipped for the current scope.
+- Deployed to a DigitalOcean VPS through Dokploy on 2026-10-06; operational backup/restore and UAT closeout remain open. See [`docs/14-deployment.md`](docs/14-deployment.md) and [the deployment runbook](docs/operations/dokploy-runbook.md).
+- Legacy migration remains out of current scope.
 - Manual Reverb, queue worker, and mail capture checks are tracked in `docs/manual-verification-checklist.md`.
 
 ## Tech Stack
@@ -75,3 +76,6 @@ composer test:coverage
 - Routes and controllers: `docs/07-routes-and-controllers.md`
 - Security: `docs/10-security.md`
 - Implementation plan: `docs/plan/README.md`
+- Deployment overview: [`docs/14-deployment.md`](docs/14-deployment.md)
+- Recorded VPS/Dokploy setup: [`docs/operations/dokploy-runbook.md`](docs/operations/dokploy-runbook.md)
+- Claude entry point: [`CLAUDE.md`](CLAUDE.md)

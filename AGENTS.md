@@ -8,7 +8,7 @@ Build the revamped SVCI Online Document Request and Management System with Larav
 
 Core workflows:
 - Public document requests without student account registration.
-- Requestor details, document requirements, and offline payment receipt submitted in one intake.
+- Public intake → registrar quote → clearance → later receipt upload → accounting validation → processing → release.
 - Reference-number tracking for requestors.
 - Admin request/payment/release management.
 - Department clearance signing by teacher, dean, accounting, and SAO.
@@ -42,8 +42,10 @@ Active work is in:
 - `docs/plan/phase-08-messaging.md`
 - `docs/plan/phase-14-post-launch.md`
 
-Skipped for current scope:
+Deployment is live; operational closeout remains in:
 - `docs/plan/phase-12-deployment.md`
+
+Skipped for current scope:
 - `docs/plan/phase-13-legacy-data-migration.md`
 
 Finished phases 00-07 and 09-11 are archived in `docs/plan/finished/`. Do not trust old phase status without checking `docs/plan/README.md` and current code.
@@ -55,7 +57,7 @@ Finished phases 00-07 and 09-11 are archived in `docs/plan/finished/`. Do not tr
 - Phase 08 messaging is not implemented unless future code changes prove otherwise.
 - Phase 09 PDF/export MVP is implemented and archived; add XLSX/extra export formats only if requested.
 - Client changed the requestor workflow on 2026-06-23: public request intake should replace student self-registration for document requestors. Existing student pages/routes remain in code for now but should be hidden from public navigation until a later removal/refactor.
-- Phase 12 deployment artifacts are skipped for current scope; only dev Docker setup was found during audit.
+- VPS/Dokploy deployment was recorded on 2026-10-06. Use `docs/14-deployment.md` and `docs/operations/dokploy-runbook.md`: `178.128.97.151`, `svciregistrar.com`, `ws.svciregistrar.com`, Git branch `develop`, manual deployments. Historical skipped/not-started deployment notes are superseded; backup/restore/UAT closeout remains open.
 - Legacy PHP folders are insecure and should not be reused as-is.
 
 ## Legacy Context

@@ -12,7 +12,7 @@ Core MVP exists for setup, schema, auth, student, admin, department, SuperAdmin,
 |---|-------|------|:------:|--------------------|
 | 15 | Public Request Intake | [`phase-15-public-request-intake.md`](./phase-15-public-request-intake.md) | Active closeout | backend + frontend + security |
 | 08 | Messaging | [`phase-08-messaging.md`](./phase-08-messaging.md) | Deferred | backend + frontend |
-| 12 | Deployment | [`phase-12-deployment.md`](./phase-12-deployment.md) | Skipped for current scope | deployment |
+| 12 | Deployment | [`phase-12-deployment.md`](./phase-12-deployment.md) | Deployed; operational closeout | deployment |
 | 13 | Legacy Data Migration | [`phase-13-legacy-data-migration.md`](./phase-13-legacy-data-migration.md) | Skipped for current scope | database + migration |
 | 14 | Post-Launch | [`phase-14-post-launch.md`](./phase-14-post-launch.md) | Partial | support + docs |
 
@@ -40,7 +40,7 @@ Completed phases are archived in [`finished/`](./finished/). Do not edit archive
 2. Manual operational checks: public request submission, admin/SuperAdmin validation, private file previews, `queue:work`, and Resend real-inbox delivery.
 3. Phase 08 remains explicitly deferred from v1 unless messaging is reactivated.
 4. Phase 14 post-launch handoff and operations after the new intake workflow is implemented.
-5. Phase 12 and Phase 13 are skipped for the current requested scope.
+5. Phase 12: preserve the existing VPS/Dokploy deployment and close out operational evidence; see [`../operations/dokploy-runbook.md`](../operations/dokploy-runbook.md). Phase 13 legacy migration remains skipped.
 
 ## How To Use These Plans
 

@@ -1,158 +1,63 @@
-# Phase 12 — Deployment To DigitalOcean And Dokploy
+# Phase 12 — VPS / Dokploy Operational Closeout
 
-> **Goal:** Ship a production-ready deployment on a DigitalOcean VPS managed by Dokploy, with app, MySQL, queue worker, Reverb, backups, and smoke tests.
+> **Goal:** Preserve the existing deployment and complete operational handoff evidence.
 
-**Status:** Not started. Audit found only `Dockerfile.dev`; production deployment artifacts are missing.
+**Status:** Deployed; operational closeout open. The 2026-10-06 deployment record supersedes the old “not started / no production artifacts” audit. Do not move this phase to `finished/` until the remaining acceptance checks are verified or explicitly deferred.
 
-**Depends on:** Phase 11 verification passing.
+**Evidence:** [`../operations/dokploy-runbook.md`](../operations/dokploy-runbook.md) records the existing DigitalOcean VPS, Dokploy project/Compose identifiers, Git source on `develop`, manual deployment mode, DNS cutover, initial migrations, HTTP/private-file checks, queue/container checks, and Resend simulator delivery. These are dated records, not new live checks.
 
-**Primary docs:** [`14-deployment.md`](../14-deployment.md), [`10-security.md`](../10-security.md), [`11-file-storage.md`](../11-file-storage.md).
+**Primary docs:** [`../14-deployment.md`](../14-deployment.md), [`../10-security.md`](../10-security.md), [`../11-file-storage.md`](../11-file-storage.md).
 
----
+## Recorded implementation
 
-## Agent Task 12.1 — Production Deployment Design Review
+- Production `Dockerfile`, `.dockerignore`, `docker-compose.dokploy.yml`, Nginx, entrypoint, and app/queue/Reverb Supervisor configs exist.
+- App, queue, Reverb, and MySQL deployed with persistent application-storage and database volumes.
+- Production domains and HTTPS configured; initial public and private-file smoke checks recorded.
+- Document catalog/program seeders and SuperAdmin provisioning ran during initial setup. Later bundled staff setup was explicitly authorized; do not repeat it during ordinary releases.
+- Resend configured and delivery simulator verified; real-inbox workflow verification remains separate.
 
-**Delegate to:** architect + deployment-patterns
-
-**Steps:**
-- [ ] Confirm target droplet: Ubuntu 22.04, 2 vCPU, 4 GB RAM, 80 GB SSD.
-- [ ] Confirm no domain initially; app served by IP first.
-- [ ] Confirm services: app, MySQL 8, queue worker, Reverb.
-- [ ] Confirm persistent volumes: app storage and MySQL data.
-- [ ] Confirm backup destination and retention with client.
-
-**Acceptance:**
-- [ ] Deployment topology is confirmed before Docker work starts.
-
-## Agent Task 12.2 — Production Docker Artifacts
-
-**Delegate to:** docker-patterns + code-reviewer
-
-**Files likely touched:**
-- `Dockerfile`
-- `.dockerignore`
-- `docker/nginx.conf`
-- `docker/supervisord.conf`
-- `docker/supervisord-queue.conf`
-- `docker/supervisord-reverb.conf`
-- `docker/entrypoint.sh`
-
-**Steps:**
-- [ ] Build production image with PHP extensions, Composer deps, Node build assets, and optimized Laravel cache path.
-- [ ] Exclude `.env`, `.git`, `node_modules`, tests if not needed, local storage, and dev artifacts from image context.
-- [ ] Add Nginx config serving `public/` only.
-- [ ] Add entrypoint that runs safe cache/migration steps.
-- [ ] Add separate supervisor configs for app, queue, and Reverb if using same image with command override.
-
-**Commands:**
-
-```bash
-docker build -t svci-doc-system .
-```
-
-**Acceptance:**
-- [ ] Production image builds locally.
-- [ ] Image does not include secrets.
-
-## Agent Task 12.3 — Local Container Smoke Test
-
-**Delegate to:** verify-app + docker-patterns
-
-**Files likely touched:**
-- `docker-compose.prod-test.yml` or equivalent local smoke config
-
-**Steps:**
-- [ ] Run app and MySQL locally from production image/config.
-- [ ] Run migrations.
-- [ ] Run production seeder or create SuperAdmin.
-- [ ] Verify app loads through container web server.
-- [ ] Verify queue worker and Reverb containers start.
-
-**Acceptance:**
-- [ ] Production container setup works before Dokploy deployment.
-
-## Agent Task 12.4 — Dokploy Project Setup Runbook
-
-**Delegate to:** deployment-patterns
-
-**Files likely touched:**
-- `docs/14-deployment.md`
-- `docs/operations/runbook.md`
-
-**Steps:**
-- [ ] Document droplet provisioning steps.
-- [ ] Document Dokploy install and admin setup.
-- [ ] Document GitHub repo connection and deploy webhook.
-- [ ] Document MySQL service setup with restricted app user.
-- [ ] Document app, queue, and Reverb service setup.
-- [ ] Document persistent volume mounts.
-
-**Acceptance:**
-- [ ] A future deploy agent can follow the runbook without guessing.
-
-## Agent Task 12.5 — Production Environment And Security
-
-**Delegate to:** security-review + deployment-patterns
-
-**Files likely touched:**
-- `.env.example`
-- `docs/14-deployment.md`
-
-**Steps:**
-- [ ] List required env vars for app, DB, mail, queue, Reverb, session, and filesystem.
-- [ ] Ensure `APP_DEBUG=false`, `APP_ENV=production`, strong `APP_KEY`, strong DB passwords.
-- [ ] Configure secure cookies only after HTTPS/domain exists.
-- [ ] Verify `.env` and private files are not web-accessible.
-- [ ] Configure UFW, SSH key-only login, and Fail2ban.
-
-**Acceptance:**
-- [ ] Production env checklist is explicit and security-reviewed.
-
-## Agent Task 12.6 — Backup And Restore Procedure
+## Agent Task 12.1 — Backup And Restore Evidence
 
 **Delegate to:** deployment-patterns + database-migrations
 
+**Read first:**
+- `docs/operations/dokploy-runbook.md`
+- `docker-compose.dokploy.yml`
+
 **Files likely touched:**
-- `docs/14-deployment.md`
 - `docs/operations/backup-restore.md`
+- `docs/operations/manual-verification-log.md`
 
 **Steps:**
-- [ ] Configure daily MySQL backup.
-- [ ] Configure storage backup for private uploaded files.
-- [ ] Test restore to a separate sandbox.
-- [ ] Document restore commands and validation checklist.
+- [ ] Confirm the approved backup destination, retention, access controls, and current job configuration.
+- [ ] Verify recoverable MySQL and private application-storage backups without replacing production volumes.
+- [ ] Restore into a separate sandbox and verify records and private files.
+- [ ] Record commands, date, environment, outcome, and responsible owner without secrets.
 
 **Acceptance:**
-- [ ] Restore has been tested, not only configured.
+- [ ] Scheduled backups and a successful sandbox restore are evidenced.
 
-## Agent Task 12.7 — Production Smoke Test
+## Agent Task 12.2 — Production Workflow And Recovery Verification
 
-**Delegate to:** verify-app
+**Delegate to:** deployment-patterns + security-review
 
-**Checklist:**
-- [ ] Landing page loads.
-- [ ] Register student and see pending page.
-- [ ] SuperAdmin approves student.
-- [ ] Student logs in and submits request.
-- [ ] Student uploads payment receipt.
-- [ ] Admin approves request/payment.
-- [ ] Department signs clearance.
-- [ ] Student downloads clearance PDF.
-- [ ] Reverb updates visible in two browser windows.
-- [ ] Queue worker processes notification/email jobs.
+**Read first:**
+- `docs/14-deployment.md`
+- `docs/operations/dokploy-runbook.md`
+- `docs/manual-verification-checklist.md`
 
-**Acceptance:**
-- [ ] Smoke test passes on production IP or staging equivalent.
-
-## Agent Task 12.8 — Deployment Closeout
-
-**Delegate to:** doc-updater + code-reviewer
+**Files likely touched:**
+- `docs/operations/manual-verification-log.md`
+- `docs/operations/hotfix.md`
 
 **Steps:**
-- [ ] Record deployment URL securely outside repo if credentials are involved.
-- [ ] Update docs with learned commands and operational caveats.
-- [ ] Confirm health endpoint exists and Dokploy monitors it.
-- [ ] Confirm rollback plan is documented.
+- [ ] With authorization for production test records, verify public intake, Registrar quote, clearance, later payment, Accounting validation, claim slip, and release.
+- [ ] Verify real-inbox delivery and two-session Reverb behavior with polling fallback.
+- [ ] Verify health/failed-job monitoring and record the operational owner.
+- [ ] Record the actual host firewall, SSH key-only access, and Fail2ban configuration; the initial deployment record does not establish host-hardening completion.
+- [ ] Demonstrate a rollback of a compatible revision in a sandbox, preserving volume identities and reviewing migration compatibility.
+- [ ] Record remaining staff UAT and handoff items in Phase 14 without claiming unperformed checks.
 
 **Acceptance:**
-- [ ] App, queue, Reverb, MySQL, backups, monitoring, and rollback are documented and verified.
+- [ ] Workflow, realtime/email, monitoring, and recovery evidence is dated and linked.
+- [ ] Deployment is not recreated and existing production data is preserved.

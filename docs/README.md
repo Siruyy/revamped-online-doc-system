@@ -33,4 +33,6 @@ This documentation set is split into focused, single-topic files. Read them in o
 
 ## Related
 
-- Implementation plans (phased, with checkboxes): [`../plan/`](../plan/README.md)
+- Implementation plans (phased, with checkboxes): [`plan/`](plan/README.md)
+- Recorded production deployment and environment: [Dokploy runbook](operations/dokploy-runbook.md)
+- Claude project entry point: [`../CLAUDE.md`](../CLAUDE.md)
